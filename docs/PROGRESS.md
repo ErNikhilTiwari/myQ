@@ -18,8 +18,8 @@
 | **M6** | Public QR Token Page (No Login) | ✅ **Approved** | Public token view, Manual lookup, 360px mobile responsive, 36/36 tests pass | 2026-10-11 |
 | **M7** | TV Viewer Mode + Real-Time WebSocket | ✅ **Approved** | 3 TV templates, Synthetic chime, TV heartbeat, 41/41 tests pass | 2026-10-11 |
 | **M8** | Announcement System | ✅ **Completed** | Delay tickers, Banners, Takeovers, English & Hindi TTS, 46/46 tests pass | 2026-10-11 |
-| **M9** | Appointments + Payments (Razorpay Webhooks) | 🔄 In Progress | Booking slots, Webhook idempotency | — |
-| **M10** | WhatsApp Notifications (Official API) | ⏳ Queued | Cloud API templates, Outbox delivery logs | — |
+| **M9** | Appointments + Payments (Razorpay Webhooks) | ✅ **Completed** | Booking slots, Fail-closed slot check, Webhook idempotency, 53/53 tests pass | 2026-10-11 |
+| **M10** | WhatsApp Notifications (Official API) | 🔄 In Progress | Cloud API templates, Outbox delivery logs | — |
 | **M11** | Advertisement Slots (Patient & TV Viewer) | ⏳ Queued | Reusable ad slot components | — |
 | **M12** | Reporting & Export (PDF / Excel) | ⏳ Queued | Daily/Monthly metrics, PDF & Excel export | — |
 | **M13** | Hardening, Performance, Security & Deploy | ⏳ Queued | Security checklist, Throttling, E2E checks | — |

@@ -21,6 +21,7 @@ model User {
   staffProfiles  ClinicStaff[]
   queueEntries   QueueEntry[]
   appointments   Appointment[]
+  payments       Payment[]
   auditLogs      AuditLog[]
 
   @@index([phoneNumber])
@@ -55,6 +56,7 @@ model Clinic {
   services       Service[]
   queues         Queue[]
   appointments   Appointment[]
+  payments       Payment[]
   displayDevices DisplayDevice[]
   announcements  Announcement[]
   auditLogs      AuditLog[]
@@ -149,6 +151,7 @@ model QueueEntry {
 
   queue Queue @relation(fields: [queueId], references: [id], onDelete: Cascade)
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
 
   @@index([queueId, status])
   @@index([publicToken])
@@ -164,16 +167,43 @@ model Appointment {
   status         String    @default("CONFIRMED") // PENDING, CONFIRMED, CANCELLED, COMPLETED
   bookingFee     Float     @default(0.0)
   paymentStatus  String    @default("PENDING") // PENDING, SUCCESS, FAILED
+  queueEntryId   String?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
-  clinic  Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  doctor  Doctor?  @relation(fields: [doctorId], references: [id], onDelete: SetNull)
-  service Service? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  clinic     Clinic      @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  doctor     Doctor?     @relation(fields: [doctorId], references: [id], onDelete: SetNull)
+  service    Service?    @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  queueEntry QueueEntry? @relation(fields: [queueEntryId], references: [id], onDelete: SetNull)
+  payments   Payment[]
 
   @@index([clinicId, slotTime])
   @@index([userId])
+}
+
+model Payment {
+  id               String    @id @default(uuid())
+  clinicId         String
+  userId           String
+  appointmentId    String?
+  amount           Float
+  currency         String    @default("INR")
+  status           String    @default("CREATED") // CREATED, SUCCESS, FAILED, REFUNDED
+  gatewayOrderId   String?   @unique
+  gatewayPaymentId String?   @unique
+  idempotencyKey   String?   @unique
+  rawWebhookData   String?   // JSON representation for audit log
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  clinic      Clinic       @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  appointment Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
+  @@index([clinicId])
+  @@index([userId])
+  @@index([status])
 }
 
 model OTPVerification {

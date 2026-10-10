@@ -8,7 +8,7 @@
 
 ## Current Status
 
-- **Phase:** M8 (Announcement System) — completed; advancing directly to M9.
+- **Phase:** M9 (Appointments & Payments) — completed; advancing directly to M10.
 - **M0:** ✅ Approved (2026-10-10). See `docs/00-reference-analysis.md`.
 - **M1:** ✅ Approved (2026-10-11). See `docs/01-architecture.md` - `docs/06-deployment.md`.
 - **M2:** ✅ Approved (2026-10-11). See commit `2e74cb9`.
@@ -17,8 +17,9 @@
 - **M5:** ✅ Approved (2026-10-11). See commit `2991d6a`.
 - **M6:** ✅ Approved (2026-10-11). See commit `4f8d240`.
 - **M7:** ✅ Completed (2026-10-11). See commit `2d0e25f`.
-- **M8:** ✅ Completed (2026-10-11). Delay tickers, dual English+Hindi callouts, emergency takeover. 46/46 tests pass.
-- **Next:** M9 (Appointments & Razorpay Payments with Webhook Idempotency).
+- **M8:** ✅ Completed (2026-10-11). See commit `c8a8258`.
+- **M9:** ✅ Completed (2026-10-11). Booking slots, fail-closed collision check, Razorpay HMAC verification, idempotent webhooks, and arrival check-in. 53/53 tests pass.
+- **Next:** M10 (WhatsApp Cloud API Integration: Webhook signature verification, template message outbox, and idempotent status updates).
 
 ## Tech Stack (Pending M1 Approval)
 

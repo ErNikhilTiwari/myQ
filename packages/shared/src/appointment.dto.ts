@@ -1,0 +1,83 @@
+export type AppointmentStatus =
+  | 'PENDING'
+  | 'CONFIRMED'
+  | 'CANCELLED'
+  | 'COMPLETED'
+  | 'NO_SHOW';
+
+export type PaymentStatus =
+  | 'PENDING'
+  | 'CREATED'
+  | 'SUCCESS'
+  | 'FAILED'
+  | 'REFUNDED';
+
+export interface BookAppointmentDto {
+  clinicId: string;
+  doctorId?: string;
+  serviceId?: string;
+  slotTime: string; // ISO 8601 string
+  bookingFee?: number;
+}
+
+export interface AppointmentDto {
+  id: string;
+  clinicId: string;
+  userId: string;
+  patientName?: string;
+  patientPhone?: string;
+  doctorId?: string | null;
+  doctorName?: string | null;
+  serviceId?: string | null;
+  serviceName?: string | null;
+  slotTime: string;
+  status: AppointmentStatus;
+  bookingFee: number;
+  paymentStatus: PaymentStatus;
+  queueEntryId?: string | null;
+  tokenNumber?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RescheduleAppointmentDto {
+  slotTime: string;
+}
+
+export interface CreatePaymentOrderDto {
+  appointmentId: string;
+  amount: number;
+  currency?: string;
+}
+
+export interface PaymentOrderDto {
+  paymentId: string;
+  orderId: string;
+  amount: number;
+  currency: string;
+  keyId: string;
+  status: PaymentStatus;
+}
+
+export interface VerifyPaymentDto {
+  paymentId: string;
+  razorpayOrderId: string;
+  razorpayPaymentId: string;
+  razorpaySignature: string;
+}
+
+export interface RazorpayWebhookPayload {
+  event: string;
+  payload: {
+    payment?: {
+      entity: {
+        id: string;
+        order_id: string;
+        amount: number;
+        currency: string;
+        status: string;
+        method?: string;
+      };
+    };
+  };
+}
