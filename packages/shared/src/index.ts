@@ -7,3 +7,4 @@ export * from './doctor.dto';
 export * from './service.dto';
 export * from './queue.dto';
 export * from './receptionist.dto';
+export * from './viewer.dto';

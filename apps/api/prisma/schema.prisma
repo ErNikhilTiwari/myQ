@@ -50,12 +50,13 @@ model Clinic {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  staff        ClinicStaff[]
-  doctors      Doctor[]
-  services     Service[]
-  queues       Queue[]
-  appointments Appointment[]
-  auditLogs    AuditLog[]
+  staff          ClinicStaff[]
+  doctors        Doctor[]
+  services       Service[]
+  queues         Queue[]
+  appointments   Appointment[]
+  displayDevices DisplayDevice[]
+  auditLogs      AuditLog[]
 
   @@index([slug])
 }
@@ -200,4 +201,21 @@ model AuditLog {
 
   @@index([clinicId])
   @@index([action])
+}
+
+model DisplayDevice {
+  id              String    @id @default(uuid())
+  clinicId        String
+  name            String
+  displayToken    String    @unique
+  template        String    @default("NOW_SERVING_NEXT") // NOW_SERVING_NEXT, LAST_4_CALLED, SINGLE_LARGE
+  soundEnabled    Boolean   @default(true)
+  lastHeartbeatAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@index([clinicId])
+  @@index([displayToken])
 }

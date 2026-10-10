@@ -15,9 +15,9 @@
 | **M3** | Multi-Tenant Core (Clinics, Staff, RBAC) | ✅ **Approved** | TenantGuard, RBAC, Clinics/Doctors/Services APIs, 20/20 tests pass | 2026-10-11 |
 | **M4** | Queue Core (Tokens, Concurrency-Safe Call Next) | ✅ **Approved** | State machine (inc. ON_HOLD), Atomic counters, 28/28 tests pass | 2026-10-11 |
 | **M5** | Receptionist Dashboard + Walk-ins | ✅ **Approved** | Full-day simulation, Walk-in registration, Daily stats, 31/31 tests pass | 2026-10-11 |
-| **M6** | Public QR Token Page (No Login) | ✅ **Completed** | Public token view, Manual lookup, 360px mobile responsive, 36/36 tests pass | 2026-10-11 |
-| **M7** | TV Viewer Mode + Real-Time WebSocket | 🔄 In Progress | 3 TV templates, WebSockets, Audio/Chime, Sound overlay | — |
-| **M8** | Announcement System | ⏳ Queued | Call-outs, Banners, Takeovers, English & Hindi TTS | — |
+| **M6** | Public QR Token Page (No Login) | ✅ **Approved** | Public token view, Manual lookup, 360px mobile responsive, 36/36 tests pass | 2026-10-11 |
+| **M7** | TV Viewer Mode + Real-Time WebSocket | ✅ **Completed** | 3 TV templates, Synthetic chime, TV heartbeat, 41/41 tests pass | 2026-10-11 |
+| **M8** | Announcement System | 🔄 In Progress | Call-outs, Banners, Takeovers, English & Hindi TTS | — |
 | **M9** | Appointments + Payments (Razorpay Webhooks) | ⏳ Queued | Booking slots, Webhook idempotency | — |
 | **M10** | WhatsApp Notifications (Official API) | ⏳ Queued | Cloud API templates, Outbox delivery logs | — |
 | **M11** | Advertisement Slots (Patient & TV Viewer) | ⏳ Queued | Reusable ad slot components | — |

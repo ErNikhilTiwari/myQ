@@ -8,15 +8,16 @@
 
 ## Current Status
 
-- **Phase:** M6 (Public QR Token Page) — completed; advancing directly to M7.
+- **Phase:** M7 (TV Viewer Mode) — completed; advancing directly to M8.
 - **M0:** ✅ Approved (2026-10-10). See `docs/00-reference-analysis.md`.
 - **M1:** ✅ Approved (2026-10-11). See `docs/01-architecture.md` - `docs/06-deployment.md`.
 - **M2:** ✅ Approved (2026-10-11). See commit `2e74cb9`.
 - **M3:** ✅ Approved (2026-10-11). See commit `d2571a3`.
 - **M4:** ✅ Approved (2026-10-11). See commit `e7dd02f`.
 - **M5:** ✅ Approved (2026-10-11). See commit `2991d6a`.
-- **M6:** ✅ Completed (2026-10-11). Public QR page & zero-PII manual lookup verified.
-- **Next:** M7 (TV Viewer mode + real-time updates: 3 templates, sound chime, WebSockets/polling).
+- **M6:** ✅ Approved (2026-10-11). See commit `4f8d240`.
+- **M7:** ✅ Completed (2026-10-11). All 3 TV display templates, synthetic audio chime, and heartbeats verified.
+- **Next:** M8 (Announcement system: Section 51, English + Hindi TTS voice call-outs, banners, and emergency takeovers).
 
 ## Tech Stack (Pending M1 Approval)
 
