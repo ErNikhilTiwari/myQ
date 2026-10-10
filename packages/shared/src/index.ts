@@ -10,3 +10,4 @@ export * from './receptionist.dto';
 export * from './viewer.dto';
 export * from './announcement.dto';
 export * from './appointment.dto';
+export * from './whatsapp.dto';

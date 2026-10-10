@@ -11,6 +11,7 @@ import { ViewerModule } from './viewer/viewer.module';
 import { AnnouncementsModule } from './announcements/announcements.module';
 import { AppointmentsModule } from './appointments/appointments.module';
 import { PaymentsModule } from './payments/payments.module';
+import { WhatsAppModule } from './whatsapp/whatsapp.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { PaymentsModule } from './payments/payments.module';
     AnnouncementsModule,
     AppointmentsModule,
     PaymentsModule,
+    WhatsAppModule,
   ],
 })
 export class AppModule {}

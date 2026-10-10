@@ -20,9 +20,10 @@ model User {
   patientProfile PatientProfile?
   staffProfiles  ClinicStaff[]
   queueEntries   QueueEntry[]
-  appointments   Appointment[]
-  payments       Payment[]
-  auditLogs      AuditLog[]
+  appointments     Appointment[]
+  payments         Payment[]
+  whatsappMessages WhatsAppMessage[]
+  auditLogs        AuditLog[]
 
   @@index([phoneNumber])
   @@index([role])
@@ -58,8 +59,9 @@ model Clinic {
   appointments   Appointment[]
   payments       Payment[]
   displayDevices DisplayDevice[]
-  announcements  Announcement[]
-  auditLogs      AuditLog[]
+  announcements    Announcement[]
+  whatsappMessages WhatsAppMessage[]
+  auditLogs        AuditLog[]
 
   @@index([slug])
 }
@@ -272,4 +274,26 @@ model Announcement {
 
   @@index([clinicId, status])
   @@index([priority])
+}
+
+model WhatsAppMessage {
+  id               String   @id @default(uuid())
+  clinicId         String
+  userId           String?
+  phoneNumber      String
+  direction        String   @default("OUTBOUND") // INBOUND, OUTBOUND
+  messageType      String   @default("TEMPLATE") // TEXT, TEMPLATE, INTERACTIVE
+  content          String   // text or JSON payload
+  gatewayMessageId String?  @unique
+  status           String   @default("SENT") // PENDING, SENT, DELIVERED, READ, FAILED
+  idempotencyKey   String?  @unique
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([clinicId])
+  @@index([phoneNumber])
+  @@index([status])
 }

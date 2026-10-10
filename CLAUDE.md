@@ -8,7 +8,7 @@
 
 ## Current Status
 
-- **Phase:** M9 (Appointments & Payments) — completed; advancing directly to M10.
+- **Phase:** M10 (WhatsApp Cloud API Integration) — completed; advancing directly to M11.
 - **M0:** ✅ Approved (2026-10-10). See `docs/00-reference-analysis.md`.
 - **M1:** ✅ Approved (2026-10-11). See `docs/01-architecture.md` - `docs/06-deployment.md`.
 - **M2:** ✅ Approved (2026-10-11). See commit `2e74cb9`.
@@ -18,8 +18,9 @@
 - **M6:** ✅ Approved (2026-10-11). See commit `4f8d240`.
 - **M7:** ✅ Completed (2026-10-11). See commit `2d0e25f`.
 - **M8:** ✅ Completed (2026-10-11). See commit `c8a8258`.
-- **M9:** ✅ Completed (2026-10-11). Booking slots, fail-closed collision check, Razorpay HMAC verification, idempotent webhooks, and arrival check-in. 53/53 tests pass.
-- **Next:** M10 (WhatsApp Cloud API Integration: Webhook signature verification, template message outbox, and idempotent status updates).
+- **M9:** ✅ Completed (2026-10-11). See commit `c6497ec`.
+- **M10:** ✅ Completed (2026-10-11). Official Meta Cloud API webhook verification, template notifications, status updates with idempotency, 58/58 tests pass.
+- **Next:** M11 (Advertisement Slots: TV viewer bottom banner, patient mobile ad slots, impressions and clicks tracking).
 
 ## Tech Stack (Pending M1 Approval)
 
