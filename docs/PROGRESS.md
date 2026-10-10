@@ -12,9 +12,9 @@
 | **M0** | Reference Repo Analysis | ✅ **Approved** | `docs/00-reference-analysis.md` | 2026-10-10 |
 | **M1** | Architecture & Design Docs | ✅ **Approved** | `docs/01-architecture.md`<br>`docs/02-schema.md`<br>`docs/03-api.md`<br>`docs/04-flows.md`<br>`docs/05-security.md`<br>`docs/06-deployment.md` | 2026-10-11 |
 | **M2** | Project Scaffold, DB Migrations, Seed, OTP Auth | ✅ **Approved** | Monorepo layout, Prisma, Seed data, Auth APIs & UI, 10/10 tests pass | 2026-10-11 |
-| **M3** | Multi-Tenant Core (Clinics, Staff, RBAC) | 📝 **Completed** (Awaiting Approval) | TenantGuard, RBAC, Clinics/Doctors/Services APIs, 20/20 tests pass | *Pending* |
-| **M4** | Queue Core (Tokens, Concurrency-Safe Call Next) | ⏳ Queued | Queue state machine, Atomic counter logic | — |
-| **M5** | Receptionist Dashboard + Walk-ins | ⏳ Queued | Dashboard UI, Walk-in registration | — |
+| **M3** | Multi-Tenant Core (Clinics, Staff, RBAC) | ✅ **Approved** | TenantGuard, RBAC, Clinics/Doctors/Services APIs, 20/20 tests pass | 2026-10-11 |
+| **M4** | Queue Core (Tokens, Concurrency-Safe Call Next) | ✅ **Completed** | State machine (inc. ON_HOLD), Atomic counters, 28/28 tests pass | 2026-10-11 |
+| **M5** | Receptionist Dashboard + Walk-ins | 🔄 In Progress | Dashboard UI, Walk-in registration | — |
 | **M6** | Public QR Token Page (No Login) | ⏳ Queued | Public token view, 360px mobile responsive | — |
 | **M7** | TV Viewer Mode + Real-Time WebSocket | ⏳ Queued | 3 TV templates, WebSockets, Audio/Chime, Sound overlay | — |
 | **M8** | Announcement System | ⏳ Queued | Call-outs, Banners, Takeovers, English & Hindi TTS | — |

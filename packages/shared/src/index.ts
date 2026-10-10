@@ -5,3 +5,4 @@ export * from './api-response';
 export * from './clinic.dto';
 export * from './doctor.dto';
 export * from './service.dto';
+export * from './queue.dto';
