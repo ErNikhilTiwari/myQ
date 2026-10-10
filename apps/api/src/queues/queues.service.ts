@@ -381,4 +381,35 @@ export class QueuesService {
       lastUpdated: new Date().toISOString(),
     };
   }
+
+  /**
+   * Manual token lookup by clinicSlug and tokenNumber (zero auth required)
+   */
+  async lookupToken(clinicSlug: string, tokenNumber: string): Promise<PublicTokenStatusDto> {
+    const clinic = await this.prisma.clinic.findUnique({
+      where: { slug: clinicSlug },
+    });
+
+    if (!clinic) {
+      throw new NotFoundException(`Clinic "${clinicSlug}" not found.`);
+    }
+
+    const cleanToken = tokenNumber.trim().toUpperCase();
+
+    const entry = await this.prisma.queueEntry.findFirst({
+      where: {
+        queue: { clinicId: clinic.id },
+        tokenNumber: cleanToken,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!entry) {
+      throw new NotFoundException(
+        `Token "${cleanToken}" not found in clinic "${clinic.name}". Please check the token number.`,
+      );
+    }
+
+    return this.getPublicTokenStatus(entry.publicToken);
+  }
 }

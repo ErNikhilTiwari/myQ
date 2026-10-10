@@ -30,9 +30,12 @@ describe('Receptionist Dashboard & Full-Day Simulation (E2E Integration)', () =>
     clinicA = await prisma.clinic.findUnique({ where: { slug: 'abc-health' } });
     queueA = await prisma.queue.findFirst({ where: { clinicId: clinicA.id } });
 
-    // Clean queue entries
+    // Clean queue entries and test walk-in users
     await prisma.queueEntry.deleteMany({ where: { queueId: queueA.id } });
     await prisma.queue.update({ where: { id: queueA.id }, data: { currentSeq: 0 } });
+    await prisma.user.deleteMany({
+      where: { phoneNumber: { in: ['+919876599001', '+919876599002'] } },
+    });
 
     // Login Receptionist A (+919876500001)
     await prisma.oTPVerification.create({

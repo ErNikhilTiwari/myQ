@@ -5,6 +5,7 @@ import {
   Patch,
   Param,
   Body,
+  Query,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -27,7 +28,19 @@ export class QueuesController {
   constructor(private readonly queuesService: QueuesService) {}
 
   /**
-   * 1. Public QR Token Lookup (Zero Auth Required)
+   * 1. Manual Token Lookup by Clinic + Token Number (Zero Auth)
+   */
+  @Get('queue/lookup')
+  async lookupToken(
+    @Query('clinicSlug') clinicSlug: string,
+    @Query('tokenNumber') tokenNumber: string,
+  ): Promise<ApiResponse> {
+    const data = await this.queuesService.lookupToken(clinicSlug, tokenNumber);
+    return { success: true, data };
+  }
+
+  /**
+   * 2. Public QR Token Lookup via non-guessable publicToken (Zero Auth)
    */
   @Get('queue/:publicToken')
   async getPublicTokenStatus(

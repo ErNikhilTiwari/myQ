@@ -8,14 +8,15 @@
 
 ## Current Status
 
-- **Phase:** M5 (Receptionist Dashboard + Walk-ins) — completed; advancing directly to M6.
+- **Phase:** M6 (Public QR Token Page) — completed; advancing directly to M7.
 - **M0:** ✅ Approved (2026-10-10). See `docs/00-reference-analysis.md`.
 - **M1:** ✅ Approved (2026-10-11). See `docs/01-architecture.md` - `docs/06-deployment.md`.
 - **M2:** ✅ Approved (2026-10-11). See commit `2e74cb9`.
 - **M3:** ✅ Approved (2026-10-11). See commit `d2571a3`.
 - **M4:** ✅ Approved (2026-10-11). See commit `e7dd02f`.
-- **M5:** ✅ Completed (2026-10-11). Full-day receptionist simulation test passing.
-- **Next:** M6 (Public QR token page + manual token lookup, no login required).
+- **M5:** ✅ Approved (2026-10-11). See commit `2991d6a`.
+- **M6:** ✅ Completed (2026-10-11). Public QR page & zero-PII manual lookup verified.
+- **Next:** M7 (TV Viewer mode + real-time updates: 3 templates, sound chime, WebSockets/polling).
 
 ## Tech Stack (Pending M1 Approval)
 
