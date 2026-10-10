@@ -8,6 +8,7 @@ import { ServicesModule } from './services/services.module';
 import { QueuesModule } from './queues/queues.module';
 import { ReceptionistModule } from './receptionist/receptionist.module';
 import { ViewerModule } from './viewer/viewer.module';
+import { AnnouncementsModule } from './announcements/announcements.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { ViewerModule } from './viewer/viewer.module';
     QueuesModule,
     ReceptionistModule,
     ViewerModule,
+    AnnouncementsModule,
   ],
 })
 export class AppModule {}

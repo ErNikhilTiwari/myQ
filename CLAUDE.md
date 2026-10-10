@@ -8,7 +8,7 @@
 
 ## Current Status
 
-- **Phase:** M7 (TV Viewer Mode) — completed; advancing directly to M8.
+- **Phase:** M8 (Announcement System) — completed; advancing directly to M9.
 - **M0:** ✅ Approved (2026-10-10). See `docs/00-reference-analysis.md`.
 - **M1:** ✅ Approved (2026-10-11). See `docs/01-architecture.md` - `docs/06-deployment.md`.
 - **M2:** ✅ Approved (2026-10-11). See commit `2e74cb9`.
@@ -16,8 +16,9 @@
 - **M4:** ✅ Approved (2026-10-11). See commit `e7dd02f`.
 - **M5:** ✅ Approved (2026-10-11). See commit `2991d6a`.
 - **M6:** ✅ Approved (2026-10-11). See commit `4f8d240`.
-- **M7:** ✅ Completed (2026-10-11). All 3 TV display templates, synthetic audio chime, and heartbeats verified.
-- **Next:** M8 (Announcement system: Section 51, English + Hindi TTS voice call-outs, banners, and emergency takeovers).
+- **M7:** ✅ Completed (2026-10-11). See commit `2d0e25f`.
+- **M8:** ✅ Completed (2026-10-11). Delay tickers, dual English+Hindi callouts, emergency takeover. 46/46 tests pass.
+- **Next:** M9 (Appointments & Razorpay Payments with Webhook Idempotency).
 
 ## Tech Stack (Pending M1 Approval)
 

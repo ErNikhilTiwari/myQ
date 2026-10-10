@@ -16,9 +16,9 @@
 | **M4** | Queue Core (Tokens, Concurrency-Safe Call Next) | ✅ **Approved** | State machine (inc. ON_HOLD), Atomic counters, 28/28 tests pass | 2026-10-11 |
 | **M5** | Receptionist Dashboard + Walk-ins | ✅ **Approved** | Full-day simulation, Walk-in registration, Daily stats, 31/31 tests pass | 2026-10-11 |
 | **M6** | Public QR Token Page (No Login) | ✅ **Approved** | Public token view, Manual lookup, 360px mobile responsive, 36/36 tests pass | 2026-10-11 |
-| **M7** | TV Viewer Mode + Real-Time WebSocket | ✅ **Completed** | 3 TV templates, Synthetic chime, TV heartbeat, 41/41 tests pass | 2026-10-11 |
-| **M8** | Announcement System | 🔄 In Progress | Call-outs, Banners, Takeovers, English & Hindi TTS | — |
-| **M9** | Appointments + Payments (Razorpay Webhooks) | ⏳ Queued | Booking slots, Webhook idempotency | — |
+| **M7** | TV Viewer Mode + Real-Time WebSocket | ✅ **Approved** | 3 TV templates, Synthetic chime, TV heartbeat, 41/41 tests pass | 2026-10-11 |
+| **M8** | Announcement System | ✅ **Completed** | Delay tickers, Banners, Takeovers, English & Hindi TTS, 46/46 tests pass | 2026-10-11 |
+| **M9** | Appointments + Payments (Razorpay Webhooks) | 🔄 In Progress | Booking slots, Webhook idempotency | — |
 | **M10** | WhatsApp Notifications (Official API) | ⏳ Queued | Cloud API templates, Outbox delivery logs | — |
 | **M11** | Advertisement Slots (Patient & TV Viewer) | ⏳ Queued | Reusable ad slot components | — |
 | **M12** | Reporting & Export (PDF / Excel) | ⏳ Queued | Daily/Monthly metrics, PDF & Excel export | — |
