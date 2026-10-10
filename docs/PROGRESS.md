@@ -21,8 +21,8 @@
 | **M9** | Appointments + Payments (Razorpay Webhooks) | ✅ **Completed** | Booking slots, Fail-closed slot check, Webhook idempotency, 53/53 tests pass | 2026-10-11 |
 | **M10** | WhatsApp Notifications (Official API) | ✅ **Completed** | Meta webhook verification, Outbound templates, HMAC-SHA256, 58/58 tests pass | 2026-10-11 |
 | **M11** | Advertisement Slots (Patient & TV Viewer) | ✅ **Completed** | TV bottom banner, impressions/clicks tracking, 64/64 tests pass | 2026-10-11 |
-| **M12** | Reporting & Export (PDF / Excel) | 🔄 In Progress | Daily/Monthly metrics, PDF & Excel export | — |
-| **M13** | Hardening, Performance, Security & Deploy | ⏳ Queued | Security checklist, Throttling, E2E checks | — |
+| **M12** | Reporting & Export (PDF / Excel) | ✅ **Completed** | Daily/Monthly metrics, CSV/JSON export, 70/70 tests pass | 2026-10-11 |
+| **M13** | Hardening, Performance, Security & Deploy | 🔄 In Progress | Security audit checklist, E2E verification, Phase 1 wrap | — |
 
 ---
 
