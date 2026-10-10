@@ -8,7 +8,7 @@
 
 ## Current Status
 
-- **Phase:** M12 (Reports & Analytics Export) — completed; advancing directly to M13 (Hardening & Phase 1 Completion).
+- **Phase:** Phase 1 (MVP) COMPLETE — all milestones M0 through M13 implemented, tested, and passing.
 - **M0:** ✅ Approved (2026-10-10). See `docs/00-reference-analysis.md`.
 - **M1:** ✅ Approved (2026-10-11). See `docs/01-architecture.md` - `docs/06-deployment.md`.
 - **M2:** ✅ Approved (2026-10-11). See commit `2e74cb9`.
@@ -21,8 +21,9 @@
 - **M9:** ✅ Completed (2026-10-11). See commit `c6497ec`.
 - **M10:** ✅ Completed (2026-10-11). See commit `1af4db5`.
 - **M11:** ✅ Completed (2026-10-11). See commit `edb5180`.
-- **M12:** ✅ Completed (2026-10-11). Daily/monthly clinic analytics, average wait/consult metrics, and CSV report export. 70/70 tests pass.
-- **Next:** M13 (Hardening, security audit checklist, full monorepo build and Phase 1 completion).
+- **M12:** ✅ Completed (2026-10-11). See commit `f5aaeae`.
+- **M13:** ✅ Completed (2026-10-11). Hardening & security audit checklist verified. 13/13 test suites (77/77 tests) passing. 100% clean monorepo builds.
+
 
 ## Tech Stack (Pending M1 Approval)
 
