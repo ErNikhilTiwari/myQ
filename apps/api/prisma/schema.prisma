@@ -1,0 +1,203 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String          @id @default(uuid())
+  phoneNumber  String          @unique
+  name         String
+  email        String?
+  role         String          @default("PATIENT") // UserRole enum: SUPER_ADMIN, CLINIC_ADMIN, RECEPTIONIST, DOCTOR, PATIENT
+  isActive     Boolean         @default(true)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  patientProfile PatientProfile?
+  staffProfiles  ClinicStaff[]
+  queueEntries   QueueEntry[]
+  appointments   Appointment[]
+  auditLogs      AuditLog[]
+
+  @@index([phoneNumber])
+  @@index([role])
+}
+
+model PatientProfile {
+  id          String    @id @default(uuid())
+  userId      String    @unique
+  dateOfBirth DateTime?
+  gender      String?
+  address     String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Clinic {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  phoneNumber String
+  email       String?
+  address     String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  staff        ClinicStaff[]
+  doctors      Doctor[]
+  services     Service[]
+  queues       Queue[]
+  appointments Appointment[]
+  auditLogs    AuditLog[]
+
+  @@index([slug])
+}
+
+model ClinicStaff {
+  id        String   @id @default(uuid())
+  clinicId  String
+  userId    String
+  role      String   @default("RECEPTIONIST") // CLINIC_ADMIN, RECEPTIONIST
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([clinicId, userId])
+  @@index([clinicId])
+}
+
+model Doctor {
+  id             String   @id @default(uuid())
+  clinicId       String
+  name           String
+  specialization String
+  roomNumber     String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  clinic       Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  queues       Queue[]
+  appointments Appointment[]
+
+  @@index([clinicId])
+}
+
+model Service {
+  id              String   @id @default(uuid())
+  clinicId        String
+  name            String
+  description     String?
+  durationMinutes Int      @default(15)
+  priceAmount     Float    @default(0.0)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  clinic       Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  queues       Queue[]
+  appointments Appointment[]
+
+  @@index([clinicId])
+}
+
+model Queue {
+  id          String   @id @default(uuid())
+  clinicId    String
+  doctorId    String?
+  serviceId   String?
+  name        String
+  isPaused    Boolean  @default(false)
+  currentSeq  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  clinic       Clinic       @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  doctor       Doctor?      @relation(fields: [doctorId], references: [id], onDelete: SetNull)
+  service      Service?     @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  queueEntries QueueEntry[]
+
+  @@index([clinicId])
+}
+
+model QueueEntry {
+  id             String    @id @default(uuid())
+  queueId        String
+  userId         String
+  tokenNumber    String
+  sequenceNumber Int
+  status         String    @default("WAITING") // BOOKED, WAITING, CALLED, IN_SERVICE, COMPLETED, SKIPPED, ON_HOLD, CANCELLED, NO_SHOW
+  holdReason     String?
+  publicToken    String    @unique
+  estimatedWait  Int       @default(0) // minutes
+  calledAt       DateTime?
+  startedAt      DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  queue Queue @relation(fields: [queueId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([queueId, status])
+  @@index([publicToken])
+}
+
+model Appointment {
+  id             String    @id @default(uuid())
+  clinicId       String
+  userId         String
+  doctorId       String?
+  serviceId      String?
+  slotTime       DateTime
+  status         String    @default("CONFIRMED") // PENDING, CONFIRMED, CANCELLED, COMPLETED
+  bookingFee     Float     @default(0.0)
+  paymentStatus  String    @default("PENDING") // PENDING, SUCCESS, FAILED
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  clinic  Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  doctor  Doctor?  @relation(fields: [doctorId], references: [id], onDelete: SetNull)
+  service Service? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+
+  @@index([clinicId, slotTime])
+  @@index([userId])
+}
+
+model OTPVerification {
+  id          String    @id @default(uuid())
+  phoneNumber String
+  hashedOtp   String
+  attempts    Int       @default(0)
+  expiresAt   DateTime
+  verifiedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([phoneNumber])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  clinicId  String?
+  action    String
+  metadata  String?  // JSON string
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  clinic Clinic? @relation(fields: [clinicId], references: [id], onDelete: SetNull)
+
+  @@index([clinicId])
+  @@index([action])
+}

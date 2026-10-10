@@ -1,0 +1,11 @@
+export enum QueueEntryStatus {
+  BOOKED = 'BOOKED',
+  WAITING = 'WAITING',
+  CALLED = 'CALLED',
+  IN_SERVICE = 'IN_SERVICE',
+  COMPLETED = 'COMPLETED',
+  SKIPPED = 'SKIPPED',
+  ON_HOLD = 'ON_HOLD',
+  CANCELLED = 'CANCELLED',
+  NO_SHOW = 'NO_SHOW'
+}
