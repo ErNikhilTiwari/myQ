@@ -6,3 +6,4 @@ export * from './clinic.dto';
 export * from './doctor.dto';
 export * from './service.dto';
 export * from './queue.dto';
+export * from './receptionist.dto';
