@@ -20,8 +20,8 @@
 | **M8** | Announcement System | ✅ **Completed** | Delay tickers, Banners, Takeovers, English & Hindi TTS, 46/46 tests pass | 2026-10-11 |
 | **M9** | Appointments + Payments (Razorpay Webhooks) | ✅ **Completed** | Booking slots, Fail-closed slot check, Webhook idempotency, 53/53 tests pass | 2026-10-11 |
 | **M10** | WhatsApp Notifications (Official API) | ✅ **Completed** | Meta webhook verification, Outbound templates, HMAC-SHA256, 58/58 tests pass | 2026-10-11 |
-| **M11** | Advertisement Slots (Patient & TV Viewer) | 🔄 In Progress | Reusable ad slot components | — |
-| **M12** | Reporting & Export (PDF / Excel) | ⏳ Queued | Daily/Monthly metrics, PDF & Excel export | — |
+| **M11** | Advertisement Slots (Patient & TV Viewer) | ✅ **Completed** | TV bottom banner, impressions/clicks tracking, 64/64 tests pass | 2026-10-11 |
+| **M12** | Reporting & Export (PDF / Excel) | 🔄 In Progress | Daily/Monthly metrics, PDF & Excel export | — |
 | **M13** | Hardening, Performance, Security & Deploy | ⏳ Queued | Security checklist, Throttling, E2E checks | — |
 
 ---

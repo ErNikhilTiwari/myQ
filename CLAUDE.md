@@ -8,7 +8,7 @@
 
 ## Current Status
 
-- **Phase:** M10 (WhatsApp Cloud API Integration) — completed; advancing directly to M11.
+- **Phase:** M11 (Advertisement Slots) — completed; advancing directly to M12.
 - **M0:** ✅ Approved (2026-10-10). See `docs/00-reference-analysis.md`.
 - **M1:** ✅ Approved (2026-10-11). See `docs/01-architecture.md` - `docs/06-deployment.md`.
 - **M2:** ✅ Approved (2026-10-11). See commit `2e74cb9`.
@@ -19,8 +19,9 @@
 - **M7:** ✅ Completed (2026-10-11). See commit `2d0e25f`.
 - **M8:** ✅ Completed (2026-10-11). See commit `c8a8258`.
 - **M9:** ✅ Completed (2026-10-11). See commit `c6497ec`.
-- **M10:** ✅ Completed (2026-10-11). Official Meta Cloud API webhook verification, template notifications, status updates with idempotency, 58/58 tests pass.
-- **Next:** M11 (Advertisement Slots: TV viewer bottom banner, patient mobile ad slots, impressions and clicks tracking).
+- **M10:** ✅ Completed (2026-10-11). See commit `1af4db5`.
+- **M11:** ✅ Completed (2026-10-11). TV viewer and patient mobile ad slots, impressions and click beacon tracking. 64/64 tests pass.
+- **Next:** M12 (Reports & Analytics Export: Daily/Monthly aggregates, CSV/JSON export endpoints).
 
 ## Tech Stack (Pending M1 Approval)
 

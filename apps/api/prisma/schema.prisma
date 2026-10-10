@@ -61,6 +61,7 @@ model Clinic {
   displayDevices DisplayDevice[]
   announcements    Announcement[]
   whatsappMessages WhatsAppMessage[]
+  advertisements   Advertisement[]
   auditLogs        AuditLog[]
 
   @@index([slug])
@@ -296,4 +297,47 @@ model WhatsAppMessage {
   @@index([clinicId])
   @@index([phoneNumber])
   @@index([status])
+}
+
+model Advertisement {
+  id          String   @id @default(uuid())
+  clinicId    String?  // null = platform-wide
+  title       String
+  imageUrl    String
+  targetUrl   String?
+  placement   String   @default("TV_VIEWER_BOTTOM") // TV_VIEWER_BOTTOM, PATIENT_MOBILE_TOP, PATIENT_MOBILE_BOTTOM
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  clinic      Clinic?         @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  impressions AdImpression[]
+  clicks      AdClick[]
+
+  @@index([placement, isActive])
+  @@index([clinicId])
+}
+
+model AdImpression {
+  id        String   @id @default(uuid())
+  adId      String
+  clinicId  String?
+  deviceType String  @default("TV") // TV, MOBILE
+  createdAt DateTime @default(now())
+
+  ad Advertisement @relation(fields: [adId], references: [id], onDelete: Cascade)
+
+  @@index([adId])
+}
+
+model AdClick {
+  id        String   @id @default(uuid())
+  adId      String
+  clinicId  String?
+  deviceType String  @default("MOBILE") // TV, MOBILE
+  createdAt DateTime @default(now())
+
+  ad Advertisement @relation(fields: [adId], references: [id], onDelete: Cascade)
+
+  @@index([adId])
 }

@@ -12,6 +12,7 @@ import { AnnouncementsModule } from './announcements/announcements.module';
 import { AppointmentsModule } from './appointments/appointments.module';
 import { PaymentsModule } from './payments/payments.module';
 import { WhatsAppModule } from './whatsapp/whatsapp.module';
+import { AdsModule } from './ads/ads.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { WhatsAppModule } from './whatsapp/whatsapp.module';
     AppointmentsModule,
     PaymentsModule,
     WhatsAppModule,
+    AdsModule,
   ],
 })
 export class AppModule {}
