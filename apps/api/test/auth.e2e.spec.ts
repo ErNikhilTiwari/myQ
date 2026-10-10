@@ -3,6 +3,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { AllExceptionsFilter } from '../src/common/filters/http-exception.filter';
 
 describe('Auth API (E2E Integration)', () => {
   let app: INestApplication;
@@ -15,9 +16,14 @@ describe('Auth API (E2E Integration)', () => {
 
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+    app.useGlobalFilters(new AllExceptionsFilter());
     await app.init();
 
     prisma = app.get(PrismaService);
+    // Clear recent OTPs for test mobile to avoid 60s rate limit in tests
+    await prisma.oTPVerification.deleteMany({
+      where: { phoneNumber: '+919876543299' },
+    });
   }, 30000);
 
   afterAll(async () => {

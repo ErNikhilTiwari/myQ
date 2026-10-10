@@ -2,3 +2,6 @@ export * from './roles.enum';
 export * from './queue-status.enum';
 export * from './auth.dto';
 export * from './api-response';
+export * from './clinic.dto';
+export * from './doctor.dto';
+export * from './service.dto';

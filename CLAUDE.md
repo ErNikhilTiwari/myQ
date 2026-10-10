@@ -8,10 +8,11 @@
 
 ## Current Status
 
-- **Phase:** M2 (Project Scaffold, DB Migrations, Seed, OTP Auth) — completed, awaiting approval.
+- **Phase:** M3 (Multi-Tenant Core: Clinics, Staff, Doctors, Services, RBAC) — completed, awaiting approval.
 - **M0:** ✅ Approved (2026-10-10). See `docs/00-reference-analysis.md`.
 - **M1:** ✅ Approved (2026-10-11). See `docs/01-architecture.md` - `docs/06-deployment.md`.
-- **Next:** M3 (Multi-tenant core: clinics, staff, doctors, services, RBAC, isolation tests).
+- **M2:** ✅ Approved (2026-10-11). See commit `2e74cb9`.
+- **Next:** M4 (Queue core: queues, tokens, state machine, concurrency-safe "Call Next").
 
 ## Tech Stack (Pending M1 Approval)
 
