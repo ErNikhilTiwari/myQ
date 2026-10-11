@@ -13,3 +13,4 @@ export * from './appointment.dto';
 export * from './whatsapp.dto';
 export * from './ad.dto';
 export * from './report.dto';
+export * from './subscription.dto';
