@@ -4,6 +4,7 @@ import { ReceptionistConsole } from './components/ReceptionistConsole';
 import { MobileTokenTracker } from './components/MobileTokenTracker';
 import { LoginModal, LoginProfile } from './components/LoginModal';
 import { SuperAdminDashboard } from './components/SuperAdminDashboard';
+import { AppointmentBookingModal } from './components/AppointmentBookingModal';
 import { ClinicItem } from './components/ClinicSearchSelect';
 import { 
   Monitor, 
@@ -17,7 +18,8 @@ import {
   ShieldCheck,
   Building2,
   ChevronLeft,
-  Crown
+  Crown,
+  Calendar
 } from 'lucide-react';
 
 export type AppView = 'LANDING' | 'PATIENT' | 'RECEPTIONIST' | 'TV_VIEWER' | 'SUPER_ADMIN';
@@ -67,7 +69,13 @@ export default function App() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [loginProfile, setLoginProfile] = useState<LoginProfile>('GENERAL');
 
-  // Fetch available clinics from backend
+  // Appointment Booking Modal State (In-Clinic TV QR vs Remote)
+  const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const [bookingModalType, setBookingModalType] = useState<'IN_CLINIC' | 'REMOTE'>('REMOTE');
+  const [bookingQrToken, setBookingQrToken] = useState<string>('');
+  const [activeTrackingToken, setActiveTrackingToken] = useState<string>('');
+
+  // Fetch available clinics from backend & inspect URL for In-Clinic TV QR scan
   useEffect(() => {
     fetch('/api/clinics')
       .then((res) => res.json())
@@ -79,6 +87,25 @@ export default function App() {
       .catch((err) => {
         console.warn('Could not fetch clinics list:', err);
       });
+
+    // Check if user scanned In-Clinic TV QR code (?clinic=...&qr=...&type=IN_CLINIC)
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const clinicParam = params.get('clinic');
+      const qrParam = params.get('qr');
+      const typeParam = params.get('type');
+
+      if (clinicParam) {
+        setSelectedClinicId(clinicParam);
+      }
+
+      if (qrParam || typeParam === 'IN_CLINIC') {
+        setActiveTab('PATIENT');
+        setBookingModalType('IN_CLINIC');
+        if (qrParam) setBookingQrToken(qrParam);
+        setIsBookingOpen(true);
+      }
+    } catch {}
   }, []);
 
   // When user logs in, auto-bind to their mapped clinic and route directly to their profile
@@ -212,8 +239,22 @@ export default function App() {
           )}
         </div>
 
-        {/* 3. Global Navbar Login Button */}
+        {/* 3. Global Action & Login Controls */}
         <div className="flex items-center space-x-2">
+          {/* Quick Doctor Appointment Booking Button */}
+          <button
+            onClick={() => {
+              setBookingModalType('REMOTE');
+              setBookingQrToken('');
+              setIsBookingOpen(true);
+            }}
+            className="flex items-center space-x-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white px-3 py-1.5 rounded-xl font-bold text-xs shadow-sm transition active:scale-95"
+          >
+            <Calendar className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Book Appointment</span>
+            <span className="sm:hidden">Book</span>
+          </button>
+
           {currentUser ? (
             <div className="flex items-center space-x-2">
               <div className="hidden sm:flex items-center space-x-1.5 bg-[#0F172A] border border-slate-700 px-2.5 py-1 rounded-xl">
@@ -395,6 +436,12 @@ export default function App() {
             onSelectClinicId={setSelectedClinicId}
             defaultClinicSlug={currentClinic?.slug}
             onOpenPatientLogin={openPatientLogin}
+            onOpenBookingModal={() => {
+              setBookingModalType('REMOTE');
+              setBookingQrToken('');
+              setIsBookingOpen(true);
+            }}
+            activeTrackingToken={activeTrackingToken}
             currentUser={currentUser}
           />
         )}
@@ -447,6 +494,24 @@ export default function App() {
         onClose={() => setIsLoginOpen(false)}
         onLoginSuccess={handleLoginSuccess}
         profileType={loginProfile}
+      />
+
+      {/* Patient Appointment Booking Modal (Dual Pricing: In-Clinic ₹200 vs Remote ₹250) */}
+      <AppointmentBookingModal
+        isOpen={isBookingOpen}
+        onClose={() => setIsBookingOpen(false)}
+        clinics={clinics}
+        preselectedClinicId={selectedClinicId}
+        initialBookingType={bookingModalType}
+        qrToken={bookingQrToken}
+        currentUser={currentUser}
+        token={token}
+        onLoginSuccess={handleLoginSuccess}
+        onBookingConfirmed={(tokenNum, clinicId) => {
+          if (clinicId) setSelectedClinicId(clinicId);
+          setActiveTrackingToken(tokenNum);
+          setActiveTab('PATIENT');
+        }}
       />
     </div>
   );

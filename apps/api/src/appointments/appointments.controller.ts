@@ -27,6 +27,17 @@ export class AppointmentsController {
   constructor(private readonly appointmentsService: AppointmentsService) {}
 
   /**
+   * 0. Get Rotating In-Clinic Secure Booking QR Code (Public for Clinic TV Display)
+   */
+  @Get('clinics/:clinicId/in-clinic-qr')
+  async getInClinicQr(
+    @Param('clinicId') clinicId: string,
+  ): Promise<ApiResponse> {
+    const data = await this.appointmentsService.generateInClinicQrCode(clinicId);
+    return { success: true, data };
+  }
+
+  /**
    * 1. Book an appointment (Patient)
    */
   @Post('appointments')

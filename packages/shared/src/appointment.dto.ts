@@ -12,12 +12,24 @@ export type PaymentStatus =
   | 'FAILED'
   | 'REFUNDED';
 
+export type BookingType = 'IN_CLINIC' | 'REMOTE';
+
 export interface BookAppointmentDto {
   clinicId: string;
   doctorId?: string;
   serviceId?: string;
   slotTime: string; // ISO 8601 string
-  bookingFee?: number;
+  bookingType?: BookingType; // Default 'REMOTE' (₹250 default) vs 'IN_CLINIC' (₹200 default)
+  qrToken?: string; // Rotating QR cryptographic token required if bookingType === 'IN_CLINIC'
+}
+
+export interface InClinicQrCodeDto {
+  token: string;
+  clinicId: string;
+  clinicSlug: string;
+  price: number;
+  expiresAt: string;
+  refreshIntervalSeconds: number;
 }
 
 export interface AppointmentDto {

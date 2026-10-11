@@ -67,6 +67,8 @@ model Clinic {
   email       String?
   address     String?
   city        String?
+  inClinicPrice Float    @default(200.0)
+  remotePrice   Float    @default(250.0)
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -190,6 +192,8 @@ model Appointment {
   doctorId       String?
   serviceId      String?
   slotTime       DateTime
+  bookingType    String    @default("REMOTE") // IN_CLINIC, REMOTE
+  qrCodeToken    String?
   status         String    @default("CONFIRMED") // PENDING, CONFIRMED, CANCELLED, COMPLETED
   bookingFee     Float     @default(0.0)
   paymentStatus  String    @default("PENDING") // PENDING, SUCCESS, FAILED

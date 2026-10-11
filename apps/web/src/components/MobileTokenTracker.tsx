@@ -10,7 +10,9 @@ import {
   ShieldCheck, 
   AlertCircle,
   LogIn,
-  User
+  User,
+  Calendar,
+  Sparkles
 } from 'lucide-react';
 import { ClinicSearchSelect, ClinicItem } from './ClinicSearchSelect';
 
@@ -34,6 +36,8 @@ interface MobileTokenTrackerProps {
   onSelectClinicId?: (id: string) => void;
   defaultClinicSlug?: string;
   onOpenPatientLogin?: () => void;
+  onOpenBookingModal?: () => void;
+  activeTrackingToken?: string;
   currentUser?: any;
 }
 
@@ -43,6 +47,8 @@ export const MobileTokenTracker: React.FC<MobileTokenTrackerProps> = ({
   onSelectClinicId,
   defaultClinicSlug = '',
   onOpenPatientLogin,
+  onOpenBookingModal,
+  activeTrackingToken,
   currentUser,
 }) => {
   const [tokenInput, setTokenInput] = useState('');
@@ -56,6 +62,27 @@ export const MobileTokenTracker: React.FC<MobileTokenTrackerProps> = ({
 
   const selectedClinic = clinics.find((c) => c.id === selectedClinicId);
   const clinicSlug = selectedClinic?.slug || defaultClinicSlug;
+
+  // Sync active tracking token when passed from booking confirmation
+  useEffect(() => {
+    if (activeTrackingToken && clinicSlug) {
+      setTokenInput(activeTrackingToken);
+      fetch(
+        `/api/queue/lookup?clinicSlug=${clinicSlug}&tokenNumber=${activeTrackingToken.trim().toUpperCase()}`,
+        {
+          headers: { 'Bypass-Tunnel-Reminder': 'true' },
+        }
+      )
+        .then((r) => r.json())
+        .then((res) => {
+          if (res.success && res.data) {
+            setTokenData(res.data);
+            setPreviousStatus(res.data.status);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [activeTrackingToken, clinicSlug]);
 
   // 1. Register Service Worker on mount for Interactive Push
   useEffect(() => {
@@ -282,6 +309,28 @@ export const MobileTokenTracker: React.FC<MobileTokenTrackerProps> = ({
 
           {/* Clinic Search & Select */}
           <div className="space-y-3">
+            {onOpenBookingModal && (
+              <button
+                type="button"
+                onClick={onOpenBookingModal}
+                className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white p-3 rounded-2xl text-xs font-bold transition flex items-center justify-between shadow-md active:scale-95"
+              >
+                <div className="flex items-center space-x-2">
+                  <div className="p-1.5 bg-white/20 rounded-xl">
+                    <Calendar className="w-4 h-4 text-white" />
+                  </div>
+                  <div className="text-left">
+                    <div className="font-extrabold text-xs">Book Doctor Appointment</div>
+                    <div className="text-[10px] text-emerald-100 font-normal">Dual pricing &bull; Auto token assignment</div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-1.5 text-[10px] font-mono bg-white/20 px-2 py-1 rounded-lg font-black">
+                  <span>₹200 / ₹250</span>
+                  <ArrowRight className="w-3 h-3" />
+                </div>
+              </button>
+            )}
+
             <div>
               <label className="text-[11px] text-[#64748B] font-bold block mb-1">Clinic Facility:</label>
               <ClinicSearchSelect

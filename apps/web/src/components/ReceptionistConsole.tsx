@@ -20,11 +20,13 @@ import {
   BarChart3,
   Stethoscope,
   Layers,
-  LayoutDashboard
+  LayoutDashboard,
+  DollarSign
 } from 'lucide-react';
 import { ClinicAnalytics } from './ClinicAnalytics';
 import { DoctorManagement } from './DoctorManagement';
 import { ServiceQueueManagement } from './ServiceQueueManagement';
+import { ClinicPricingConfig } from './ClinicPricingConfig';
 
 interface QueueItem {
   id: string;
@@ -82,7 +84,7 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
   const [selectedQueueId, setSelectedQueueId] = useState<string>('');
   
   // Navigation tabs within Clinic Console
-  const [activeConsoleTab, setActiveConsoleTab] = useState<'QUEUE' | 'DOCTORS' | 'SERVICES' | 'ANALYTICS'>('QUEUE');
+  const [activeConsoleTab, setActiveConsoleTab] = useState<'QUEUE' | 'DOCTORS' | 'SERVICES' | 'ANALYTICS' | 'PRICING'>('QUEUE');
   
   // Active queue state
   const [currentServing, setCurrentServing] = useState<QueueItem | null>(null);
@@ -426,6 +428,15 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
               <BarChart3 className="w-3.5 h-3.5 text-[#0284C7]" />
               <span>Reports & Analytics</span>
             </button>
+            <button
+              onClick={() => setActiveConsoleTab('PRICING')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition ${
+                activeConsoleTab === 'PRICING' ? 'bg-white text-[#1E293B] shadow-sm' : 'text-[#64748B] hover:text-[#1E293B]'
+              }`}
+            >
+              <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Pricing & TV QR</span>
+            </button>
           </div>
 
           {activeConsoleTab === 'QUEUE' && (
@@ -441,6 +452,19 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
       </div>
 
       {/* Conditional Content by Active Tab */}
+      {activeConsoleTab === 'PRICING' && (
+        <ClinicPricingConfig 
+          clinicId={clinicId} 
+          token={token} 
+          initialInClinicPrice={(activeClinicObj as any)?.inClinicPrice || 200}
+          initialRemotePrice={(activeClinicObj as any)?.remotePrice || 250}
+          onUpdated={() => {
+            setFeedbackMsg({ type: 'success', text: 'Clinic appointment pricing updated successfully!' });
+            setTimeout(() => setFeedbackMsg(null), 3000);
+          }}
+        />
+      )}
+
       {activeConsoleTab === 'DOCTORS' && (
         <DoctorManagement 
           clinicId={clinicId} 

@@ -11,12 +11,17 @@ import {
   BookAppointmentDto,
   AppointmentDto,
   RescheduleAppointmentDto,
+  InClinicQrCodeDto,
   AppointmentStatus,
   PaymentStatus,
 } from '@queueapp/shared';
 import { customAlphabet } from 'nanoid';
 
 const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ', 8);
+
+import * as crypto from 'crypto';
+
+const QR_SECRET = process.env.JWT_ACCESS_SECRET || 'qr_rotating_salt_secret_key';
 
 @Injectable()
 export class AppointmentsService {
@@ -25,7 +30,68 @@ export class AppointmentsService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Book an appointment with fail-closed availability check (ADR-005)
+   * 1. Generate Rotating Secure In-Clinic QR Code Token
+   * Valid for 45 seconds (refreshes every 30-45s on clinic TV screen)
+   */
+  async generateInClinicQrCode(clinicId: string): Promise<InClinicQrCodeDto> {
+    const clinic = await this.prisma.clinic.findUnique({
+      where: { id: clinicId },
+    });
+    if (!clinic) {
+      throw new NotFoundException(`Clinic with ID "${clinicId}" not found.`);
+    }
+
+    const price = clinic.inClinicPrice ?? 200;
+    // Window: 45-second duration with a 15-second grace period buffer
+    const timestamp = Date.now();
+    const expiresAt = new Date(timestamp + 45 * 1000).toISOString();
+
+    const payload = `${clinic.id}:${price}:${expiresAt}`;
+    const signature = crypto.createHmac('sha256', QR_SECRET).update(payload).digest('hex');
+    const token = Buffer.from(JSON.stringify({ payload, signature })).toString('base64url');
+
+    return {
+      token,
+      clinicId: clinic.id,
+      clinicSlug: clinic.slug,
+      price,
+      expiresAt,
+      refreshIntervalSeconds: 30,
+    };
+  }
+
+  /**
+   * 2. Validate cryptographic rotating QR code
+   */
+  validateInClinicQrCode(token: string, expectedClinicId: string): { valid: boolean; price: number; reason?: string } {
+    try {
+      const decoded = JSON.parse(Buffer.from(token, 'base64url').toString('utf8'));
+      const { payload, signature } = decoded;
+      const expectedSig = crypto.createHmac('sha256', QR_SECRET).update(payload).digest('hex');
+
+      if (signature !== expectedSig) {
+        return { valid: false, price: 0, reason: 'Invalid QR cryptographic signature.' };
+      }
+
+      const [cId, priceStr, expiresAtStr] = payload.split(':');
+      if (cId !== expectedClinicId) {
+        return { valid: false, price: 0, reason: 'QR code belongs to a different clinic facility.' };
+      }
+
+      const expiresAt = new Date(expiresAtStr).getTime();
+      // Allow 15-second grace period for network jitter
+      if (Date.now() > expiresAt + 15 * 1000) {
+        return { valid: false, price: 0, reason: 'QR code has expired. Please scan the current code on the TV screen.' };
+      }
+
+      return { valid: true, price: parseFloat(priceStr) };
+    } catch {
+      return { valid: false, price: 0, reason: 'Malformed or corrupt QR code token.' };
+    }
+  }
+
+  /**
+   * Book an appointment with fail-closed availability check & server-side calculated pricing
    */
   async bookAppointment(
     userId: string,
@@ -43,6 +109,26 @@ export class AppointmentsService {
     });
     if (!clinic) {
       throw new NotFoundException(`Clinic with ID "${dto.clinicId}" not found.`);
+    }
+
+    // STRICT SERVER-SIDE PRICING CALCULATION
+    const bookingType = dto.bookingType || 'REMOTE';
+    let calculatedFee: number;
+
+    if (bookingType === 'IN_CLINIC') {
+      if (!dto.qrToken) {
+        throw new BadRequestException(
+          'Missing QR code token for in-clinic discounted booking. Please scan the rotating QR code on the clinic TV screen.'
+        );
+      }
+      const qrValidation = this.validateInClinicQrCode(dto.qrToken, clinic.id);
+      if (!qrValidation.valid) {
+        throw new BadRequestException(`In-Clinic QR verification failed: ${qrValidation.reason}`);
+      }
+      calculatedFee = qrValidation.price || clinic.inClinicPrice || 200;
+    } else {
+      // Remote booking (default ₹250 or clinic's configured remotePrice)
+      calculatedFee = clinic.remotePrice ?? 250;
     }
 
     if (dto.doctorId) {
@@ -93,9 +179,11 @@ export class AppointmentsService {
         doctorId: dto.doctorId || null,
         serviceId: dto.serviceId || null,
         slotTime: slotDate,
-        status: 'CONFIRMED',
-        bookingFee: dto.bookingFee || 0.0,
-        paymentStatus: dto.bookingFee && dto.bookingFee > 0 ? 'PENDING' : 'SUCCESS',
+        bookingType,
+        qrCodeToken: dto.qrToken || null,
+        status: 'PENDING',
+        bookingFee: calculatedFee,
+        paymentStatus: 'PENDING',
       },
       include: {
         user: true,
@@ -106,7 +194,7 @@ export class AppointmentsService {
     });
 
     this.logger.log(
-      `📅 Appointment booked for User ${userId} at Clinic ${dto.clinicId} on ${slotDate.toISOString()}`,
+      `📅 Appointment ${appointment.id} initiated (${bookingType} @ ₹${calculatedFee}) for User ${userId} at Clinic ${dto.clinicId}`
     );
 
     return this.mapToDto(appointment);

@@ -8,6 +8,8 @@ export interface ClinicDto {
   email?: string | null;
   address?: string | null;
   city?: string | null;
+  inClinicPrice: number;
+  remotePrice: number;
   isActive: boolean;
   createdAt: string;
   doctorsCount?: number;
@@ -22,6 +24,8 @@ export interface CreateClinicDto {
   email?: string;
   address?: string;
   city?: string;
+  inClinicPrice?: number;
+  remotePrice?: number;
 }
 
 export interface UpdateClinicDto {
@@ -31,6 +35,8 @@ export interface UpdateClinicDto {
   email?: string;
   address?: string;
   city?: string;
+  inClinicPrice?: number;
+  remotePrice?: number;
   isActive?: boolean;
 }
 

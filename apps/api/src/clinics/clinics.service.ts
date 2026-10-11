@@ -40,6 +40,8 @@ export class ClinicsService {
       phoneNumber: c.phoneNumber,
       email: c.email,
       address: c.address,
+      inClinicPrice: c.inClinicPrice ?? 200,
+      remotePrice: c.remotePrice ?? 250,
       isActive: c.isActive,
       createdAt: c.createdAt.toISOString(),
       doctorsCount: c._count.doctors,
@@ -88,6 +90,8 @@ export class ClinicsService {
         address: dto.address,
         city: dto.city,
         chainId: dto.chainId || null,
+        inClinicPrice: dto.inClinicPrice !== undefined ? Number(dto.inClinicPrice) : 200,
+        remotePrice: dto.remotePrice !== undefined ? Number(dto.remotePrice) : 250,
       },
     });
   }
