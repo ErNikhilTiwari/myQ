@@ -520,17 +520,17 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
               </div>
             </div>
 
-            {/* Column 2 (4/12): LIVE QUEUE STATUS / NEXT IN LINE */}
-            <div className="lg:col-span-4 bg-white border border-slate-200/90 rounded-3xl p-5 md:p-6 flex flex-col justify-between shadow-md h-full">
+            {/* Column 2 (3/12): LIVE QUEUE STATUS / NEXT IN LINE */}
+            <div className="lg:col-span-3 bg-white border border-slate-200/90 rounded-3xl p-4 sm:p-5 flex flex-col justify-between shadow-md h-full">
               <div>
-                <h3 className="text-xs font-black uppercase tracking-wider text-[#1E293B] border-b border-slate-100 pb-2.5 mb-3 flex items-center justify-between">
+                <h3 className="text-xs font-black uppercase tracking-wider text-[#1E293B] border-b border-slate-100 pb-2 mb-2.5 flex items-center justify-between">
                   <span>⏳ NEXT IN LINE</span>
                   <span className="text-[#0284C7] font-mono font-bold text-[10px] bg-[#E0F2FE] px-2 py-0.5 rounded">
-                    ESTIMATED WAIT
+                    EST. WAIT
                   </span>
                 </h3>
 
-                <div className="space-y-2.5">
+                <div className="space-y-2">
                   {nextWaiting.length === 0 ? (
                     <div className="text-center py-10 text-[#94A3B8] text-xs">
                       No patients currently waiting in line
@@ -539,16 +539,16 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
                     nextWaiting.slice(0, 4).map((item, idx) => (
                       <div
                         key={idx}
-                        className="bg-[#F8FAFC] border border-slate-200/80 p-2.5 rounded-2xl flex items-center justify-between transition hover:border-[#0284C7]/40"
+                        className="bg-[#F8FAFC] border border-slate-200/80 p-2 rounded-2xl flex items-center justify-between transition hover:border-[#0284C7]/40"
                       >
                         <div className="flex items-center space-x-2 min-w-0">
                           <span className="text-xs font-mono text-[#94A3B8] font-bold shrink-0">#{idx + 1}</span>
                           <div className="min-w-0">
-                            <div className="text-lg font-black font-mono text-[#1E293B] leading-tight">{item.tokenNumber}</div>
-                            <div className="text-xs font-bold text-[#1E293B] truncate">{item.patientName}</div>
+                            <div className="text-base font-black font-mono text-[#1E293B] leading-tight">{item.tokenNumber}</div>
+                            <div className="text-[11px] font-bold text-[#1E293B] truncate">{item.patientName}</div>
                           </div>
                         </div>
-                        <span className="text-xs font-bold text-[#0284C7] bg-[#E0F2FE] px-2 py-0.5 rounded-lg border border-[#0284C7]/20 whitespace-nowrap shrink-0 font-mono">
+                        <span className="text-[11px] font-bold text-[#0284C7] bg-[#E0F2FE] px-2 py-0.5 rounded-lg border border-[#0284C7]/20 whitespace-nowrap shrink-0 font-mono">
                           ~{item.estimatedWaitMinutes}m
                         </span>
                       </div>
@@ -558,7 +558,7 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
               </div>
 
               {/* Waiting metrics summary */}
-              <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-[#64748B]">
+              <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-[#64748B]">
                 <span className="flex items-center space-x-1">
                   <Users className="w-3.5 h-3.5 text-[#0284C7]" />
                   <span>In Queue:</span>
@@ -572,61 +572,68 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
               </div>
             </div>
 
-            {/* Column 3 (3/12): ROTATING SECURE IN-CLINIC QR CODE */}
-            <div className="lg:col-span-3 bg-gradient-to-br from-slate-900 to-[#0F172A] text-white rounded-3xl p-5 md:p-6 flex flex-col justify-between shadow-xl border-2 border-emerald-500/40 relative overflow-hidden h-full">
-              <div className="absolute -top-12 -right-12 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl" />
+            {/* Column 3 (4/12): ROTATING SECURE IN-CLINIC QR CODE (ENLARGED & SPANNED TEXT) */}
+            <div className="lg:col-span-4 bg-gradient-to-br from-slate-900 to-[#0F172A] text-white rounded-3xl p-5 md:p-6 flex flex-col justify-between shadow-xl border-2 border-emerald-500/40 relative overflow-hidden h-full">
+              <div className="absolute -top-12 -right-12 w-36 h-36 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
 
-              <div>
-                <div className="flex items-center justify-between pb-2.5 border-b border-slate-800">
-                  <span className="bg-emerald-500 text-slate-950 font-black text-[10px] tracking-wider uppercase px-2 py-0.5 rounded flex items-center space-x-1">
-                    <QrCode className="w-3 h-3" />
-                    <span>IN-CLINIC BOOKING</span>
+              {/* Top Bar: Mode & Countdown */}
+              <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                <span className="bg-emerald-500 text-slate-950 font-black text-[11px] tracking-wider uppercase px-2.5 py-1 rounded-md flex items-center space-x-1.5 shadow-xs">
+                  <QrCode className="w-3.5 h-3.5" />
+                  <span>IN-CLINIC BOOKING</span>
+                </span>
+
+                <span className="text-xs font-extrabold text-emerald-400 font-mono flex items-center space-x-1 bg-emerald-950/70 border border-emerald-500/30 px-2 py-0.5 rounded-md">
+                  <RefreshCw className={`w-3 h-3 ${isQrLoading ? 'animate-spin' : ''}`} />
+                  <span>Rotates in {qrData?.secondsRemaining || 30}s</span>
+                </span>
+              </div>
+
+              {/* Text Spanned Above QR Code */}
+              <div className="text-center my-2">
+                <div className="text-xs font-semibold text-slate-300">
+                  Scan to Book Appointment &bull; Walk-in Discount
+                </div>
+                <div className="text-3xl sm:text-4xl font-black text-emerald-400 mt-0.5 flex items-center justify-center space-x-2">
+                  <span>₹{qrData?.price || 200}</span>
+                  <span className="text-sm text-slate-400 line-through font-normal">₹250</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wide bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                    ₹50 OFF
                   </span>
-
-                  <span className="text-xs font-extrabold text-emerald-400 font-mono flex items-center space-x-1">
-                    <RefreshCw className={`w-3 h-3 ${isQrLoading ? 'animate-spin' : ''}`} />
-                    <span>{qrData?.secondsRemaining || 30}s</span>
-                  </span>
                 </div>
+              </div>
 
-                {/* Pricing Hero Banner */}
-                <div className="mt-2.5 text-center">
-                  <div className="text-[11px] font-bold text-slate-300">Scan to Book for</div>
-                  <div className="text-2xl sm:text-3xl font-black text-emerald-400 mt-0.5">
-                    ₹{qrData?.price || 200}
-                    <span className="text-xs text-slate-400 line-through ml-1.5 font-normal">₹250</span>
-                  </div>
+              {/* Enlarged QR Code Container (Crisp & Scannable from Distance) */}
+              <div className="my-auto flex items-center justify-center py-1">
+                <div className="bg-white p-3 sm:p-3.5 rounded-3xl shadow-2xl border-4 border-emerald-400 relative">
+                  {qrData?.token ? (
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(
+                        `${window.location.origin}/?clinic=${effectiveClinicId}&qr=${qrData.token}&type=IN_CLINIC`
+                      )}`}
+                      alt="Scan QR for discounted in-clinic appointment"
+                      className="w-44 h-44 sm:w-48 sm:h-48 md:w-52 md:h-52 xl:w-56 xl:h-56 2xl:w-60 2xl:h-60 object-contain"
+                      loading="eager"
+                    />
+                  ) : (
+                    <div className="w-44 h-44 sm:w-48 sm:h-48 md:w-52 md:h-52 xl:w-56 xl:h-56 flex items-center justify-center text-slate-400 text-xs">
+                      {qrNetworkError ? 'Offline - showing last queue' : 'Loading QR...'}
+                    </div>
+                  )}
                 </div>
+              </div>
 
-                {/* QR Code Container */}
-                <div className="mt-3 flex flex-col items-center justify-center">
-                  <div className="bg-white p-2.5 rounded-2xl shadow-2xl border-4 border-emerald-400 relative">
-                    {qrData?.token ? (
-                      <img
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(
-                          `${window.location.origin}/?clinic=${effectiveClinicId}&qr=${qrData.token}&type=IN_CLINIC`
-                        )}`}
-                        alt="Scan QR for discounted in-clinic appointment"
-                        className="w-28 h-28 sm:w-32 sm:h-32 object-contain"
-                        loading="eager"
-                      />
-                    ) : (
-                      <div className="w-28 h-28 sm:w-32 sm:h-32 flex items-center justify-center text-slate-400 text-xs">
-                        {qrNetworkError ? 'Offline - showing last queue' : 'Loading QR...'}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <p className="text-[10px] text-center text-slate-300 mt-2.5 font-medium leading-tight">
-                  Point camera at screen to book instant appointment with assigned token
+              {/* Text Spanned Below QR Code */}
+              <div className="text-center my-2">
+                <p className="text-xs text-slate-200 font-semibold tracking-wide">
+                  Point camera at screen to book &bull; Instant live token assigned
                 </p>
               </div>
 
-              {/* Security validation guarantee */}
-              <div className="pt-2.5 border-t border-slate-800 flex items-center justify-center space-x-1 text-[10px] text-emerald-400 font-semibold text-center">
+              {/* Bottom Security Guarantee */}
+              <div className="pt-2 border-t border-slate-800 flex items-center justify-center space-x-1.5 text-[11px] text-emerald-400 font-bold text-center">
                 <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
-                <span>Verified &bull; Expired codes rejected</span>
+                <span>Cryptographically verified &bull; Expired codes rejected</span>
               </div>
             </div>
           </div>
