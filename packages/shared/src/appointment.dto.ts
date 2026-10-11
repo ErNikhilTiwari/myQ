@@ -44,10 +44,13 @@ export interface RescheduleAppointmentDto {
   slotTime: string;
 }
 
+export type PaymentProviderType = 'RAZORPAY' | 'CASHFREE' | 'PHONEPE';
+
 export interface CreatePaymentOrderDto {
   appointmentId: string;
   amount: number;
   currency?: string;
+  provider?: PaymentProviderType;
 }
 
 export interface PaymentOrderDto {
@@ -55,6 +58,7 @@ export interface PaymentOrderDto {
   orderId: string;
   amount: number;
   currency: string;
+  provider: PaymentProviderType;
   keyId: string;
   status: PaymentStatus;
 }

@@ -40,7 +40,8 @@ export class PaymentsService {
       throw new NotFoundException(`Appointment with ID "${dto.appointmentId}" not found.`);
     }
 
-    const orderId = `order_${nanoid()}`;
+    const provider = dto.provider || 'RAZORPAY';
+    const orderId = `${provider.toLowerCase()}_order_${nanoid()}`;
 
     const payment = await this.prisma.payment.create({
       data: {
@@ -54,14 +55,15 @@ export class PaymentsService {
       },
     });
 
-    this.logger.log(`💳 Created Payment Order ${orderId} for Appointment ${appointment.id}`);
+    this.logger.log(`💳 Created [${provider}] Payment Order ${orderId} for Appointment ${appointment.id}`);
 
     return {
       paymentId: payment.id,
       orderId,
       amount: payment.amount,
       currency: payment.currency,
-      keyId: this.keyId,
+      provider,
+      keyId: `${provider.toLowerCase()}_key_test`,
       status: payment.status as PaymentStatus,
     };
   }
