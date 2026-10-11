@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Search, 
-  QrCode, 
   Clock, 
   Users, 
   CheckCircle, 
   Bell, 
   MapPin, 
-  ArrowRight,
-  ShieldCheck,
-  AlertCircle
+  ArrowRight, 
+  ShieldCheck, 
+  AlertCircle 
 } from 'lucide-react';
 
 interface PublicTokenStatus {
@@ -107,34 +106,34 @@ export const MobileTokenTracker: React.FC<MobileTokenTrackerProps> = ({
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'CALLED':
-        return { label: '🔔 NOW CALLING', bg: 'bg-emerald-500 text-slate-950 font-black animate-pulse' };
+        return { label: '🔔 NOW CALLING', bg: 'bg-[#16A34A] text-white font-black animate-pulse' };
       case 'IN_SERVICE':
-        return { label: '🩺 IN CONSULTATION', bg: 'bg-teal-500 text-slate-950 font-bold' };
+        return { label: '🩺 IN CONSULTATION', bg: 'bg-[#0284C7] text-white font-bold' };
       case 'ON_HOLD':
-        return { label: '⏸️ ON HOLD', bg: 'bg-amber-500 text-slate-950 font-bold' };
+        return { label: '⏸️ ON HOLD', bg: 'bg-[#D97706] text-white font-bold' };
       case 'COMPLETED':
-        return { label: '✅ COMPLETED', bg: 'bg-slate-700 text-slate-300 font-bold' };
+        return { label: '✅ COMPLETED', bg: 'bg-[#1E293B] text-white font-bold' };
       default:
-        return { label: '⏳ IN QUEUE', bg: 'bg-indigo-500 text-white font-bold' };
+        return { label: '⏳ IN QUEUE', bg: 'bg-[#2563EB] text-white font-bold' };
     }
   };
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-start bg-slate-950 text-slate-100 p-4 min-h-screen">
-      {/* Mobile Wrapper (Max 420px for 360px-420px standard smartphones) */}
+    <div className="flex-1 flex flex-col items-center justify-start bg-[#F8FAFC] text-[#334155] p-4 min-h-screen">
+      {/* Mobile Wrapper (Max 420px for smartphones) */}
       <div className="w-full max-w-md flex flex-col space-y-4">
         
         {/* Top Header Card */}
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl">
+        <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-2.5">
               <span className="text-2xl">📱</span>
               <div>
-                <h1 className="text-base font-black text-white">Live Token Tracker</h1>
-                <p className="text-[11px] text-slate-400">Zero-Login QR Token Status</p>
+                <h1 className="text-base font-black text-[#1E293B]">Live Token Tracker</h1>
+                <p className="text-[11px] text-[#64748B]">Zero-Login QR Token Status</p>
               </div>
             </div>
-            <span className="bg-emerald-500/20 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-500/30">
+            <span className="bg-[#E0F2FE] text-[#0284C7] text-[10px] font-bold px-2 py-0.5 rounded-full border border-[#0284C7]/20">
               Live Sync
             </span>
           </div>
@@ -142,14 +141,14 @@ export const MobileTokenTracker: React.FC<MobileTokenTrackerProps> = ({
           {/* Clinic Switcher & Quick Lookup Form */}
           <div className="space-y-2.5">
             <div className="flex items-center space-x-2">
-              <label className="text-[11px] text-slate-400 font-medium">Clinic:</label>
+              <label className="text-[11px] text-[#64748B] font-bold">Clinic:</label>
               <select
                 value={clinicSlug}
                 onChange={(e) => {
                   setClinicSlug(e.target.value);
                   setTokenData(null);
                 }}
-                className="flex-1 bg-slate-950 border border-slate-700/80 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500 cursor-pointer"
+                className="flex-1 bg-[#F8FAFC] border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs text-[#1E293B] font-semibold focus:outline-none focus:border-[#0284C7] cursor-pointer"
               >
                 {clinics.map((c) => (
                   <option key={c.id} value={c.slug}>
@@ -166,13 +165,13 @@ export const MobileTokenTracker: React.FC<MobileTokenTrackerProps> = ({
                   value={tokenInput}
                   onChange={(e) => setTokenInput(e.target.value)}
                   placeholder="Token (e.g. A-01)"
-                  className="w-full bg-slate-950 border border-slate-700/80 rounded-2xl px-4 py-2.5 text-xs text-white font-mono uppercase tracking-wider placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-[#F8FAFC] border border-slate-300 rounded-2xl px-4 py-2.5 text-xs text-[#1E293B] font-mono uppercase tracking-wider placeholder-slate-400 focus:outline-none focus:border-[#0284C7] focus:bg-white"
                 />
               </div>
               <button
                 type="submit"
                 disabled={loading}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-2xl text-xs font-bold transition flex items-center space-x-1"
+                className="bg-[#0284C7] hover:bg-[#0369A1] text-white px-4 py-2.5 rounded-2xl text-xs font-bold transition flex items-center space-x-1 shadow-sm"
               >
                 <Search className="w-3.5 h-3.5" />
                 <span>{loading ? '...' : 'Track'}</span>
@@ -181,7 +180,7 @@ export const MobileTokenTracker: React.FC<MobileTokenTrackerProps> = ({
           </div>
 
           {errorMsg && (
-            <div className="mt-3 p-2.5 bg-rose-950/40 border border-rose-800/60 rounded-xl text-rose-300 text-xs flex items-center space-x-2">
+            <div className="mt-3 p-2.5 bg-[#FEF2F2] border border-[#DC2626]/20 rounded-xl text-[#DC2626] text-xs flex items-center space-x-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{errorMsg}</span>
             </div>
@@ -190,99 +189,92 @@ export const MobileTokenTracker: React.FC<MobileTokenTrackerProps> = ({
 
         {/* Live Token Details Card */}
         {tokenData ? (
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl relative overflow-hidden flex flex-col space-y-6">
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-md relative overflow-hidden flex flex-col space-y-6">
             
             {/* Clinic Info Header */}
-            <div className="flex justify-between items-start border-b border-slate-800 pb-4">
+            <div className="flex justify-between items-start border-b border-slate-100 pb-4">
               <div>
-                <h2 className="text-lg font-black text-white tracking-tight">{tokenData.clinicName}</h2>
-                <div className="text-xs text-emerald-400 font-semibold mt-0.5 flex items-center space-x-1">
+                <h2 className="text-lg font-black text-[#1E293B] tracking-tight">{tokenData.clinicName}</h2>
+                <div className="text-xs text-[#0284C7] font-semibold mt-0.5 flex items-center space-x-1">
                   <span>👨‍⚕️ {tokenData.doctorName || 'Doctor Consultation'}</span>
                 </div>
               </div>
-              <div className="text-right">
-                <span className={`text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full ${getStatusBadge(tokenData.status).bg}`}>
-                  {getStatusBadge(tokenData.status).label}
-                </span>
-              </div>
-            </div>
-
-            {/* Big Token Number Display */}
-            <div className="text-center py-4">
-              <div className="text-xs uppercase font-bold tracking-widest text-slate-400 mb-1">
-                Your Token Number
-              </div>
-              <div className="text-7xl font-black font-mono tracking-tight text-white drop-shadow-lg">
-                {tokenData.tokenNumber}
-              </div>
-              {tokenData.status === 'CALLED' && (
-                <div className="mt-3 bg-emerald-500 text-slate-950 font-black text-xs py-2 px-4 rounded-xl animate-bounce">
-                  🔔 Please proceed to doctor chamber now!
-                </div>
-              )}
-            </div>
-
-            {/* Position Ahead & Estimated Waiting Time Grid */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-slate-950/80 border border-slate-800 p-4 rounded-2xl text-center">
-                <div className="text-[11px] font-semibold text-slate-400 flex items-center justify-center space-x-1">
-                  <Users className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>People Ahead</span>
-                </div>
-                <div className="text-2xl font-black font-mono text-white mt-1">
-                  {tokenData.positionAhead}
-                </div>
-              </div>
-
-              <div className="bg-slate-950/80 border border-slate-800 p-4 rounded-2xl text-center">
-                <div className="text-[11px] font-semibold text-slate-400 flex items-center justify-center space-x-1">
-                  <Clock className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Estimated Wait</span>
-                </div>
-                <div className="text-2xl font-black font-mono text-emerald-400 mt-1">
-                  ~{tokenData.estimatedWaitMinutes} <span className="text-xs font-normal text-slate-400">min</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Serving Comparison Bar */}
-            <div className="bg-slate-950 border border-slate-800/80 p-3.5 rounded-2xl flex items-center justify-between text-xs">
-              <span className="text-slate-400">Currently in Chamber:</span>
-              <span className="font-mono font-bold text-white bg-slate-800 px-2.5 py-0.5 rounded">
-                {tokenData.currentServingToken || 'None'}
+              <span className={`px-3 py-1 rounded-full text-[10px] uppercase tracking-wider ${getStatusBadge(tokenData.status).bg}`}>
+                {getStatusBadge(tokenData.status).label}
               </span>
             </div>
 
-            {/* Web Push Notification Call-to-action */}
-            {!notificationsAllowed ? (
-              <button
-                onClick={handleEnablePush}
-                className="w-full bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/40 text-indigo-300 py-3 rounded-2xl text-xs font-bold transition flex items-center justify-center space-x-2"
-              >
-                <Bell className="w-4 h-4 text-indigo-400" />
-                <span>Notify me on WhatsApp / Browser when called</span>
-              </button>
-            ) : (
-              <div className="p-3 bg-emerald-950/30 border border-emerald-800/50 rounded-2xl text-emerald-300 text-xs font-semibold flex items-center justify-center space-x-2">
-                <CheckCircle className="w-4 h-4 text-emerald-400" />
-                <span>Push notifications active on this device</span>
+            {/* Token Hero Number */}
+            <div className="text-center py-4 bg-[#F8FAFC] rounded-2xl border border-slate-200/80">
+              <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-widest block mb-1">
+                Your Token Number
+              </span>
+              <div className="text-6xl font-black font-mono tracking-tight text-[#1E293B]">
+                {tokenData.tokenNumber}
+              </div>
+              <div className="text-xs text-[#64748B] font-medium mt-1">
+                Queue: <span className="text-[#1E293B] font-bold">{tokenData.queueName}</span>
+              </div>
+            </div>
+
+            {/* Status Live Metrics: Positions Ahead & Estimated Wait Time */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-[#F8FAFC] border border-slate-200 p-4 rounded-2xl text-center">
+                <div className="text-2xl font-black font-mono text-[#0284C7]">
+                  {tokenData.positionAhead}
+                </div>
+                <div className="text-[11px] font-bold text-[#64748B] mt-0.5 flex items-center justify-center space-x-1">
+                  <Users className="w-3 h-3 text-[#0284C7]" />
+                  <span>People Ahead</span>
+                </div>
+              </div>
+
+              <div className="bg-[#F8FAFC] border border-slate-200 p-4 rounded-2xl text-center">
+                <div className="text-2xl font-black font-mono text-[#16A34A]">
+                  ~{tokenData.estimatedWaitMinutes}m
+                </div>
+                <div className="text-[11px] font-bold text-[#64748B] mt-0.5 flex items-center justify-center space-x-1">
+                  <Clock className="w-3 h-3 text-[#16A34A]" />
+                  <span>Est. Wait Time</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Now Serving Counter */}
+            {tokenData.currentServingToken && (
+              <div className="bg-[#E0F2FE]/50 border border-[#0284C7]/20 p-3.5 rounded-2xl flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <span className="w-2 h-2 rounded-full bg-[#16A34A] animate-pulse" />
+                  <span className="text-xs font-semibold text-[#1E293B]">Currently inside doctor chamber:</span>
+                </div>
+                <span className="font-mono font-black text-sm text-[#0284C7]">
+                  {tokenData.currentServingToken}
+                </span>
               </div>
             )}
 
-            {/* Footer sync info */}
-            <div className="text-center text-[10px] text-slate-500 pt-2 border-t border-slate-800">
-              Auto-updating every 4s &bull; Safe to close and revisit via QR code
+            {/* Browser Push Notification Permission Prompt */}
+            {!notificationsAllowed ? (
+              <button
+                onClick={handleEnablePush}
+                className="w-full bg-[#0284C7] hover:bg-[#0369A1] text-white py-3 rounded-2xl text-xs font-bold transition flex items-center justify-center space-x-2 shadow-sm"
+              >
+                <Bell className="w-4 h-4" />
+                <span>Notify me when my turn arrives</span>
+              </button>
+            ) : (
+              <div className="bg-[#DCFCE7] border border-[#16A34A]/30 p-2.5 rounded-xl text-center text-[11px] font-bold text-[#16A34A] flex items-center justify-center space-x-1.5">
+                <CheckCircle className="w-3.5 h-3.5" />
+                <span>Alerts active: We'll ping your phone when called!</span>
+              </div>
+            )}
+
+            {/* Footer sync indicator */}
+            <div className="text-center text-[10px] text-[#94A3B8] font-mono">
+              Auto-syncs every 4 seconds &bull; Last updated {new Date(tokenData.lastUpdated).toLocaleTimeString()}
             </div>
           </div>
-        ) : (
-          <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-8 text-center text-slate-400">
-            <QrCode className="w-12 h-12 mx-auto text-slate-600 mb-3" />
-            <div className="text-sm font-bold text-white">Enter a Token Number Above</div>
-            <p className="text-xs text-slate-500 mt-1">
-              Example tokens: <span className="text-emerald-400 font-mono font-bold">A-01</span>, <span className="text-emerald-400 font-mono font-bold">A-02</span>
-            </p>
-          </div>
-        )}
+        ) : null}
       </div>
     </div>
   );

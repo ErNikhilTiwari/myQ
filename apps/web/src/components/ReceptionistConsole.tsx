@@ -86,13 +86,15 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
   const [walkinName, setWalkinName] = useState('');
   const [walkinPhone, setWalkinPhone] = useState('+91');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Hold reason prompt
+  const [holdingTokenId, setHoldingTokenId] = useState<string | null>(null);
+  const [holdReason, setHoldReason] = useState('Laboratory Testing Required');
+
+  // UI Toast message
   const [feedbackMsg, setFeedbackMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Hold reason modal state
-  const [holdingTokenId, setHoldingTokenId] = useState<string | null>(null);
-  const [holdReasonInput, setHoldReasonInput] = useState('Waiting for lab test results');
-
-  // Load Queues for currently selected clinic
+  // Fetch all queues for selected clinic
   useEffect(() => {
     if (!selectedClinicId) return;
 
@@ -181,17 +183,21 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
 
     try {
       setIsSubmitting(true);
-      const res = await fetch(`/api/clinics/${selectedClinicId}/queues/entries/${entryId}/transition`, {
+      const res = await fetch(`/api/clinics/${selectedClinicId}/queues/${selectedQueueId}/transition`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ toStatus, reason }),
+        body: JSON.stringify({
+          entryId,
+          status: toStatus,
+          holdReason: reason,
+        }),
       });
       const data = await res.json();
       if (data.success) {
-        showToast('success', `Token marked as ${toStatus}`);
+        showToast('success', `Token updated to ${toStatus}`);
         setHoldingTokenId(null);
       } else {
         showToast('error', data.error?.message || `Failed to transition to ${toStatus}`);
@@ -255,14 +261,14 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
   const activeQueueObj = queues.find((q) => q.id === selectedQueueId);
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-900 text-slate-100 p-4 md:p-6 overflow-y-auto">
+    <div className="flex-1 flex flex-col bg-[#F8FAFC] text-[#334155] p-4 md:p-6 overflow-y-auto">
       {/* Toast Notification */}
       {feedbackMsg && (
         <div
-          className={`fixed top-16 right-6 z-50 px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-2 text-sm font-semibold transition animate-bounce ${
+          className={`fixed top-16 right-6 z-50 px-4 py-3 rounded-xl shadow-lg flex items-center space-x-2 text-sm font-semibold transition animate-bounce ${
             feedbackMsg.type === 'success'
-              ? 'bg-emerald-600 text-white border border-emerald-400'
-              : 'bg-rose-600 text-white border border-rose-400'
+              ? 'bg-[#16A34A] text-white border border-[#16A34A]'
+              : 'bg-[#DC2626] text-white border border-[#DC2626]'
           }`}
         >
           {feedbackMsg.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
@@ -270,32 +276,32 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
         </div>
       )}
 
-      {/* Top Header Bar */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 mb-6 border-b border-slate-800 gap-4">
+      {/* Top Header Card */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-sm mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <div className="flex items-center space-x-3">
-            <h1 className="text-2xl font-black text-white tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-black text-[#1E293B] tracking-tight">
               {activeClinicObj?.name || 'Clinic Desk'}
             </h1>
-            <span className="bg-emerald-500/20 text-emerald-400 text-xs px-2.5 py-0.5 rounded-full font-bold border border-emerald-500/30">
+            <span className="bg-[#E0F2FE] text-[#0284C7] text-xs px-2.5 py-0.5 rounded-full font-bold border border-[#0284C7]/20">
               Receptionist Desk
             </span>
           </div>
-          <p className="text-xs text-slate-400 mt-0.5">Live Queue Management & Patient Counter Operations</p>
+          <p className="text-xs text-[#64748B] mt-0.5 font-medium">Live Queue Management & Patient Counter Operations</p>
         </div>
 
         {/* Action Controls */}
         <div className="flex items-center space-x-3 w-full sm:w-auto">
           {/* Multi-Tenant Clinic Switcher Dropdown */}
-          <div className="flex items-center space-x-2 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl">
-            <Building2 className="w-4 h-4 text-emerald-400" />
+          <div className="flex items-center space-x-2 bg-[#F8FAFC] border border-slate-300 px-3 py-1.5 rounded-xl">
+            <Building2 className="w-4 h-4 text-[#0284C7]" />
             <select
               value={selectedClinicId}
               onChange={(e) => onSelectClinicId(e.target.value)}
-              className="bg-transparent text-xs font-bold text-white focus:outline-none cursor-pointer"
+              className="bg-transparent text-xs font-bold text-[#1E293B] focus:outline-none cursor-pointer"
             >
               {clinics.map((c) => (
-                <option key={c.id} value={c.id} className="bg-slate-900 text-white">
+                <option key={c.id} value={c.id} className="bg-white text-[#1E293B]">
                   {c.name}
                 </option>
               ))}
@@ -307,7 +313,7 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
               if (!token) onOpenLogin();
               else setShowWalkinModal(true);
             }}
-            className="flex-1 sm:flex-initial flex items-center justify-center space-x-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-lg transition active:scale-95"
+            className="flex-1 sm:flex-initial flex items-center justify-center space-x-2 bg-[#0284C7] hover:bg-[#0369A1] text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-sm transition active:scale-95"
           >
             <UserPlus className="w-4 h-4" />
             <span>New Walk-in Patient</span>
@@ -317,19 +323,19 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
 
       {/* Auth Banner if not signed in */}
       {!token && (
-        <div className="mb-6 bg-amber-950/40 border border-amber-800/60 p-4 rounded-2xl flex items-center justify-between">
+        <div className="mb-6 bg-[#FEF3C7] border border-[#D97706]/30 p-4 rounded-2xl flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <Lock className="w-5 h-5 text-amber-400 shrink-0" />
+            <Lock className="w-5 h-5 text-[#D97706] shrink-0" />
             <div>
-              <div className="text-xs font-bold text-amber-300">Staff Authentication Required</div>
-              <div className="text-[11px] text-slate-400">
+              <div className="text-xs font-bold text-[#92400E]">Staff Authentication Required</div>
+              <div className="text-[11px] text-[#B45309]">
                 You are currently viewing in read-only guest mode. Log in as a receptionist to call tokens and issue walk-ins.
               </div>
             </div>
           </div>
           <button
             onClick={onOpenLogin}
-            className="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shrink-0"
+            className="bg-[#D97706] hover:bg-[#B45309] text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shrink-0 shadow-sm"
           >
             <LogIn className="w-3.5 h-3.5" />
             <span>Staff Login (1-Click)</span>
@@ -340,7 +346,7 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
       {/* Queue Selector Tabs */}
       <div className="flex items-center space-x-2 overflow-x-auto pb-3 mb-6 scrollbar-none">
         {queues.length === 0 ? (
-          <div className="text-xs text-slate-500">No queues configured in this clinic.</div>
+          <div className="text-xs text-[#64748B]">No queues configured in this clinic.</div>
         ) : (
           queues.map((q) => (
             <button
@@ -348,12 +354,14 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
               onClick={() => setSelectedQueueId(q.id)}
               className={`px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2 shrink-0 border ${
                 selectedQueueId === q.id
-                  ? 'bg-emerald-600 border-emerald-400 text-white shadow-lg shadow-emerald-950/40'
-                  : 'bg-slate-800/80 border-slate-700/60 text-slate-300 hover:bg-slate-700'
+                  ? 'bg-[#1E293B] border-[#1E293B] text-white shadow-sm'
+                  : 'bg-white border-slate-200 text-[#334155] hover:bg-slate-50'
               }`}
             >
               <span>👨‍⚕️ {q.doctor?.name || q.name}</span>
-              <span className="bg-slate-900/60 px-2 py-0.5 rounded text-[10px] font-mono">
+              <span className={`px-2 py-0.5 rounded text-[10px] font-mono ${
+                selectedQueueId === q.id ? 'bg-[#0F172A] text-slate-200' : 'bg-slate-100 text-[#64748B]'
+              }`}>
                 {q.doctor?.roomNumber || 'Room 1'}
               </span>
             </button>
@@ -365,14 +373,14 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 items-start">
         
         {/* Left Col: Primary Serving Chamber Card */}
-        <div className="bg-slate-800/90 border border-slate-700/80 rounded-3xl p-6 shadow-xl flex flex-col justify-between h-full">
+        <div className="bg-white border-2 border-[#0284C7]/30 rounded-3xl p-6 shadow-md flex flex-col justify-between h-full">
           <div>
-            <div className="flex items-center justify-between pb-3 border-b border-slate-700/60">
-              <span className="text-xs font-black tracking-wider uppercase text-emerald-400 flex items-center space-x-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <span className="text-xs font-black tracking-wider uppercase text-[#16A34A] flex items-center space-x-1.5">
+                <span className="w-2 h-2 rounded-full bg-[#16A34A] animate-pulse" />
                 <span>ACTIVE CONSULTATION</span>
               </span>
-              <span className="text-xs font-mono text-slate-400">
+              <span className="text-xs font-mono text-[#64748B] font-bold">
                 {activeQueueObj?.doctor?.roomNumber || 'Room 101'}
               </span>
             </div>
@@ -381,38 +389,38 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
             <div className="text-center py-8">
               {currentServing ? (
                 <>
-                  <div className="text-7xl font-black font-mono tracking-tight text-white drop-shadow-md">
+                  <div className="text-7xl font-black font-mono tracking-tight text-[#1E293B]">
                     {currentServing.tokenNumber}
                   </div>
-                  <div className="mt-3 text-lg font-bold text-slate-200">
+                  <div className="mt-3 text-lg font-bold text-[#1E293B]">
                     {currentServing.patientName || 'Walk-in Patient'}
                   </div>
-                  <div className="text-xs text-slate-400 font-mono mt-1">
+                  <div className="text-xs text-[#64748B] font-mono mt-1">
                     {currentServing.phoneNumber || 'Counter Token'}
                   </div>
-                  <div className="mt-4 inline-flex items-center space-x-2 bg-emerald-950/50 border border-emerald-800/60 text-emerald-300 px-3 py-1 rounded-full text-xs font-semibold">
+                  <div className="mt-4 inline-flex items-center space-x-2 bg-[#E0F2FE] border border-[#0284C7]/20 text-[#0284C7] px-3.5 py-1 rounded-full text-xs font-bold">
                     <Activity className="w-3.5 h-3.5 animate-spin" />
                     <span>In Chamber Consultation</span>
                   </div>
                 </>
               ) : (
                 <div className="py-8">
-                  <div className="text-slate-600 text-5xl mb-3">🛋️</div>
-                  <div className="text-sm font-bold text-slate-400">Doctor Chamber Idle</div>
-                  <p className="text-xs text-slate-500 mt-1">Press "Call Next Patient" to summon next in line</p>
+                  <div className="text-slate-300 text-5xl mb-3">🛋️</div>
+                  <div className="text-sm font-bold text-[#334155]">Doctor Chamber Idle</div>
+                  <p className="text-xs text-[#64748B] mt-1">Press "Call Next Patient" to summon next in line</p>
                 </div>
               )}
             </div>
           </div>
 
           {/* Action Control Buttons */}
-          <div className="space-y-3 pt-4 border-t border-slate-700/60">
+          <div className="space-y-3 pt-4 border-t border-slate-100">
             {currentServing ? (
               <div className="grid grid-cols-2 gap-2.5">
                 <button
                   onClick={() => handleTransition(currentServing.id, 'COMPLETED')}
                   disabled={isSubmitting}
-                  className="bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 shadow-lg shadow-emerald-950/30"
+                  className="bg-[#16A34A] hover:bg-[#15803D] text-white py-3 rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 shadow-sm"
                 >
                   <CheckCircle className="w-4 h-4" />
                   <span>Complete</span>
@@ -420,7 +428,7 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
                 <button
                   onClick={() => setHoldingTokenId(currentServing.id)}
                   disabled={isSubmitting}
-                  className="bg-amber-600 hover:bg-amber-500 text-white py-3 rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 shadow-lg shadow-amber-950/30"
+                  className="bg-[#D97706] hover:bg-[#B45309] text-white py-3 rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 shadow-sm"
                 >
                   <PauseCircle className="w-4 h-4" />
                   <span>Put On Hold</span>
@@ -428,10 +436,18 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
                 <button
                   onClick={() => handleTransition(currentServing.id, 'NO_SHOW')}
                   disabled={isSubmitting}
-                  className="bg-rose-600/80 hover:bg-rose-600 text-white py-2.5 rounded-xl font-semibold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 col-span-2"
+                  className="bg-slate-200 hover:bg-slate-300 text-[#334155] py-2.5 rounded-xl font-bold text-xs flex items-center justify-center space-x-1 transition"
                 >
-                  <AlertCircle className="w-4 h-4" />
-                  <span>Mark No-Show / Absent</span>
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>No-Show</span>
+                </button>
+                <button
+                  onClick={() => handleTransition(currentServing.id, 'CANCELLED')}
+                  disabled={isSubmitting}
+                  className="bg-rose-50 hover:bg-rose-100 text-[#DC2626] py-2.5 rounded-xl font-bold text-xs flex items-center justify-center space-x-1 transition border border-rose-200"
+                >
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  <span>Cancel</span>
                 </button>
               </div>
             ) : null}
@@ -439,153 +455,173 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
             <button
               onClick={handleCallNext}
               disabled={isSubmitting || waitingList.length === 0}
-              className={`w-full py-3.5 rounded-xl font-black text-sm flex items-center justify-center space-x-2 transition active:scale-95 shadow-xl ${
+              className={`w-full py-4 rounded-2xl font-black text-sm flex items-center justify-center space-x-2 transition shadow-md active:scale-95 ${
                 waitingList.length > 0
-                  ? 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 shadow-emerald-950/40 cursor-pointer'
-                  : 'bg-slate-800 text-slate-500 border border-slate-700/60 cursor-not-allowed'
+                  ? 'bg-[#0284C7] hover:bg-[#0369A1] text-white'
+                  : 'bg-slate-100 text-[#94A3B8] cursor-not-allowed border border-slate-200'
               }`}
             >
-              <PhoneCall className="w-4 h-4" />
-              <span>CALL NEXT PATIENT ({waitingList.length})</span>
+              <PhoneCall className="w-5 h-5" />
+              <span>
+                {waitingList.length > 0 ? `Call Next Patient (${waitingList[0].tokenNumber})` : 'Queue Empty'}
+              </span>
             </button>
           </div>
         </div>
 
-        {/* Center Col: Next Waiting Queue */}
-        <div className="bg-slate-800/60 border border-slate-700/60 rounded-3xl p-6 shadow-xl flex flex-col h-full">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-700/60 mb-4">
-            <span className="text-xs font-black tracking-wider uppercase text-slate-300 flex items-center space-x-2">
-              <Users className="w-4 h-4 text-emerald-400" />
-              <span>Waiting List ({waitingList.length})</span>
-            </span>
-            <span className="text-[11px] text-slate-400">FIFO Sequence</span>
-          </div>
+        {/* Center Col: Waiting Queue List */}
+        <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-full min-h-[480px]">
+          <div>
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <span className="text-xs font-black tracking-wider uppercase text-[#1E293B] flex items-center space-x-2">
+                <Users className="w-4 h-4 text-[#0284C7]" />
+                <span>WAITING LIST ({waitingList.length})</span>
+              </span>
+              <span className="text-xs font-mono text-[#0284C7] bg-[#E0F2FE] px-2 py-0.5 rounded font-bold">
+                Avg ~12m
+              </span>
+            </div>
 
-          <div className="space-y-2.5 overflow-y-auto flex-1 max-h-[460px] pr-1">
-            {waitingList.length === 0 ? (
-              <div className="text-center py-12 text-slate-500 text-xs">
-                No patients currently waiting in this queue.
-              </div>
-            ) : (
-              waitingList.map((token, idx) => (
-                <div
-                  key={token.id}
-                  className="bg-slate-900/80 border border-slate-700/50 hover:border-slate-600 p-3 rounded-2xl flex items-center justify-between transition"
-                >
-                  <div className="flex items-center space-x-3">
-                    <span className="text-xs font-mono font-bold text-slate-500 w-5">#{idx + 1}</span>
-                    <div>
-                      <div className="text-lg font-black font-mono text-white leading-tight">
-                        {token.tokenNumber}
-                      </div>
-                      <div className="text-xs text-slate-300">{token.patientName || 'Walk-in'}</div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-xs font-bold text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-900/40">
-                      ~{(idx + 1) * 12} min
-                    </div>
-                    <div className="text-[10px] text-slate-500 mt-1">{token.phoneNumber}</div>
-                  </div>
+            <div className="space-y-2.5 mt-4 max-h-[380px] overflow-y-auto pr-1">
+              {waitingList.length === 0 ? (
+                <div className="text-center py-12 text-[#94A3B8] text-xs">
+                  No patients waiting in this queue.
                 </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* Right Col: On-Hold Queue (ADR-006) */}
-        <div className="bg-slate-800/60 border border-slate-700/60 rounded-3xl p-6 shadow-xl flex flex-col h-full">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-700/60 mb-4">
-            <span className="text-xs font-black tracking-wider uppercase text-amber-400 flex items-center space-x-2">
-              <PauseCircle className="w-4 h-4" />
-              <span>On-Hold Queue ({onHoldList.length})</span>
-            </span>
-            <span className="text-[11px] text-slate-400">Recall Capable</span>
-          </div>
-
-          <div className="space-y-2.5 overflow-y-auto flex-1 max-h-[460px] pr-1">
-            {onHoldList.length === 0 ? (
-              <div className="text-center py-12 text-slate-500 text-xs">
-                No patients currently on hold.
-              </div>
-            ) : (
-              onHoldList.map((token) => (
-                <div
-                  key={token.id}
-                  className="bg-amber-950/20 border border-amber-900/40 p-3.5 rounded-2xl flex items-center justify-between transition"
-                >
-                  <div>
-                    <div className="text-lg font-black font-mono text-amber-300">
-                      {token.tokenNumber}
-                    </div>
-                    <div className="text-xs text-slate-200 font-medium">
-                      {token.patientName || 'Patient'}
-                    </div>
-                    <div className="text-[11px] text-amber-400/80 mt-1 italic">
-                      💬 {token.holdReason || 'Awaiting doctor / lab'}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handleTransition(token.id, 'WAITING')}
-                    disabled={isSubmitting}
-                    className="bg-amber-500/20 hover:bg-amber-500/40 border border-amber-500/40 text-amber-300 px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1"
+              ) : (
+                waitingList.map((item, idx) => (
+                  <div
+                    key={item.id}
+                    className="p-3 bg-[#F8FAFC] border border-slate-200/80 rounded-2xl flex items-center justify-between transition hover:border-[#0284C7]/40"
                   >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                    <span>Recall</span>
-                  </button>
-                </div>
-              ))
-            )}
+                    <div className="flex items-center space-x-3">
+                      <span className="w-7 h-7 rounded-xl bg-slate-200 text-[#334155] flex items-center justify-center font-bold text-xs font-mono">
+                        {idx + 1}
+                      </span>
+                      <div>
+                        <div className="font-extrabold text-[#1E293B] text-sm">{item.tokenNumber}</div>
+                        <div className="text-xs text-[#64748B] font-medium">{item.patientName}</div>
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <div className="text-xs font-bold text-[#0284C7] flex items-center justify-end space-x-1">
+                        <Clock className="w-3 h-3" />
+                        <span>~{(idx + 1) * 12}m</span>
+                      </div>
+                      <div className="text-[10px] text-[#94A3B8] font-mono">{item.phoneNumber}</div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+          <div className="text-center text-[11px] text-[#94A3B8] pt-3 border-t border-slate-100 font-medium">
+            Waiting times updated dynamically
           </div>
         </div>
+
+        {/* Right Col: On-Hold & Completed Lists */}
+        <div className="space-y-6">
+          {/* On Hold Patients Card */}
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+              <span className="text-xs font-black tracking-wider uppercase text-[#D97706] flex items-center space-x-2">
+                <PauseCircle className="w-4 h-4 text-[#D97706]" />
+                <span>ON HOLD ({onHoldList.length})</span>
+              </span>
+            </div>
+
+            <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
+              {onHoldList.length === 0 ? (
+                <div className="text-center py-6 text-[#94A3B8] text-xs">No tokens on hold</div>
+              ) : (
+                onHoldList.map((h) => (
+                  <div
+                    key={h.id}
+                    className="p-3 bg-[#FEF3C7]/40 border border-[#D97706]/30 rounded-2xl flex items-center justify-between"
+                  >
+                    <div>
+                      <div className="font-bold text-xs text-[#1E293B]">{h.tokenNumber} &bull; {h.patientName}</div>
+                      <div className="text-[10px] text-[#B45309]">{h.holdReason || 'Awaiting reports'}</div>
+                    </div>
+                    <button
+                      onClick={() => handleTransition(h.id, 'WAITING')}
+                      className="bg-[#D97706] hover:bg-[#B45309] text-white px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center space-x-1 shadow-sm"
+                    >
+                      <PlayCircle className="w-3.5 h-3.5" />
+                      <span>Resume</span>
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Recently Completed Patients Card */}
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+              <span className="text-xs font-black tracking-wider uppercase text-[#16A34A] flex items-center space-x-2">
+                <CheckCircle className="w-4 h-4 text-[#16A34A]" />
+                <span>RECENTLY SERVED ({completedList.length})</span>
+              </span>
+            </div>
+
+            <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
+              {completedList.length === 0 ? (
+                <div className="text-center py-6 text-[#94A3B8] text-xs">No consultations completed yet today</div>
+              ) : (
+                completedList.slice(0, 5).map((c) => (
+                  <div
+                    key={c.id}
+                    className="p-2.5 bg-[#F8FAFC] border border-slate-200/80 rounded-xl flex items-center justify-between text-xs"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <span className="font-bold font-mono text-[#1E293B]">{c.tokenNumber}</span>
+                      <span className="text-[#334155]">{c.patientName}</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-[#16A34A] bg-[#DCFCE7] px-2 py-0.5 rounded-full">
+                      COMPLETED
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+
       </div>
 
-      {/* MODAL 1: Walk-In Registration Modal */}
+      {/* New Walk-in Patient Modal */}
       {showWalkinModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-800 border border-slate-700 rounded-3xl p-6 max-w-md w-full shadow-2xl animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-700">
-              <h3 className="text-base font-extrabold text-white flex items-center space-x-2">
-                <UserPlus className="w-5 h-5 text-indigo-400" />
-                <span>Register Walk-In Patient</span>
-              </h3>
-              <button
-                onClick={() => setShowWalkinModal(false)}
-                className="text-slate-400 hover:text-white text-lg font-bold"
-              >
-                ✕
-              </button>
-            </div>
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative">
+            <h3 className="text-lg font-black text-[#1E293B] mb-1">Issue Walk-in Token</h3>
+            <p className="text-xs text-[#64748B] mb-5">
+              Instantly register counter walk-in into active queue.
+            </p>
 
             <form onSubmit={handleRegisterWalkin} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Target Clinic & Doctor</label>
-                <div className="bg-slate-900 border border-slate-700 p-2.5 rounded-xl text-xs font-bold text-emerald-400">
-                  {activeClinicObj?.name} &bull; {activeQueueObj?.doctor?.name || 'General OPD'}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Patient Full Name</label>
+                <label className="block text-xs font-bold text-[#334155] mb-1">Patient Full Name</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Ramesh Kumar"
+                  placeholder="e.g. Ramesh Patel"
                   value={walkinName}
                   onChange={(e) => setWalkinName(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                  className="w-full bg-[#F8FAFC] border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-[#1E293B] font-semibold focus:outline-none focus:border-[#0284C7] focus:bg-white"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Phone Number (WhatsApp)</label>
+                <label className="block text-xs font-bold text-[#334155] mb-1">Mobile Phone (for SMS tracking)</label>
                 <input
                   type="text"
                   required
                   placeholder="+919876543210"
                   value={walkinPhone}
                   onChange={(e) => setWalkinPhone(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 font-mono focus:outline-none focus:border-indigo-500"
+                  className="w-full bg-[#F8FAFC] border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-[#1E293B] font-mono focus:outline-none focus:border-[#0284C7] focus:bg-white"
                 />
               </div>
 
@@ -593,16 +629,16 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowWalkinModal(false)}
-                  className="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 py-2.5 rounded-xl text-xs font-bold transition"
+                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-[#334155] py-2.5 rounded-xl text-xs font-bold transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-xl text-xs font-bold transition shadow-lg shadow-indigo-950/40"
+                  className="flex-1 bg-[#0284C7] hover:bg-[#0369A1] text-white py-2.5 rounded-xl text-xs font-bold transition shadow-sm"
                 >
-                  {isSubmitting ? 'Issuing...' : 'Issue Token'}
+                  {isSubmitting ? 'Issuing...' : 'Generate Token'}
                 </button>
               </div>
             </form>
@@ -610,36 +646,30 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
         </div>
       )}
 
-      {/* MODAL 2: Put On Hold Reason Modal */}
+      {/* Put on Hold Reason Dialog */}
       {holdingTokenId && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-800 border border-slate-700 rounded-3xl p-6 max-w-sm w-full shadow-2xl">
-            <h3 className="text-base font-extrabold text-white mb-2 flex items-center space-x-2">
-              <PauseCircle className="w-5 h-5 text-amber-400" />
-              <span>Put Patient On Hold</span>
-            </h3>
-            <p className="text-xs text-slate-400 mb-4">
-              Enter the reason why this token is being paused:
-            </p>
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 max-w-sm w-full shadow-2xl">
+            <h3 className="text-base font-black text-[#1E293B] mb-1">Place Token On Hold</h3>
+            <p className="text-xs text-[#64748B] mb-4">Select or type reason for holding patient:</p>
 
             <input
               type="text"
-              value={holdReasonInput}
-              onChange={(e) => setHoldReasonInput(e.target.value)}
-              placeholder="e.g. Awaiting blood test report"
-              className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white mb-4 focus:outline-none focus:border-amber-500"
+              value={holdReason}
+              onChange={(e) => setHoldReason(e.target.value)}
+              className="w-full bg-[#F8FAFC] border border-slate-300 rounded-xl px-3 py-2 text-xs text-[#1E293B] font-semibold mb-4 focus:outline-none focus:border-[#0284C7]"
             />
 
             <div className="flex space-x-2">
               <button
                 onClick={() => setHoldingTokenId(null)}
-                className="flex-1 bg-slate-700 text-slate-300 py-2 rounded-xl text-xs font-bold"
+                className="flex-1 bg-slate-100 text-[#334155] py-2 rounded-xl text-xs font-bold"
               >
                 Cancel
               </button>
               <button
-                onClick={() => handleTransition(holdingTokenId, 'ON_HOLD', holdReasonInput)}
-                className="flex-1 bg-amber-600 hover:bg-amber-500 text-white py-2 rounded-xl text-xs font-bold"
+                onClick={() => handleTransition(holdingTokenId, 'ON_HOLD', holdReason)}
+                className="flex-1 bg-[#D97706] hover:bg-[#B45309] text-white py-2 rounded-xl text-xs font-bold shadow-sm"
               >
                 Confirm Hold
               </button>

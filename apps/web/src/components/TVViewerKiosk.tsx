@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Volume2, VolumeX, Radio, Sparkles, AlertTriangle, Monitor } from 'lucide-react';
+import { Volume2, VolumeX, Sparkles } from 'lucide-react';
 import { QueueBottomAd } from './QueueBottomAd';
-
-type DisplayTemplate = 'NOW_SERVING_NEXT' | 'LAST_4_CALLED' | 'SINGLE_LARGE';
 
 interface TVViewerProps {
   clinicSlug?: string;
@@ -17,7 +15,6 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
   clinics = [],
   onSelectClinicId
 }) => {
-  const [template, setTemplate] = useState<DisplayTemplate>('NOW_SERVING_NEXT');
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [clinicName, setClinicName] = useState('ABC Health Clinic');
 
@@ -32,24 +29,14 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
     doctorName: 'Dr. Ramesh Sharma',
   });
 
-  const [recentCalled, setRecentCalled] = useState<Array<{
-    tokenNumber: string;
-    roomNumber: string;
-    doctorName: string;
-  }>>([
-    { tokenNumber: 'A-01', roomNumber: 'Room 101', doctorName: 'Dr. Ramesh Sharma' },
-    { tokenNumber: 'A-02', roomNumber: 'Room 102', doctorName: 'Dr. Ananya Singh' },
-    { tokenNumber: 'W-01', roomNumber: 'Room 101', doctorName: 'Dr. Ramesh Sharma' },
-    { tokenNumber: 'W-02', roomNumber: 'Room 103', doctorName: 'Dr. Rajesh Gupta' },
-  ]);
-
   const [nextWaiting, setNextWaiting] = useState<Array<{
     tokenNumber: string;
     estimatedWaitMinutes: number;
   }>>([
-    { tokenNumber: 'A-03', estimatedWaitMinutes: 12 },
-    { tokenNumber: 'A-04', estimatedWaitMinutes: 24 },
-    { tokenNumber: 'W-03', estimatedWaitMinutes: 36 },
+    { tokenNumber: 'A-02', estimatedWaitMinutes: 10 },
+    { tokenNumber: 'A-03', estimatedWaitMinutes: 20 },
+    { tokenNumber: 'W-01', estimatedWaitMinutes: 30 },
+    { tokenNumber: 'W-02', estimatedWaitMinutes: 40 },
   ]);
 
   const prevTokenRef = useRef<string>('A-01');
@@ -86,7 +73,7 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
     }
   };
 
-  // Poll live queue & active TV advertisements
+  // Poll live queue data
   useEffect(() => {
     const pollTV = () => {
       // 1. Fetch Clinic Details
@@ -146,19 +133,23 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
   }, [audioEnabled, selectedClinicId]);
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-950 text-white p-4 sm:p-6 md:p-8 select-none overflow-hidden justify-between">
+    <div className="flex-1 flex flex-col bg-[#F8FAFC] text-[#334155] p-4 sm:p-6 md:p-8 select-none justify-between min-h-[calc(100vh-50px)]">
       {/* Header Bar */}
-      <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
-        <div className="flex items-center space-x-3">
-          <span className="text-3xl">🏥</span>
+      <div className="flex items-center justify-between bg-white border border-slate-200/80 rounded-2xl p-4 sm:px-6 shadow-sm mb-6">
+        <div className="flex items-center space-x-4">
+          <div className="w-12 h-12 rounded-2xl bg-[#E0F2FE] border border-[#0284C7]/20 flex items-center justify-center text-2xl">
+            🏥
+          </div>
           <div>
-            <div className="flex items-center space-x-2">
-              <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white">{clinicName}</h1>
+            <div className="flex items-center space-x-3">
+              <h1 className="text-xl md:text-2xl font-black tracking-tight text-[#1E293B]">
+                {clinicName}
+              </h1>
               {clinics.length > 1 && onSelectClinicId && (
                 <select
                   value={selectedClinicId}
                   onChange={(e) => onSelectClinicId(e.target.value)}
-                  className="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1 font-medium focus:ring-1 focus:ring-emerald-500 outline-none cursor-pointer"
+                  className="bg-[#F8FAFC] border border-slate-300 text-[#1E293B] text-xs rounded-lg px-2.5 py-1 font-bold focus:ring-2 focus:ring-[#0284C7] outline-none cursor-pointer"
                 >
                   {clinics.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -168,48 +159,23 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
                 </select>
               )}
             </div>
-            <p className="text-xs text-slate-400">Waiting Hall Live Token Kiosk Screen</p>
+            <p className="text-xs text-[#64748B] font-medium mt-0.5">
+              Live Token Waiting Hall Screen &bull; Chamber Routing
+            </p>
           </div>
         </div>
 
-        {/* Controls Bar: Sound Toggle + Template Selector */}
+        {/* Chime Sound Control */}
         <div className="flex items-center space-x-3">
-          <div className="hidden sm:flex items-center space-x-1.5 bg-slate-900 border border-slate-800 p-1 rounded-xl text-xs">
-            <button
-              onClick={() => setTemplate('NOW_SERVING_NEXT')}
-              className={`px-3 py-1.5 rounded-lg font-bold transition ${
-                template === 'NOW_SERVING_NEXT' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Template 1: Now Serving + Next
-            </button>
-            <button
-              onClick={() => setTemplate('LAST_4_CALLED')}
-              className={`px-3 py-1.5 rounded-lg font-bold transition ${
-                template === 'LAST_4_CALLED' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Template 2: Last 4
-            </button>
-            <button
-              onClick={() => setTemplate('SINGLE_LARGE')}
-              className={`px-3 py-1.5 rounded-lg font-bold transition ${
-                template === 'SINGLE_LARGE' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Template 3: Large Token
-            </button>
-          </div>
-
           <button
             onClick={() => {
               setAudioEnabled(!audioEnabled);
               if (!audioEnabled) playChime();
             }}
-            className={`flex items-center space-x-2 px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+            className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold transition shadow-sm ${
               audioEnabled
-                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
-                : 'bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse'
+                ? 'bg-[#16A34A]/10 text-[#16A34A] border border-[#16A34A]/30'
+                : 'bg-[#D97706]/10 text-[#D97706] border border-[#D97706]/30'
             }`}
           >
             {audioEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
@@ -218,131 +184,76 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
         </div>
       </div>
 
-      {/* Main Kiosk Content Area */}
+      {/* Main Kiosk Content Area - Single Unified Default Template (Now Serving + Next in Line) */}
       <div className="flex-1 flex flex-col justify-center my-auto">
-        {/* TEMPLATE 1: NOW SERVING + NEXT LIST */}
-        {template === 'NOW_SERVING_NEXT' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
-            {/* Left Big Serving Box (2/3) */}
-            <div className="md:col-span-2 bg-gradient-to-b from-slate-900 to-slate-900/90 border-4 border-emerald-500/50 rounded-3xl p-8 md:p-12 shadow-2xl flex flex-col justify-between text-center relative overflow-hidden">
-              <div className="flex justify-between items-center">
-                <span className="bg-emerald-500 text-slate-950 font-black uppercase tracking-widest text-xs px-4 py-1.5 rounded-full">
-                  🔔 NOW SERVING
-                </span>
-                <span className="text-emerald-400 font-mono text-sm font-bold flex items-center space-x-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
-                  <span>LIVE</span>
-                </span>
-              </div>
-
-              <div className="my-auto py-10">
-                <div className="text-8xl sm:text-9xl md:text-[11rem] font-black font-mono tracking-tight text-white drop-shadow-2xl">
-                  {currentServing.tokenNumber}
-                </div>
-                <div className="text-2xl sm:text-3xl font-extrabold text-emerald-400 mt-4 flex items-center justify-center space-x-3">
-                  <span>📍 {currentServing.roomNumber}</span>
-                  <span className="text-slate-600">&bull;</span>
-                  <span className="text-slate-200">{currentServing.doctorName}</span>
-                </div>
-              </div>
-
-              <div className="text-xs uppercase tracking-widest text-slate-400 font-bold border-t border-slate-800 pt-3">
-                Please proceed directly inside when called
-              </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+          
+          {/* Left Hero Box (2/3): NOW SERVING Counter */}
+          <div className="lg:col-span-2 bg-white border-2 border-[#0284C7]/40 rounded-3xl p-8 md:p-12 shadow-lg flex flex-col justify-between text-center relative overflow-hidden">
+            {/* Top Indicator */}
+            <div className="flex justify-between items-center">
+              <span className="bg-[#16A34A] text-white font-black uppercase tracking-widest text-xs px-4 py-1.5 rounded-full shadow-sm">
+                🔔 NOW SERVING
+              </span>
+              <span className="text-[#0284C7] font-mono text-xs font-bold flex items-center space-x-1.5 bg-[#E0F2FE] px-3 py-1 rounded-full border border-[#0284C7]/20">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#16A34A] animate-ping" />
+                <span>LIVE CHAMBER ROUTING</span>
+              </span>
             </div>
 
-            {/* Right Next Waiting Box (1/3) */}
-            <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 flex flex-col justify-between shadow-xl">
-              <div>
-                <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 border-b border-slate-800 pb-3 mb-4 flex items-center justify-between">
-                  <span>⏳ NEXT IN LINE</span>
-                  <span className="text-emerald-400 font-mono">ESTIMATED</span>
-                </h3>
-
-                <div className="space-y-3">
-                  {nextWaiting.map((item, idx) => (
-                    <div
-                      key={idx}
-                      className="bg-slate-950/80 border border-slate-800 p-4 rounded-2xl flex items-center justify-between"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <span className="text-xs font-mono text-slate-500 font-bold">#{idx + 1}</span>
-                        <span className="text-3xl font-black font-mono text-white">{item.tokenNumber}</span>
-                      </div>
-                      <span className="text-xs font-bold text-emerald-400 bg-emerald-950/50 px-2.5 py-1 rounded-lg border border-emerald-900/40">
-                        ~{item.estimatedWaitMinutes} min
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="text-center text-[11px] text-slate-500 border-t border-slate-800 pt-3 mt-4">
-                Smart Display Sync &bull; Auto 3s Heartbeat
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* TEMPLATE 2: LAST 4 CALLED TOKENS (2x2 GRID) */}
-        {template === 'LAST_4_CALLED' && (
-          <div className="grid grid-cols-2 gap-6 items-stretch">
-            {recentCalled.slice(0, 4).map((entry, idx) => (
-              <div
-                key={idx}
-                className={`rounded-3xl p-8 flex flex-col justify-between border-4 shadow-2xl ${
-                  idx === 0
-                    ? 'bg-slate-900 border-emerald-500 shadow-emerald-950/40'
-                    : 'bg-slate-900/60 border-slate-800'
-                }`}
-              >
-                <div className="flex justify-between items-center">
-                  <span
-                    className={`text-xs font-black uppercase tracking-wider px-3 py-1 rounded-full ${
-                      idx === 0 ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-300'
-                    }`}
-                  >
-                    {idx === 0 ? 'CURRENT' : `CALLED #${idx + 1}`}
-                  </span>
-                  <span className="text-sm font-bold text-slate-400 font-mono">{entry.roomNumber}</span>
-                </div>
-
-                <div className="text-center py-6">
-                  <div className="text-8xl font-black font-mono text-white tracking-tight">
-                    {entry.tokenNumber}
-                  </div>
-                  <div className="text-xl font-bold text-slate-200 mt-2">{entry.doctorName}</div>
-                </div>
-
-                <div className="text-center text-xs text-slate-500 uppercase tracking-widest font-semibold">
-                  {idx === 0 ? 'Proceed inside' : 'Previously called'}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* TEMPLATE 3: SINGLE LARGE TOKEN */}
-        {template === 'SINGLE_LARGE' && (
-          <div className="bg-slate-900/90 border-4 border-emerald-500/70 rounded-3xl p-12 flex flex-col justify-between items-center text-center shadow-2xl min-h-[440px]">
-            <span className="bg-emerald-500 text-slate-950 font-black uppercase tracking-widest text-base px-6 py-2 rounded-full">
-              🔔 NOW SERVING
-            </span>
-
-            <div className="my-auto py-8">
-              <div className="text-[13rem] sm:text-[15rem] leading-none font-black font-mono text-white tracking-tighter drop-shadow-2xl">
+            {/* Huge Token Number Display */}
+            <div className="my-auto py-10">
+              <div className="text-8xl sm:text-9xl md:text-[11rem] font-black font-mono tracking-tight text-[#1E293B]">
                 {currentServing.tokenNumber}
               </div>
-              <div className="text-4xl font-extrabold text-emerald-400 mt-6">
-                {currentServing.roomNumber} &bull; <span className="text-slate-200">{currentServing.doctorName}</span>
+              <div className="text-2xl sm:text-3xl font-extrabold text-[#0284C7] mt-4 flex items-center justify-center space-x-3">
+                <span className="bg-[#E0F2FE] text-[#0284C7] px-4 py-1.5 rounded-2xl font-bold">
+                  📍 {currentServing.roomNumber}
+                </span>
+                <span className="text-slate-300">&bull;</span>
+                <span className="text-[#334155]">{currentServing.doctorName}</span>
               </div>
             </div>
 
-            <div className="text-sm font-bold text-slate-400 uppercase tracking-widest">
-              Please enter doctor consultation chamber
+            {/* Instructions */}
+            <div className="text-xs uppercase tracking-widest text-[#64748B] font-bold border-t border-slate-100 pt-4">
+              Please proceed directly to the doctor consultation chamber
             </div>
           </div>
-        )}
+
+          {/* Right Box (1/3): NEXT IN LINE */}
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-6 flex flex-col justify-between shadow-md">
+            <div>
+              <h3 className="text-xs font-black uppercase tracking-wider text-[#1E293B] border-b border-slate-100 pb-3 mb-4 flex items-center justify-between">
+                <span>⏳ NEXT IN LINE</span>
+                <span className="text-[#0284C7] font-mono font-bold text-[11px] bg-[#E0F2FE] px-2 py-0.5 rounded">
+                  ESTIMATED WAIT
+                </span>
+              </h3>
+
+              <div className="space-y-3">
+                {nextWaiting.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="bg-[#F8FAFC] border border-slate-200/80 p-4 rounded-2xl flex items-center justify-between transition hover:border-[#0284C7]/40"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <span className="text-xs font-mono text-[#94A3B8] font-bold">#{idx + 1}</span>
+                      <span className="text-3xl font-black font-mono text-[#1E293B]">{item.tokenNumber}</span>
+                    </div>
+                    <span className="text-xs font-bold text-[#0284C7] bg-[#E0F2FE] px-3 py-1 rounded-xl border border-[#0284C7]/20">
+                      ~{item.estimatedWaitMinutes} min
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="text-center text-[11px] text-[#64748B] font-medium border-t border-slate-100 pt-3 mt-4">
+              Heartbeat Sync Active &bull; Real-time Token Refresh
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Optimized Minimal TV Banner Ad Space (Strictly Underneath Queue System) */}
