@@ -1,15 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Volume2, VolumeX, Radio, Sparkles, AlertTriangle, Monitor } from 'lucide-react';
+import { QueueBottomAd } from './QueueBottomAd';
 
 type DisplayTemplate = 'NOW_SERVING_NEXT' | 'LAST_4_CALLED' | 'SINGLE_LARGE';
-
-interface ActiveAd {
-  id: string;
-  title: string;
-  imageUrl: string;
-  targetUrl?: string | null;
-  placement: string;
-}
 
 interface TVViewerProps {
   clinicSlug?: string;
@@ -27,7 +20,6 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
   const [template, setTemplate] = useState<DisplayTemplate>('NOW_SERVING_NEXT');
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [clinicName, setClinicName] = useState('ABC Health Clinic');
-  const [activeAd, setActiveAd] = useState<ActiveAd | null>(null);
 
   // TV Snapshot State
   const [currentServing, setCurrentServing] = useState<{
@@ -144,16 +136,6 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
                   }
                 });
             });
-
-          // 4. Fetch Active TV Banner Ad
-          fetch(`/api/ads/TV_VIEWER_BOTTOM?clinicId=${clinic.id}`)
-            .then((r) => r.json())
-            .then((adRes) => {
-              if (adRes.success && adRes.data) {
-                setActiveAd(adRes.data);
-              }
-            })
-            .catch(() => {});
         })
         .catch(() => {});
     };
@@ -363,28 +345,12 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
         )}
       </div>
 
-      {/* Bottom TV Ad Slot / Network Banner (M11 & Phase 3 Dynamic Targeting) */}
-      <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-        {activeAd ? (
-          <div className="w-full bg-slate-900/90 border border-slate-800 rounded-2xl p-2.5 flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <span className="bg-indigo-500/20 text-indigo-400 text-[10px] font-black uppercase px-2 py-0.5 rounded">
-                SPONSORED
-              </span>
-              <span className="font-semibold text-slate-200">{activeAd.title}</span>
-            </div>
-            <span className="text-[11px] text-slate-500">QueueApp Display Network</span>
-          </div>
-        ) : (
-          <div className="w-full flex justify-between items-center text-slate-500 text-[11px]">
-            <div className="flex items-center space-x-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Smart TV Kiosk Active &bull; Refresh Rate 3s &bull; Anti-Burn In Safe</span>
-            </div>
-            <div>Powered by QueueApp SaaS</div>
-          </div>
-        )}
-      </div>
+      {/* Optimized Minimal TV Banner Ad Space (Strictly Underneath Queue System) */}
+      <QueueBottomAd
+        clinicId={selectedClinicId}
+        refreshIntervalSeconds={45}
+        showFallbackOnNoFill={true}
+      />
     </div>
   );
 };
