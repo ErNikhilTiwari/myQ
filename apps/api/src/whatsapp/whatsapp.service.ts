@@ -11,6 +11,8 @@ import {
   WhatsAppMessageDto,
   WhatsAppWebhookPayload,
   WhatsAppMessageStatus,
+  WhatsAppBotState,
+  BotReplyDto,
 } from '@queueapp/shared';
 import * as crypto from 'crypto';
 import { customAlphabet } from 'nanoid';
@@ -50,14 +52,12 @@ export class WhatsAppService {
       throw new NotFoundException(`Clinic with ID "${dto.clinicId}" not found.`);
     }
 
-    // Try to associate with user if phone exists
     const user = await this.prisma.user.findFirst({
       where: { phoneNumber: dto.recipientPhone },
     });
 
     const gatewayMessageId = `wam_${nanoid()}`;
 
-    // Render simulated message body from template
     let content = `[Template: ${dto.templateName}] `;
     if (dto.templateName === 'appointment_confirmed') {
       content += `Hello! Your appointment with ${clinic.name} is confirmed for ${dto.parameters.slotTime || 'your slot'}.`;
@@ -81,7 +81,6 @@ export class WhatsAppService {
     });
 
     this.logger.log(`📤 Dispatched WhatsApp Template "${dto.templateName}" to ${dto.recipientPhone}`);
-
     return this.mapToDto(message);
   }
 
@@ -121,8 +120,391 @@ export class WhatsAppService {
   }
 
   /**
+   * Conversation State Machine Processor for WhatsApp Chatbot (Phase 2, Section 14-19, 53)
+   */
+  async processChatbotMessage(
+    clinicId: string,
+    phoneNumber: string,
+    inputText: string,
+  ): Promise<BotReplyDto> {
+    const cleanText = (inputText || '').trim();
+    const lower = cleanText.toLowerCase();
+
+    // 1. Get or create session
+    let session = await this.prisma.whatsAppConversation.findUnique({
+      where: { clinicId_phoneNumber: { clinicId, phoneNumber } },
+    });
+
+    if (!session) {
+      const user = await this.prisma.user.findFirst({ where: { phoneNumber } });
+      session = await this.prisma.whatsAppConversation.create({
+        data: {
+          clinicId,
+          userId: user ? user.id : null,
+          phoneNumber,
+          currentState: 'IDLE',
+          lastActiveAt: new Date(),
+        },
+      });
+    }
+
+    let context = session.contextData ? JSON.parse(session.contextData) : {};
+
+    // 2. Global command handlers: 0, menu, back, cancel, help
+    if (lower === '0' || lower === 'menu' || lower === 'cancel') {
+      await this.prisma.whatsAppConversation.update({
+        where: { id: session.id },
+        data: { currentState: 'IDLE', contextData: null, lastActiveAt: new Date() },
+      });
+      return this.renderMainMenu();
+    }
+
+    if (lower === 'help') {
+      return {
+        replyText:
+          '💡 *QueueApp Help & Commands*\n\n' +
+          '• Type *menu* or *0* to return to the main menu anytime.\n' +
+          '• Type *cancel* to abort your current action.\n' +
+          '• Reply with the number corresponding to your option.\n' +
+          '• Need human assistance? Contact clinic reception directly.',
+        nextState: session.currentState as WhatsAppBotState,
+      };
+    }
+
+    const state = session.currentState;
+
+    // 3. State Machine Transitions
+    switch (state) {
+      case 'IDLE': {
+        if (lower === 'hi' || lower === 'hello' || lower === 'hey') {
+          return this.renderMainMenu();
+        }
+
+        // Option 1: Check Queue / Status
+        if (cleanText === '1' || lower.includes('queue') || lower.includes('status')) {
+          const user = await this.prisma.user.findFirst({ where: { phoneNumber } });
+          if (!user) {
+            return {
+              replyText:
+                '⚠️ No active registration found for your number. Please register first by typing *5* or *register*.',
+              nextState: 'IDLE',
+            };
+          }
+
+          const activeToken = await this.prisma.queueEntry.findFirst({
+            where: {
+              userId: user.id,
+              status: { in: ['WAITING', 'CALLED', 'IN_SERVICE', 'ON_HOLD'] },
+            },
+            include: { queue: { include: { clinic: true, doctor: true } } },
+            orderBy: { createdAt: 'desc' },
+          });
+
+          if (!activeToken) {
+            return {
+              replyText:
+                'ℹ️ You have no active tokens in the queue today.\n\nType *2* to book a new appointment or *0* for main menu.',
+              nextState: 'IDLE',
+            };
+          }
+
+          // Count people ahead
+          const peopleAhead = await this.prisma.queueEntry.count({
+            where: {
+              queueId: activeToken.queueId,
+              status: 'WAITING',
+              sequenceNumber: { lt: activeToken.sequenceNumber },
+            },
+          });
+
+          return {
+            replyText:
+              `🏥 *${activeToken.queue.clinic.name}*\n` +
+              `👨‍⚕️ Doctor: ${activeToken.queue.doctor?.name || 'General OPD'}\n\n` +
+              `🎟️ *Your Token: ${activeToken.tokenNumber}*\n` +
+              `📊 Status: ${activeToken.status}\n` +
+              `👥 People Ahead: ${peopleAhead}\n` +
+              `⏳ Est. Waiting Time: ~${activeToken.estimatedWait || 15} minutes\n\n` +
+              `Type *0* to return to main menu.`,
+            nextState: 'IDLE',
+          };
+        }
+
+        // Option 2: Book Appointment
+        if (cleanText === '2' || lower.includes('book')) {
+          const doctors = await this.prisma.doctor.findMany({
+            where: { clinicId, isActive: true },
+          });
+
+          if (doctors.length === 0) {
+            return {
+              replyText: 'Sorry, no doctors are currently available for booking. Type *0* for menu.',
+              nextState: 'IDLE',
+            };
+          }
+
+          let doctorListText = '👨‍⚕️ *Select a Doctor:*\n\n';
+          doctors.forEach((d, idx) => {
+            doctorListText += `${idx + 1}. ${d.name} (${d.specialization})\n`;
+          });
+          doctorListText += '\nReply with doctor number (e.g. 1):';
+
+          context.availableDoctors = doctors.map((d) => ({ id: d.id, name: d.name }));
+          await this.prisma.whatsAppConversation.update({
+            where: { id: session.id },
+            data: {
+              currentState: 'SELECT_DOCTOR',
+              contextData: JSON.stringify(context),
+              lastActiveAt: new Date(),
+            },
+          });
+
+          return {
+            replyText: doctorListText,
+            nextState: 'SELECT_DOCTOR',
+          };
+        }
+
+        // Option 3: My Appointments
+        if (cleanText === '3' || lower.includes('appointment')) {
+          const user = await this.prisma.user.findFirst({ where: { phoneNumber } });
+          if (!user) {
+            return {
+              replyText: 'No account registered with this number. Type *5* to register.',
+              nextState: 'IDLE',
+            };
+          }
+
+          const appts = await this.prisma.appointment.findMany({
+            where: { userId: user.id, status: { in: ['CONFIRMED', 'PENDING'] } },
+            include: { doctor: true, clinic: true },
+            orderBy: { slotTime: 'asc' },
+            take: 3,
+          });
+
+          if (appts.length === 0) {
+            return {
+              replyText: 'You have no upcoming appointments scheduled. Type *2* to book one.',
+              nextState: 'IDLE',
+            };
+          }
+
+          let msg = '📅 *Your Upcoming Appointments:*\n\n';
+          appts.forEach((a, i) => {
+            msg += `${i + 1}. ${a.clinic.name} - ${a.doctor?.name || 'OPD'}\n   🕒 ${a.slotTime.toLocaleString()}\n   Status: ${a.status}\n\n`;
+          });
+          msg += 'Type *0* for main menu.';
+          return { replyText: msg, nextState: 'IDLE' };
+        }
+
+        // Option 4: Register Patient
+        if (cleanText === '5' || lower.includes('register')) {
+          await this.prisma.whatsAppConversation.update({
+            where: { id: session.id },
+            data: { currentState: 'REGISTER_NAME', contextData: null, lastActiveAt: new Date() },
+          });
+
+          return {
+            replyText: '📝 *Patient Registration*\n\nPlease reply with your full name (e.g. Rahul Sharma):',
+            nextState: 'REGISTER_NAME',
+          };
+        }
+
+        // Default Main Menu
+        return this.renderMainMenu();
+      }
+
+      case 'SELECT_DOCTOR': {
+        const choice = parseInt(cleanText, 10);
+        const docs = context.availableDoctors || [];
+
+        if (isNaN(choice) || choice < 1 || choice > docs.length) {
+          return {
+            replyText: `Invalid choice. Please reply with a number between 1 and ${docs.length}, or *0* to cancel:`,
+            nextState: 'SELECT_DOCTOR',
+          };
+        }
+
+        const selectedDoctor = docs[choice - 1];
+        context.selectedDoctorId = selectedDoctor.id;
+        context.selectedDoctorName = selectedDoctor.name;
+
+        // Generate 3 sample tomorrow slots
+        const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        const slot1 = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate(), 10, 0, 0);
+        const slot2 = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate(), 11, 30, 0);
+        const slot3 = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate(), 16, 0, 0);
+
+        context.availableSlots = [
+          slot1.toISOString(),
+          slot2.toISOString(),
+          slot3.toISOString(),
+        ];
+
+        let slotMsg = `🕒 *Available Slots for ${selectedDoctor.name}:*\n\n`;
+        slotMsg += `1. Tomorrow 10:00 AM\n`;
+        slotMsg += `2. Tomorrow 11:30 AM\n`;
+        slotMsg += `3. Tomorrow 04:00 PM\n\n`;
+        slotMsg += `Reply with slot number (1-3):`;
+
+        await this.prisma.whatsAppConversation.update({
+          where: { id: session.id },
+          data: {
+            currentState: 'SELECT_SLOT',
+            contextData: JSON.stringify(context),
+            lastActiveAt: new Date(),
+          },
+        });
+
+        return { replyText: slotMsg, nextState: 'SELECT_SLOT' };
+      }
+
+      case 'SELECT_SLOT': {
+        const slotChoice = parseInt(cleanText, 10);
+        const slots = context.availableSlots || [];
+
+        if (isNaN(slotChoice) || slotChoice < 1 || slotChoice > slots.length) {
+          return {
+            replyText: `Invalid selection. Please choose 1, 2, or 3, or type *0* to cancel:`,
+            nextState: 'SELECT_SLOT',
+          };
+        }
+
+        const chosenSlot = slots[slotChoice - 1];
+        context.selectedSlot = chosenSlot;
+
+        const confirmMsg =
+          `📋 *Confirm Booking Details:*\n\n` +
+          `• Doctor: ${context.selectedDoctorName}\n` +
+          `• Slot: ${new Date(chosenSlot).toLocaleString()}\n` +
+          `• Consultation Fee: ₹500 (Pay at Clinic)\n\n` +
+          `Reply *1* to Confirm\n` +
+          `Reply *0* to Cancel`;
+
+        await this.prisma.whatsAppConversation.update({
+          where: { id: session.id },
+          data: {
+            currentState: 'CONFIRM_BOOKING',
+            contextData: JSON.stringify(context),
+            lastActiveAt: new Date(),
+          },
+        });
+
+        return { replyText: confirmMsg, nextState: 'CONFIRM_BOOKING' };
+      }
+
+      case 'CONFIRM_BOOKING': {
+        if (cleanText === '1' || lower === 'yes' || lower === 'confirm') {
+          // Book appointment in database
+          let user = await this.prisma.user.findFirst({ where: { phoneNumber } });
+          if (!user) {
+            user = await this.prisma.user.create({
+              data: {
+                phoneNumber,
+                name: 'WhatsApp Patient',
+                role: 'PATIENT',
+              },
+            });
+          }
+
+          const appointment = await this.prisma.appointment.create({
+            data: {
+              clinicId,
+              userId: user.id,
+              doctorId: context.selectedDoctorId,
+              slotTime: new Date(context.selectedSlot),
+              status: 'CONFIRMED',
+              bookingFee: 500,
+              paymentStatus: 'PENDING',
+            },
+          });
+
+          await this.prisma.whatsAppConversation.update({
+            where: { id: session.id },
+            data: { currentState: 'IDLE', contextData: null, lastActiveAt: new Date() },
+          });
+
+          return {
+            replyText:
+              `🎉 *Appointment Confirmed!*\n\n` +
+              `Appointment ID: #${appointment.id.slice(0, 8)}\n` +
+              `Doctor: ${context.selectedDoctorName}\n` +
+              `Date & Time: ${new Date(context.selectedSlot).toLocaleString()}\n\n` +
+              `We have reserved your slot. When you reach the clinic, show this message to reception to receive your token!\n\n` +
+              `Type *0* for main menu.`,
+            nextState: 'IDLE',
+          };
+        }
+
+        return {
+          replyText: 'Booking not confirmed. Type *1* to confirm or *0* to cancel.',
+          nextState: 'CONFIRM_BOOKING',
+        };
+      }
+
+      case 'REGISTER_NAME': {
+        if (cleanText.length < 2) {
+          return {
+            replyText: 'Please enter a valid name (at least 2 letters):',
+            nextState: 'REGISTER_NAME',
+          };
+        }
+
+        const user = await this.prisma.user.upsert({
+          where: { phoneNumber },
+          update: { name: cleanText },
+          create: {
+            phoneNumber,
+            name: cleanText,
+            role: 'PATIENT',
+          },
+        });
+
+        await this.prisma.whatsAppConversation.update({
+          where: { id: session.id },
+          data: {
+            userId: user.id,
+            currentState: 'IDLE',
+            contextData: null,
+            lastActiveAt: new Date(),
+          },
+        });
+
+        return {
+          replyText:
+            `✅ *Registration Successful!*\n\nWelcome, ${user.name}! Your WhatsApp number is now linked to your QueueApp profile.\n\n` +
+            `Type *0* to view the main menu.`,
+          nextState: 'IDLE',
+        };
+      }
+
+      default:
+        await this.prisma.whatsAppConversation.update({
+          where: { id: session.id },
+          data: { currentState: 'IDLE', contextData: null, lastActiveAt: new Date() },
+        });
+        return this.renderMainMenu();
+    }
+  }
+
+  private renderMainMenu(): BotReplyDto {
+    return {
+      replyText:
+        '👋 *Welcome to QueueApp!*\n\n' +
+        'Please select an option by typing the number:\n\n' +
+        '1️⃣  *My Queue Status* (live position & wait time)\n' +
+        '2️⃣  *Book Appointment*\n' +
+        '3️⃣  *My Appointments*\n' +
+        '5️⃣  *Register / Update Name*\n' +
+        '❓  *Help*\n\n' +
+        'Reply with 1, 2, 3, 5, or Help.',
+      nextState: 'IDLE',
+      quickReplies: ['1', '2', '3', '5'],
+    };
+  }
+
+  /**
    * Process Inbound WhatsApp Webhook (POST /api/webhooks/whatsapp)
-   * Enforces HMAC-SHA256 signature verification (X-Hub-Signature-256) and idempotency.
    */
   async handleWebhook(
     rawBody: Buffer | string,
@@ -135,7 +517,6 @@ export class WhatsAppService {
 
     const bodyString = typeof rawBody === 'string' ? rawBody : rawBody.toString('utf8');
 
-    // Expected signature format: "sha256=<hex_digest>"
     const expectedSignature =
       'sha256=' +
       crypto
@@ -148,22 +529,19 @@ export class WhatsAppService {
       throw new BadRequestException('Invalid webhook signature.');
     }
 
-    // Process entry changes
     for (const entry of payload.entry || []) {
       for (const change of entry.changes || []) {
         const val = change.value;
 
-        // 1. Process delivery / read statuses
+        // 1. Delivery / read statuses
         if (val.statuses && val.statuses.length > 0) {
           for (const statusUpdate of val.statuses) {
             const idempotencyKey = `wa_status_${statusUpdate.id}_${statusUpdate.status}`;
 
-            // Check if already processed
             const existing = await this.prisma.whatsAppMessage.findFirst({
               where: { idempotencyKey },
             });
             if (existing) {
-              this.logger.log(`🔁 Webhook status update duplicate skipped: ${idempotencyKey}`);
               return { processed: true, duplicate: true };
             }
 
@@ -175,12 +553,10 @@ export class WhatsAppService {
                 idempotencyKey,
               },
             });
-
-            this.logger.log(`📬 Message ${statusUpdate.id} updated status to ${mappedStatus}`);
           }
         }
 
-        // 2. Process inbound patient messages
+        // 2. Inbound patient messages -> Handled via Conversation State Machine!
         if (val.messages && val.messages.length > 0) {
           for (const incoming of val.messages) {
             const idempotencyKey = `wa_inbound_${incoming.id}`;
@@ -192,19 +568,18 @@ export class WhatsAppService {
               return { processed: true, duplicate: true };
             }
 
-            // Find clinic by display phone or fallback to first clinic
             let clinic = await this.prisma.clinic.findFirst();
             if (!clinic) continue;
 
-            const user = await this.prisma.user.findFirst({
-              where: { phoneNumber: `+${incoming.from}` },
-            });
+            const phone = `+${incoming.from}`;
+            const user = await this.prisma.user.findFirst({ where: { phoneNumber: phone } });
 
+            // Record inbound message
             await this.prisma.whatsAppMessage.create({
               data: {
                 clinicId: clinic.id,
                 userId: user ? user.id : null,
-                phoneNumber: `+${incoming.from}`,
+                phoneNumber: phone,
                 direction: 'INBOUND',
                 messageType: incoming.type.toUpperCase(),
                 content: incoming.text?.body || '[Non-text message]',
@@ -214,7 +589,21 @@ export class WhatsAppService {
               },
             });
 
-            this.logger.log(`📥 Received inbound message from ${incoming.from}: "${incoming.text?.body}"`);
+            // Process conversation turn and reply back!
+            if (incoming.text?.body) {
+              const botReply = await this.processChatbotMessage(
+                clinic.id,
+                phone,
+                incoming.text.body,
+              );
+
+              // Dispatch outbound bot reply
+              await this.sendMessage({
+                clinicId: clinic.id,
+                recipientPhone: phone,
+                messageText: botReply.replyText,
+              });
+            }
           }
         }
       }

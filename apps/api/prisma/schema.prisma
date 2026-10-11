@@ -22,8 +22,9 @@ model User {
   queueEntries   QueueEntry[]
   appointments     Appointment[]
   payments         Payment[]
-  whatsappMessages WhatsAppMessage[]
-  auditLogs        AuditLog[]
+  whatsappMessages      WhatsAppMessage[]
+  whatsappConversations WhatsAppConversation[]
+  auditLogs             AuditLog[]
 
   @@index([phoneNumber])
   @@index([role])
@@ -60,9 +61,11 @@ model Clinic {
   payments       Payment[]
   displayDevices DisplayDevice[]
   announcements    Announcement[]
-  whatsappMessages WhatsAppMessage[]
-  advertisements   Advertisement[]
-  auditLogs        AuditLog[]
+  whatsappMessages      WhatsAppMessage[]
+  whatsappConversations WhatsAppConversation[]
+  advertisements        Advertisement[]
+  subscriptions         Subscription[]
+  auditLogs             AuditLog[]
 
   @@index([slug])
 }
@@ -340,4 +343,42 @@ model AdClick {
   ad Advertisement @relation(fields: [adId], references: [id], onDelete: Cascade)
 
   @@index([adId])
+}
+
+model WhatsAppConversation {
+  id           String    @id @default(uuid())
+  clinicId     String
+  userId       String?
+  phoneNumber  String
+  currentState String    @default("IDLE") // IDLE, REGISTER_NAME, SELECT_CLINIC, SELECT_DOCTOR, SELECT_SLOT, CONFIRM_BOOKING, CANCEL_SELECT, AWAITING_FEEDBACK
+  contextData  String?   // JSON session state (e.g. selected doctorId, date, slotTime)
+  lastActiveAt DateTime  @default(now())
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([clinicId, phoneNumber])
+  @@index([phoneNumber])
+}
+
+model Subscription {
+  id          String    @id @default(uuid())
+  clinicId    String
+  plan        String    @default("FREE") // FREE, BASIC, PROFESSIONAL, ENTERPRISE
+  status      String    @default("ACTIVE") // ACTIVE, PAST_DUE, CANCELLED, EXPIRED
+  startDate   DateTime  @default(now())
+  endDate     DateTime?
+  maxDoctors  Int       @default(2)
+  maxStaff    Int       @default(5)
+  maxDisplays Int       @default(1)
+  hasAds      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@index([clinicId])
+  @@index([status])
 }

@@ -69,3 +69,34 @@ export interface WhatsAppWebhookPayload {
     }>;
   }>;
 }
+
+export type WhatsAppBotState =
+  | 'IDLE'
+  | 'REGISTER_NAME'
+  | 'SELECT_CLINIC'
+  | 'SELECT_DOCTOR'
+  | 'SELECT_SLOT'
+  | 'CONFIRM_BOOKING'
+  | 'CANCEL_SELECT'
+  | 'AWAITING_FEEDBACK';
+
+export interface WhatsAppConversationSessionDto {
+  id: string;
+  clinicId: string;
+  phoneNumber: string;
+  currentState: WhatsAppBotState;
+  contextData?: Record<string, any>;
+  lastActiveAt: string;
+}
+
+export interface SimulateInboundMessageDto {
+  clinicId?: string;
+  phoneNumber: string;
+  messageText: string;
+}
+
+export interface BotReplyDto {
+  replyText: string;
+  nextState: WhatsAppBotState;
+  quickReplies?: string[];
+}

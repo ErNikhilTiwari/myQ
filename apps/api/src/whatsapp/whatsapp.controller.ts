@@ -60,6 +60,24 @@ export class WhatsAppController {
   }
 
   /**
+   * 2b. Direct simulation endpoint for interactive chatbot testing and debugging
+   */
+  @Post('clinics/:clinicId/whatsapp/simulate-chat')
+  @HttpCode(HttpStatus.OK)
+  async simulateChat(
+    @Param('clinicId') clinicId: string,
+    @Body('phoneNumber') phoneNumber: string,
+    @Body('messageText') messageText: string,
+  ): Promise<ApiResponse> {
+    const data = await this.whatsAppService.processChatbotMessage(
+      clinicId,
+      phoneNumber,
+      messageText,
+    );
+    return { success: true, data };
+  }
+
+  /**
    * 3. Send WhatsApp Template Notification (Staff)
    */
   @Post('clinics/:clinicId/whatsapp/send-template')
