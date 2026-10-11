@@ -213,25 +213,29 @@ export class QueuesService {
         throw new BadRequestException('Queue is paused. Please resume queue before calling next patient.');
       }
 
-      // Automatically complete any token currently in CALLED or IN_SERVICE
-      const currentlyServing = await tx.queueEntry.findFirst({
+      // Automatically complete all tokens currently in CALLED or IN_SERVICE
+      const servingEntries = await tx.queueEntry.findMany({
         where: {
           queueId,
           status: { in: [QueueEntryStatus.CALLED, QueueEntryStatus.IN_SERVICE] },
         },
-        orderBy: { sequenceNumber: 'asc' },
       });
 
       let previousCompleted = false;
-      if (currentlyServing) {
-        await tx.queueEntry.update({
-          where: { id: currentlyServing.id },
+      if (servingEntries.length > 0) {
+        await tx.queueEntry.updateMany({
+          where: {
+            id: { in: servingEntries.map((e) => e.id) },
+          },
           data: {
             status: QueueEntryStatus.COMPLETED,
             completedAt: new Date(),
           },
         });
         previousCompleted = true;
+        this.logger.log(
+          `✅ Auto-completed previous patient(s) (${servingEntries.map((e) => e.tokenNumber).join(', ')}) upon calling next patient.`
+        );
       }
 
       // Find the next waiting patient in order of sequence

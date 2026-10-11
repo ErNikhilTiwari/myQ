@@ -200,7 +200,13 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
       if (data.success) {
         const calledToken = data.data?.calledEntry?.tokenNumber || data.data?.tokenNumber || 'Next';
         const calledName = data.data?.calledEntry?.patientName || data.data?.calledEntry?.user?.name || '';
-        showToast('success', calledName ? `Called Token ${calledToken} (${calledName})` : `Called Token ${calledToken}`);
+        const prevDone = data.data?.previousEntryCompleted;
+        
+        let msg = calledName ? `Called Token ${calledToken} (${calledName})` : `Called Token ${calledToken}`;
+        if (prevDone) {
+          msg = `Previous patient completed ✅ & ${msg}`;
+        }
+        showToast('success', msg);
         fetchQueueDetails();
       } else {
         showToast('error', data.error?.message || data.message || 'Failed to call next token');
