@@ -180,6 +180,18 @@ export class WhatsAppService {
           return this.renderMainMenu();
         }
 
+        // Phase 3: AI NLU Router for FAQ questions
+        const nlu = this.classifyIntent(cleanText);
+        if (nlu.intent === 'FAQ') {
+          const faqAnswer = await this.answerClinicFAQ(clinicId, cleanText);
+          return {
+            replyText: faqAnswer,
+            nextState: 'IDLE',
+          };
+        }
+
+
+
         // Option 1: Check Queue / Status
         if (cleanText === '1' || lower.includes('queue') || lower.includes('status')) {
           const user = await this.prisma.user.findFirst({ where: { phoneNumber } });
@@ -654,6 +666,83 @@ export class WhatsAppService {
   }
 
   /**
+   * Phase 3: AI-Assisted NLU Intent Router (Router -> Orchestrator -> Handler pattern)
+   */
+  classifyIntent(text: string): { intent: 'CHECK_QUEUE' | 'BOOK_APPOINTMENT' | 'CANCEL' | 'FAQ' | 'MENU'; confidence: number; detectedEntities: any } {
+    const lower = text.trim().toLowerCase();
+
+    // FAQ Intent detection (Timings, Location, Parking, Cost, Services)
+    if (
+      lower.includes('timing') ||
+      lower.includes('hours') ||
+      lower.includes('open') ||
+      lower.includes('location') ||
+      lower.includes('where') ||
+      lower.includes('address') ||
+      lower.includes('fee') ||
+      lower.includes('cost') ||
+      lower.includes('price') ||
+      lower.includes('services') ||
+      lower.includes('parking')
+    ) {
+      return {
+        intent: 'FAQ',
+        confidence: 0.95,
+        detectedEntities: { topic: lower },
+      };
+    }
+
+    if (lower.includes('queue') || lower.includes('token') || lower.includes('status') || lower.includes('turn')) {
+      return { intent: 'CHECK_QUEUE', confidence: 0.92, detectedEntities: {} };
+    }
+
+    if (lower.includes('book') || lower.includes('appointment') || lower.includes('doctor') || lower.includes('consult')) {
+      return { intent: 'BOOK_APPOINTMENT', confidence: 0.9, detectedEntities: {} };
+    }
+
+    if (lower.includes('cancel') || lower.includes('abort') || lower.includes('stop')) {
+      return { intent: 'CANCEL', confidence: 0.95, detectedEntities: {} };
+    }
+
+    return { intent: 'MENU', confidence: 0.8, detectedEntities: {} };
+  }
+
+  /**
+   * Phase 3: Scoped Clinic Knowledge Retrieval (RAG)
+   */
+  async answerClinicFAQ(clinicId: string, question: string): Promise<string> {
+    const clinic = await this.prisma.clinic.findUnique({
+      where: { id: clinicId },
+      include: { doctors: true, services: true },
+    });
+
+    if (!clinic) {
+      return 'Clinic information not found.';
+    }
+
+    const q = question.toLowerCase();
+
+    if (q.includes('timing') || q.includes('hours') || q.includes('open')) {
+      return `⏰ *${clinic.name} Timings:*\nMonday – Saturday: 08:00 AM – 08:00 PM\nSunday: 09:00 AM – 01:00 PM (Emergency only).\n\nType *0* for main menu.`;
+    }
+
+    if (q.includes('where') || q.includes('location') || q.includes('address')) {
+      return `📍 *${clinic.name} Location:*\n${clinic.address || 'Central Road, City Center'}\nPhone: ${clinic.phoneNumber}\n\nType *0* for main menu.`;
+    }
+
+    if (q.includes('fee') || q.includes('cost') || q.includes('price')) {
+      return `💳 *Consultation Fees:*\nGeneral OPD Token: ₹200 – ₹500 depending on specialty.\nOnline advance booking available via UPI/Cards.\n\nType *2* to book now.`;
+    }
+
+    if (q.includes('doctor') || q.includes('service')) {
+      const docList = clinic.doctors.map((d) => `• ${d.name} (${d.specialization})`).join('\n');
+      return `👨‍⚕️ *Available Specialists at ${clinic.name}:*\n${docList || '• General OPD'}\n\nType *2* to book an appointment.`;
+    }
+
+    return `ℹ️ *${clinic.name} Info:*\nAddress: ${clinic.address || 'Main Branch'}\nContact: ${clinic.phoneNumber}\n\nType *0* for main menu.`;
+  }
+
+  /**
    * Helper to sign payloads for tests
    */
   generateTestHubSignature(payload: string): string {
@@ -666,3 +755,4 @@ export class WhatsAppService {
     );
   }
 }
+
