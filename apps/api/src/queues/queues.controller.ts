@@ -105,7 +105,7 @@ export class QueuesController {
   /**
    * 6. Concurrency-Safe Call Next (Receptionist)
    */
-  @Post('clinics/:clinicId/queues/:queueId/call-next')
+  @Post(['clinics/:clinicId/queues/:queueId/call-next', 'clinics/:clinicId/queues/:queueId/next'])
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
   @Roles(UserRole.SUPER_ADMIN, UserRole.CLINIC_ADMIN, UserRole.RECEPTIONIST)
@@ -120,16 +120,24 @@ export class QueuesController {
   /**
    * 7. Transition Token State (Skip, Hold, Complete, Cancel, Recall)
    */
-  @Post('clinics/:clinicId/queues/entries/:entryId/transition')
+  @Post([
+    'clinics/:clinicId/queues/entries/:entryId/transition',
+    'clinics/:clinicId/queues/:queueId/transition',
+  ])
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
   @Roles(UserRole.SUPER_ADMIN, UserRole.CLINIC_ADMIN, UserRole.RECEPTIONIST)
   async transitionEntry(
     @Param('clinicId') clinicId: string,
-    @Param('entryId') entryId: string,
-    @Body() dto: QueueTransitionDto,
+    @Param('entryId') paramEntryId: string,
+    @Body() dto: any,
   ): Promise<ApiResponse> {
-    const data = await this.queuesService.transitionEntry(clinicId, entryId, dto);
+    const entryId = paramEntryId || dto.entryId;
+    const targetStatus = dto.targetStatus || dto.status || dto.toStatus;
+    const data = await this.queuesService.transitionEntry(clinicId, entryId, {
+      targetStatus,
+      holdReason: dto.holdReason,
+    });
     return { success: true, data };
   }
 

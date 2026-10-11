@@ -29,7 +29,7 @@ export class ReceptionistController {
   /**
    * Register walk-in patient and issue token in chosen queue
    */
-  @Post('walk-in')
+  @Post(['walk-in', 'walkin'])
   @HttpCode(HttpStatus.CREATED)
   async registerWalkIn(
     @Param('clinicId') clinicId: string,

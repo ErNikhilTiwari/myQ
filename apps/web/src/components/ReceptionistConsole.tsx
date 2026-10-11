@@ -125,41 +125,42 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
       .catch((err) => console.error('Error fetching queues:', err));
   }, [clinicId, isReceptionistAuthenticated, token]);
 
-  // Poll active queue details every 2.5s
-  useEffect(() => {
+  // Fetch active queue details with instant refresh support
+  const fetchQueueDetails = React.useCallback(() => {
     if (!isReceptionistAuthenticated || !clinicId || !selectedQueueId) return;
 
-    const fetchQueueDetails = () => {
-      fetch(`/api/clinics/${clinicId}/queues/${selectedQueueId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+    fetch(`/api/clinics/${clinicId}/queues/${selectedQueueId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    })
+      .then((res) => res.json())
+      .then((res) => {
+        if (res.success && res.data) {
+          const data = res.data;
+          setCurrentServing(data.currentServing || null);
+          setWaitingList(data.waiting || []);
+          setOnHoldList(data.onHold || []);
+          setCompletedList(data.completed || []);
+        }
       })
-        .then((res) => res.json())
-        .then((res) => {
-          if (res.success && res.data) {
-            const data = res.data;
-            setCurrentServing(data.currentServing || null);
-            setWaitingList(data.waiting || []);
-            setOnHoldList(data.onHold || []);
-            setCompletedList(data.completed || []);
-          }
-        })
-        .catch(() => {});
-    };
+      .catch(() => {});
+  }, [clinicId, selectedQueueId, isReceptionistAuthenticated, token]);
 
+  // Poll active queue details every 2.5s
+  useEffect(() => {
     fetchQueueDetails();
     const interval = setInterval(fetchQueueDetails, 2500);
     return () => clearInterval(interval);
-  }, [clinicId, selectedQueueId, isReceptionistAuthenticated, token]);
+  }, [fetchQueueDetails]);
 
   // Call Next
   const handleCallNext = async () => {
-    if (!token) return;
+    if (!token || !selectedQueueId) return;
 
     try {
       setIsSubmitting(true);
-      const res = await fetch(`/api/clinics/${clinicId}/queues/${selectedQueueId}/next`, {
+      const res = await fetch(`/api/clinics/${clinicId}/queues/${selectedQueueId}/call-next`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -168,9 +169,11 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
       });
       const data = await res.json();
       if (data.success) {
-        showToast('success', `Called Token ${data.data?.tokenNumber || 'Next'}`);
+        const calledToken = data.data?.calledEntry?.tokenNumber || data.data?.tokenNumber || 'Next';
+        showToast('success', `Called Token ${calledToken}`);
+        fetchQueueDetails();
       } else {
-        showToast('error', data.error?.message || 'Failed to call next token');
+        showToast('error', data.error?.message || data.message || 'Failed to call next token');
       }
     } catch (err: any) {
       showToast('error', err.message || 'Error executing action');
@@ -181,18 +184,18 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
 
   // Transition Token Status
   const handleTransition = async (entryId: string, toStatus: string, reason?: string) => {
-    if (!token) return;
+    if (!token || !selectedQueueId) return;
 
     try {
       setIsSubmitting(true);
-      const res = await fetch(`/api/clinics/${clinicId}/queues/${selectedQueueId}/transition`, {
+      const res = await fetch(`/api/clinics/${clinicId}/queues/entries/${entryId}/transition`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          entryId,
+          targetStatus: toStatus,
           status: toStatus,
           holdReason: reason,
         }),
@@ -201,8 +204,9 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
       if (data.success) {
         showToast('success', `Token updated to ${toStatus}`);
         setHoldingTokenId(null);
+        fetchQueueDetails();
       } else {
-        showToast('error', data.error?.message || `Failed to transition to ${toStatus}`);
+        showToast('error', data.error?.message || data.message || `Failed to transition to ${toStatus}`);
       }
     } catch (err: any) {
       showToast('error', err.message || 'Error transitioning token');
@@ -211,10 +215,15 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
     }
   };
 
-  // Walk-in Registration
+  // Walk-in Registration (Create New Customer / Issue Token)
   const handleRegisterWalkin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) return;
+
+    if (!selectedQueueId) {
+      showToast('error', 'Please select a queue to issue token in');
+      return;
+    }
 
     if (!walkinName.trim() || !walkinPhone.trim()) {
       showToast('error', 'Please enter valid patient name and phone number');
@@ -223,7 +232,7 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
 
     try {
       setIsSubmitting(true);
-      const res = await fetch(`/api/clinics/${clinicId}/receptionist/walkin`, {
+      const res = await fetch(`/api/clinics/${clinicId}/receptionist/walk-in`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -231,18 +240,20 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
         },
         body: JSON.stringify({
           queueId: selectedQueueId,
-          name: walkinName,
-          phoneNumber: walkinPhone,
+          name: walkinName.trim(),
+          phoneNumber: walkinPhone.trim(),
         }),
       });
       const data = await res.json();
       if (data.success) {
-        showToast('success', `Walk-in token ${data.data.tokenNumber} issued successfully!`);
+        const issuedToken = data.data?.entry?.tokenNumber || data.data?.tokenNumber || 'Token';
+        showToast('success', `Walk-in token ${issuedToken} issued successfully!`);
         setWalkinName('');
         setWalkinPhone('+91');
         setShowWalkinModal(false);
+        fetchQueueDetails();
       } else {
-        showToast('error', data.error?.message || 'Failed to register walk-in');
+        showToast('error', data.error?.message || data.message || 'Failed to register walk-in');
       }
     } catch (err: any) {
       showToast('error', err.message || 'Error creating walk-in token');
@@ -598,6 +609,21 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
             </p>
 
             <form onSubmit={handleRegisterWalkin} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-[#334155] mb-1">Target Department / Queue</label>
+                <select
+                  value={selectedQueueId}
+                  onChange={(e) => setSelectedQueueId(e.target.value)}
+                  className="w-full bg-[#F8FAFC] border border-slate-300 rounded-xl px-3 py-2.5 text-xs text-[#1E293B] font-semibold focus:outline-none focus:border-[#0284C7] focus:bg-white"
+                >
+                  {queues.map((q) => (
+                    <option key={q.id} value={q.id}>
+                      {q.name} ({q.doctor?.name || 'Assigned Doctor'})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div>
                 <label className="block text-xs font-bold text-[#334155] mb-1">Patient Full Name</label>
                 <input
