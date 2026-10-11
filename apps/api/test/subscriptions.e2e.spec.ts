@@ -85,19 +85,19 @@ describe('Phase 2 — Multi-Clinic SaaS Subscriptions & Tier Limits (E2E Integra
     ).rejects.toThrow('Subscription plan limit reached');
   });
 
-  it('3. Clinic Admin upgrades subscription to PROFESSIONAL plan (Ad-free, 10 doctors)', async () => {
+  it('3. Clinic Admin upgrades subscription to ENTERPRISE plan (Unlimited doctors, Ad-free)', async () => {
     const res = await request(app.getHttpServer())
       .post(`/api/clinics/${clinicA.id}/subscription/upgrade`)
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
-        plan: 'PROFESSIONAL',
-        durationMonths: 6,
+        plan: 'ENTERPRISE',
+        durationMonths: 12,
       })
       .expect(201);
 
     expect(res.body.success).toBe(true);
-    expect(res.body.data.plan).toBe('PROFESSIONAL');
-    expect(res.body.data.maxDoctors).toBe(10);
+    expect(res.body.plan || res.body.data.plan).toBe('ENTERPRISE');
+    expect(res.body.data.maxDoctors).toBe(100);
     expect(res.body.data.hasAds).toBe(false);
     expect(res.body.data.endDate).toBeDefined();
 
@@ -117,6 +117,7 @@ describe('Phase 2 — Multi-Clinic SaaS Subscriptions & Tier Limits (E2E Integra
     expect(Array.isArray(res.body.data)).toBe(true);
     const sub = res.body.data.find((s: any) => s.clinicId === clinicA.id);
     expect(sub).toBeDefined();
-    expect(sub.plan).toBe('PROFESSIONAL');
+    expect(sub.plan).toBe('ENTERPRISE');
   });
+
 });

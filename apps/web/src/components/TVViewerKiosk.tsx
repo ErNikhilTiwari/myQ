@@ -13,9 +13,17 @@ interface ActiveAd {
 
 interface TVViewerProps {
   clinicSlug?: string;
+  selectedClinicId?: string;
+  clinics?: Array<{ id: string; name: string; slug: string }>;
+  onSelectClinicId?: (id: string) => void;
 }
 
-export const TVViewerKiosk: React.FC<TVViewerProps> = ({ clinicSlug = 'abc-health' }) => {
+export const TVViewerKiosk: React.FC<TVViewerProps> = ({ 
+  clinicSlug = 'abc-health',
+  selectedClinicId,
+  clinics = [],
+  onSelectClinicId
+}) => {
   const [template, setTemplate] = useState<DisplayTemplate>('NOW_SERVING_NEXT');
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [clinicName, setClinicName] = useState('ABC Health Clinic');
@@ -94,7 +102,7 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({ clinicSlug = 'abc-healt
         .then((res) => res.json())
         .then((res) => {
           if (!res.success || res.data.length === 0) return;
-          const clinic = res.data[0];
+          const clinic = (selectedClinicId && res.data.find((c: any) => c.id === selectedClinicId)) || res.data[0];
           setClinicName(clinic.name);
 
           // 2. Fetch Queues
@@ -153,7 +161,7 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({ clinicSlug = 'abc-healt
     pollTV();
     const interval = setInterval(pollTV, 3000);
     return () => clearInterval(interval);
-  }, [audioEnabled]);
+  }, [audioEnabled, selectedClinicId]);
 
   return (
     <div className="flex-1 flex flex-col bg-slate-950 text-white p-4 sm:p-6 md:p-8 select-none overflow-hidden justify-between">
@@ -162,7 +170,22 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({ clinicSlug = 'abc-healt
         <div className="flex items-center space-x-3">
           <span className="text-3xl">🏥</span>
           <div>
-            <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white">{clinicName}</h1>
+            <div className="flex items-center space-x-2">
+              <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white">{clinicName}</h1>
+              {clinics.length > 1 && onSelectClinicId && (
+                <select
+                  value={selectedClinicId}
+                  onChange={(e) => onSelectClinicId(e.target.value)}
+                  className="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1 font-medium focus:ring-1 focus:ring-emerald-500 outline-none cursor-pointer"
+                >
+                  {clinics.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
             <p className="text-xs text-slate-400">Waiting Hall Live Token Kiosk Screen</p>
           </div>
         </div>

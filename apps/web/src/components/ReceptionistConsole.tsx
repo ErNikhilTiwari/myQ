@@ -12,7 +12,10 @@ import {
   Sparkles,
   ChevronRight,
   Search,
-  Activity
+  Activity,
+  Building2,
+  Lock,
+  LogIn
 } from 'lucide-react';
 
 interface QueueItem {
@@ -46,9 +49,29 @@ interface QueueSummary {
   completedCount: number;
 }
 
-export const ReceptionistConsole: React.FC = () => {
-  const [clinicId, setClinicId] = useState<string>('');
-  const [clinicName, setClinicName] = useState<string>('ABC Health Clinic');
+interface ClinicOption {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+interface ReceptionistConsoleProps {
+  token: string | null;
+  currentUser: any;
+  onOpenLogin: () => void;
+  selectedClinicId: string;
+  onSelectClinicId: (id: string) => void;
+  clinics: ClinicOption[];
+}
+
+export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
+  token,
+  currentUser,
+  onOpenLogin,
+  selectedClinicId,
+  onSelectClinicId,
+  clinics,
+}) => {
   const [queues, setQueues] = useState<QueueSummary[]>([]);
   const [selectedQueueId, setSelectedQueueId] = useState<string>('');
   
@@ -69,39 +92,39 @@ export const ReceptionistConsole: React.FC = () => {
   const [holdingTokenId, setHoldingTokenId] = useState<string | null>(null);
   const [holdReasonInput, setHoldReasonInput] = useState('Waiting for lab test results');
 
-  // Load Clinic and Queues
+  // Load Queues for currently selected clinic
   useEffect(() => {
-    fetch('/api/clinics')
-      .then((res) => res.json())
-      .then((res) => {
-        if (res.success && res.data.length > 0) {
-          const c = res.data[0];
-          setClinicId(c.id);
-          setClinicName(c.name);
-          loadQueues(c.id);
-        }
-      })
-      .catch((err) => console.error('Error fetching clinics:', err));
-  }, []);
+    if (!selectedClinicId) return;
 
-  const loadQueues = (cId: string) => {
-    fetch(`/api/clinics/${cId}/queues`)
+    fetch(`/api/clinics/${selectedClinicId}/queues`)
       .then((res) => res.json())
       .then((res) => {
-        if (res.success && res.data.length > 0) {
+        if (res.success && res.data) {
           setQueues(res.data);
-          setSelectedQueueId((prev) => prev || res.data[0].id);
+          if (res.data.length > 0) {
+            setSelectedQueueId(res.data[0].id);
+          } else {
+            setSelectedQueueId('');
+            setCurrentServing(null);
+            setWaitingList([]);
+            setOnHoldList([]);
+          }
         }
       })
       .catch((err) => console.error('Error fetching queues:', err));
-  };
+  }, [selectedClinicId]);
 
   // Poll active queue details every 2.5s
   useEffect(() => {
-    if (!clinicId || !selectedQueueId) return;
+    if (!selectedClinicId || !selectedQueueId) return;
 
     const fetchQueueDetails = () => {
-      fetch(`/api/clinics/${clinicId}/queues/${selectedQueueId}`)
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      fetch(`/api/clinics/${selectedClinicId}/queues/${selectedQueueId}`, { headers })
         .then((res) => res.json())
         .then((res) => {
           if (res.success && res.data) {
@@ -112,21 +135,29 @@ export const ReceptionistConsole: React.FC = () => {
             setCompletedList(data.completed || []);
           }
         })
-        .catch((err) => console.error('Error fetching queue details:', err));
+        .catch(() => {});
     };
 
     fetchQueueDetails();
     const interval = setInterval(fetchQueueDetails, 2500);
     return () => clearInterval(interval);
-  }, [clinicId, selectedQueueId]);
+  }, [selectedClinicId, selectedQueueId, token]);
 
   // Receptionist Action: Call Next
   const handleCallNext = async () => {
+    if (!token) {
+      onOpenLogin();
+      return;
+    }
+
     try {
       setIsSubmitting(true);
-      const res = await fetch(`/api/clinics/${clinicId}/queues/${selectedQueueId}/next`, {
+      const res = await fetch(`/api/clinics/${selectedClinicId}/queues/${selectedQueueId}/next`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
       });
       const data = await res.json();
       if (data.success) {
@@ -143,11 +174,19 @@ export const ReceptionistConsole: React.FC = () => {
 
   // Transition Token Status (COMPLETED, ON_HOLD, NO_SHOW, CANCELLED)
   const handleTransition = async (entryId: string, toStatus: string, reason?: string) => {
+    if (!token) {
+      onOpenLogin();
+      return;
+    }
+
     try {
       setIsSubmitting(true);
-      const res = await fetch(`/api/clinics/${clinicId}/queues/entries/${entryId}/transition`, {
+      const res = await fetch(`/api/clinics/${selectedClinicId}/queues/entries/${entryId}/transition`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify({ toStatus, reason }),
       });
       const data = await res.json();
@@ -167,6 +206,11 @@ export const ReceptionistConsole: React.FC = () => {
   // Walk-in Registration
   const handleRegisterWalkin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!token) {
+      onOpenLogin();
+      return;
+    }
+
     if (!walkinName.trim() || !walkinPhone.trim()) {
       showToast('error', 'Please enter valid patient name and phone number');
       return;
@@ -174,9 +218,12 @@ export const ReceptionistConsole: React.FC = () => {
 
     try {
       setIsSubmitting(true);
-      const res = await fetch(`/api/clinics/${clinicId}/receptionist/walkin`, {
+      const res = await fetch(`/api/clinics/${selectedClinicId}/receptionist/walkin`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify({
           queueId: selectedQueueId,
           name: walkinName,
@@ -204,6 +251,7 @@ export const ReceptionistConsole: React.FC = () => {
     setTimeout(() => setFeedbackMsg(null), 3500);
   };
 
+  const activeClinicObj = clinics.find((c) => c.id === selectedClinicId);
   const activeQueueObj = queues.find((q) => q.id === selectedQueueId);
 
   return (
@@ -225,8 +273,10 @@ export const ReceptionistConsole: React.FC = () => {
       {/* Top Header Bar */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 mb-6 border-b border-slate-800 gap-4">
         <div>
-          <div className="flex items-center space-x-2">
-            <h1 className="text-2xl font-black text-white tracking-tight">{clinicName}</h1>
+          <div className="flex items-center space-x-3">
+            <h1 className="text-2xl font-black text-white tracking-tight">
+              {activeClinicObj?.name || 'Clinic Desk'}
+            </h1>
             <span className="bg-emerald-500/20 text-emerald-400 text-xs px-2.5 py-0.5 rounded-full font-bold border border-emerald-500/30">
               Receptionist Desk
             </span>
@@ -234,10 +284,29 @@ export const ReceptionistConsole: React.FC = () => {
           <p className="text-xs text-slate-400 mt-0.5">Live Queue Management & Patient Counter Operations</p>
         </div>
 
-        {/* Counter Action Buttons */}
+        {/* Action Controls */}
         <div className="flex items-center space-x-3 w-full sm:w-auto">
+          {/* Multi-Tenant Clinic Switcher Dropdown */}
+          <div className="flex items-center space-x-2 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl">
+            <Building2 className="w-4 h-4 text-emerald-400" />
+            <select
+              value={selectedClinicId}
+              onChange={(e) => onSelectClinicId(e.target.value)}
+              className="bg-transparent text-xs font-bold text-white focus:outline-none cursor-pointer"
+            >
+              {clinics.map((c) => (
+                <option key={c.id} value={c.id} className="bg-slate-900 text-white">
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <button
-            onClick={() => setShowWalkinModal(true)}
+            onClick={() => {
+              if (!token) onOpenLogin();
+              else setShowWalkinModal(true);
+            }}
             className="flex-1 sm:flex-initial flex items-center justify-center space-x-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-lg transition active:scale-95"
           >
             <UserPlus className="w-4 h-4" />
@@ -246,24 +315,50 @@ export const ReceptionistConsole: React.FC = () => {
         </div>
       </div>
 
+      {/* Auth Banner if not signed in */}
+      {!token && (
+        <div className="mb-6 bg-amber-950/40 border border-amber-800/60 p-4 rounded-2xl flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <Lock className="w-5 h-5 text-amber-400 shrink-0" />
+            <div>
+              <div className="text-xs font-bold text-amber-300">Staff Authentication Required</div>
+              <div className="text-[11px] text-slate-400">
+                You are currently viewing in read-only guest mode. Log in as a receptionist to call tokens and issue walk-ins.
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={onOpenLogin}
+            className="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shrink-0"
+          >
+            <LogIn className="w-3.5 h-3.5" />
+            <span>Staff Login (1-Click)</span>
+          </button>
+        </div>
+      )}
+
       {/* Queue Selector Tabs */}
       <div className="flex items-center space-x-2 overflow-x-auto pb-3 mb-6 scrollbar-none">
-        {queues.map((q) => (
-          <button
-            key={q.id}
-            onClick={() => setSelectedQueueId(q.id)}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2 shrink-0 border ${
-              selectedQueueId === q.id
-                ? 'bg-emerald-600 border-emerald-400 text-white shadow-lg shadow-emerald-950/40'
-                : 'bg-slate-800/80 border-slate-700/60 text-slate-300 hover:bg-slate-700'
-            }`}
-          >
-            <span>👨‍⚕️ {q.doctor?.name || q.name}</span>
-            <span className="bg-slate-900/60 px-2 py-0.5 rounded text-[10px] font-mono">
-              {q.doctor?.roomNumber || 'Room 1'}
-            </span>
-          </button>
-        ))}
+        {queues.length === 0 ? (
+          <div className="text-xs text-slate-500">No queues configured in this clinic.</div>
+        ) : (
+          queues.map((q) => (
+            <button
+              key={q.id}
+              onClick={() => setSelectedQueueId(q.id)}
+              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2 shrink-0 border ${
+                selectedQueueId === q.id
+                  ? 'bg-emerald-600 border-emerald-400 text-white shadow-lg shadow-emerald-950/40'
+                  : 'bg-slate-800/80 border-slate-700/60 text-slate-300 hover:bg-slate-700'
+              }`}
+            >
+              <span>👨‍⚕️ {q.doctor?.name || q.name}</span>
+              <span className="bg-slate-900/60 px-2 py-0.5 rounded text-[10px] font-mono">
+                {q.doctor?.roomNumber || 'Room 1'}
+              </span>
+            </button>
+          ))
+        )}
       </div>
 
       {/* Grid Layout: Serving Counter + Waiting & On-Hold Columns */}
@@ -464,9 +559,9 @@ export const ReceptionistConsole: React.FC = () => {
 
             <form onSubmit={handleRegisterWalkin} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Target Doctor / Counter</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Target Clinic & Doctor</label>
                 <div className="bg-slate-900 border border-slate-700 p-2.5 rounded-xl text-xs font-bold text-emerald-400">
-                  {activeQueueObj?.doctor?.name || 'General OPD'} ({activeQueueObj?.doctor?.roomNumber || 'Room 101'})
+                  {activeClinicObj?.name} &bull; {activeQueueObj?.doctor?.name || 'General OPD'}
                 </div>
               </div>
 

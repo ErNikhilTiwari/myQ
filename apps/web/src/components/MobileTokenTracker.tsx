@@ -26,8 +26,19 @@ interface PublicTokenStatus {
   lastUpdated: string;
 }
 
-export const MobileTokenTracker: React.FC = () => {
-  const [clinicSlug, setClinicSlug] = useState('abc-health');
+interface MobileTokenTrackerProps {
+  clinics?: Array<{ id: string; name: string; slug: string }>;
+  defaultClinicSlug?: string;
+}
+
+export const MobileTokenTracker: React.FC<MobileTokenTrackerProps> = ({
+  clinics = [
+    { id: '1', name: 'ABC Health Clinic', slug: 'abc-health' },
+    { id: '2', name: 'City Dental Care', slug: 'city-dental' },
+  ],
+  defaultClinicSlug = 'abc-health',
+}) => {
+  const [clinicSlug, setClinicSlug] = useState(defaultClinicSlug);
   const [tokenInput, setTokenInput] = useState('A-01');
   const [tokenData, setTokenData] = useState<PublicTokenStatus | null>(null);
   const [loading, setLoading] = useState(false);
@@ -128,26 +139,46 @@ export const MobileTokenTracker: React.FC = () => {
             </span>
           </div>
 
-          {/* Quick Lookup Form */}
-          <form onSubmit={handleLookup} className="flex space-x-2">
-            <div className="relative flex-1">
-              <input
-                type="text"
-                value={tokenInput}
-                onChange={(e) => setTokenInput(e.target.value)}
-                placeholder="Token (e.g. A-01)"
-                className="w-full bg-slate-950 border border-slate-700/80 rounded-2xl px-4 py-2.5 text-xs text-white font-mono uppercase tracking-wider placeholder-slate-500 focus:outline-none focus:border-emerald-500"
-              />
+          {/* Clinic Switcher & Quick Lookup Form */}
+          <div className="space-y-2.5">
+            <div className="flex items-center space-x-2">
+              <label className="text-[11px] text-slate-400 font-medium">Clinic:</label>
+              <select
+                value={clinicSlug}
+                onChange={(e) => {
+                  setClinicSlug(e.target.value);
+                  setTokenData(null);
+                }}
+                className="flex-1 bg-slate-950 border border-slate-700/80 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500 cursor-pointer"
+              >
+                {clinics.map((c) => (
+                  <option key={c.id} value={c.slug}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
             </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-2xl text-xs font-bold transition flex items-center space-x-1"
-            >
-              <Search className="w-3.5 h-3.5" />
-              <span>{loading ? '...' : 'Track'}</span>
-            </button>
-          </form>
+
+            <form onSubmit={handleLookup} className="flex space-x-2">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  value={tokenInput}
+                  onChange={(e) => setTokenInput(e.target.value)}
+                  placeholder="Token (e.g. A-01)"
+                  className="w-full bg-slate-950 border border-slate-700/80 rounded-2xl px-4 py-2.5 text-xs text-white font-mono uppercase tracking-wider placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-2xl text-xs font-bold transition flex items-center space-x-1"
+              >
+                <Search className="w-3.5 h-3.5" />
+                <span>{loading ? '...' : 'Track'}</span>
+              </button>
+            </form>
+          </div>
 
           {errorMsg && (
             <div className="mt-3 p-2.5 bg-rose-950/40 border border-rose-800/60 rounded-xl text-rose-300 text-xs flex items-center space-x-2">
