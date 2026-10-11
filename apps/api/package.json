@@ -9,8 +9,10 @@
     "dev": "ts-node-dev --respawn --transpile-only src/main.ts",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
+    "db:deploy:pg": "prisma db push --schema=prisma/schema.postgresql.prisma",
     "db:seed": "ts-node prisma/seed.ts",
     "test": "jest --config jest.config.js --runInBand",
+
     "lint": "echo \"Linting API...\""
   },
   "dependencies": {
