@@ -167,6 +167,16 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
       if (data.success && accessToken) {
         const user = data.data.user;
+        const isClinicStaff = user.role === 'RECEPTIONIST' || user.role === 'CLINIC_ADMIN' || user.role === 'SUPER_ADMIN';
+
+        if (profileType === 'RECEPTIONIST' && !isClinicStaff) {
+          setErrorMsg(
+            'This phone number is registered as a Patient, not a Clinic account. Clinics can log in only with credentials provisioned by Super Admin. Please switch to Patient Login.'
+          );
+          setLoading(false);
+          return;
+        }
+
         localStorage.setItem('token', accessToken);
         localStorage.setItem('user', JSON.stringify(user));
         localStorage.setItem('queueapp_token', accessToken);
@@ -217,6 +227,16 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
       if (data.success && accessToken) {
         const user = data.data.user;
+        const isClinicStaff = user.role === 'RECEPTIONIST' || user.role === 'CLINIC_ADMIN' || user.role === 'SUPER_ADMIN';
+
+        if (profileType === 'RECEPTIONIST' && !isClinicStaff) {
+          setErrorMsg(
+            'This phone number is registered as a Patient, not a Clinic account. Clinics can log in only with credentials provisioned by Super Admin. Please switch to Patient Login.'
+          );
+          setLoading(false);
+          return;
+        }
+
         localStorage.setItem('token', accessToken);
         localStorage.setItem('user', JSON.stringify(user));
         localStorage.setItem('queueapp_token', accessToken);
@@ -247,7 +267,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         </button>
 
         {/* Modal Header */}
-        <div className="flex items-center space-x-3 mb-6">
+        <div className="flex items-center space-x-3 mb-5">
           <div
             className="w-10 h-10 rounded-2xl flex items-center justify-center border"
             style={{ backgroundColor: headerInfo.bgColor, color: headerInfo.accentColor, borderColor: `${headerInfo.accentColor}30` }}
@@ -259,6 +279,16 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             <p className="text-xs text-[#64748B]">{headerInfo.subtitle}</p>
           </div>
         </div>
+
+        {/* Clinic Login Provisioning Notice */}
+        {profileType === 'RECEPTIONIST' && (
+          <div className="mb-4 p-2.5 bg-amber-50 border border-amber-200/80 rounded-xl text-amber-900 text-[11px] flex items-center space-x-2">
+            <span className="shrink-0 text-sm">🔒</span>
+            <span>
+              <strong>Clinic Login Only:</strong> Existing clinic accounts can sign in here. Adding new clinic profiles is restricted to the Super Admin.
+            </span>
+          </div>
+        )}
 
         {errorMsg && (
           <div className="mb-4 p-3 bg-[#FEF2F2] border border-[#DC2626]/20 rounded-xl text-[#DC2626] text-xs flex items-center space-x-2">

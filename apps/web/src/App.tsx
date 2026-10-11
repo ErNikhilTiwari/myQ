@@ -21,19 +21,44 @@ import {
 export type AppView = 'LANDING' | 'PATIENT' | 'RECEPTIONIST' | 'TV_VIEWER';
 
 export default function App() {
-  // Start on the LANDING page prompting the user to pick one of the 3 views
-  const [activeTab, setActiveTab] = useState<AppView>('LANDING');
+  // Check if someone is already logged in and determine initial view:
+  // If patient -> 'PATIENT', if clinic staff -> 'RECEPTIONIST', else -> 'LANDING'
+  const getInitialView = (): AppView => {
+    try {
+      const savedUser = localStorage.getItem('user');
+      const savedToken = localStorage.getItem('token');
+      if (savedUser && savedToken) {
+        const user = JSON.parse(savedUser);
+        if (user.role === 'PATIENT') return 'PATIENT';
+        if (user.role === 'RECEPTIONIST' || user.role === 'CLINIC_ADMIN' || user.role === 'SUPER_ADMIN') {
+          return 'RECEPTIONIST';
+        }
+      }
+    } catch {}
+    return 'LANDING';
+  };
+
+  const [activeTab, setActiveTab] = useState<AppView>(getInitialView);
   
   // Multi-Tenant Clinic State - EMPTY BY DEFAULT
   const [clinics, setClinics] = useState<ClinicItem[]>([]);
-  const [selectedClinicId, setSelectedClinicId] = useState<string>('');
-
-  // Authentication State
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'));
   const [currentUser, setCurrentUser] = useState<any>(() => {
     const saved = localStorage.getItem('user');
     return saved ? JSON.parse(saved) : null;
   });
+  const [selectedClinicId, setSelectedClinicId] = useState<string>(() => {
+    const saved = localStorage.getItem('user');
+    if (saved) {
+      try {
+        const u = JSON.parse(saved);
+        return u.clinicId || '';
+      } catch {}
+    }
+    return '';
+  });
+
+  // Authentication State
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'));
   
   // Login modal with profile context
   const [isLoginOpen, setIsLoginOpen] = useState(false);
@@ -53,15 +78,17 @@ export default function App() {
       });
   }, []);
 
-  // When staff/receptionist logs in, auto-bind to their mapped clinic
+  // When user logs in, auto-bind to their mapped clinic and route directly to their profile
   const handleLoginSuccess = (user: any, newToken: string) => {
     setCurrentUser(user);
     setToken(newToken);
     if (user.clinicId) {
       setSelectedClinicId(user.clinicId);
     }
-    // If logging in from receptionist gate or landing, route directly into receptionist
-    if (user.role === 'RECEPTIONIST' || user.role === 'CLINIC_ADMIN') {
+    // Automatically route to their designated profile view
+    if (user.role === 'PATIENT') {
+      setActiveTab('PATIENT');
+    } else if (user.role === 'RECEPTIONIST' || user.role === 'CLINIC_ADMIN' || user.role === 'SUPER_ADMIN') {
       setActiveTab('RECEPTIONIST');
     }
   };
@@ -69,9 +96,12 @@ export default function App() {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('queueapp_token');
+    localStorage.removeItem('queueapp_user');
     setToken(null);
     setCurrentUser(null);
     setSelectedClinicId('');
+    setActiveTab('LANDING');
   };
 
   // Profile-specific login openers
@@ -102,9 +132,17 @@ export default function App() {
         3. Simple Login / Logout Button
       */}
       <nav className="bg-[#1E293B] text-white px-3 sm:px-6 py-2.5 flex flex-wrap items-center justify-between text-xs sticky top-0 z-40 shadow-sm gap-2">
-        {/* 1. App Brand Name (Click to return to Landing Page) */}
+        {/* 1. App Brand Name */}
         <button
-          onClick={() => setActiveTab('LANDING')}
+          onClick={() => {
+            if (currentUser?.role === 'PATIENT') {
+              setActiveTab('PATIENT');
+            } else if (currentUser?.role === 'RECEPTIONIST' || currentUser?.role === 'CLINIC_ADMIN' || currentUser?.role === 'SUPER_ADMIN') {
+              setActiveTab('RECEPTIONIST');
+            } else {
+              setActiveTab('LANDING');
+            }
+          }}
           className="flex items-center space-x-2 text-left hover:opacity-90 transition focus:outline-none"
         >
           <span className="text-xl">🏥</span>
@@ -240,7 +278,7 @@ export default function App() {
                 </div>
 
                 <div className="flex items-center space-x-2 text-[#0284C7] font-black text-xs shrink-0 self-end sm:self-center bg-[#E0F2FE] group-hover:bg-[#0284C7] group-hover:text-white px-4 py-2.5 rounded-xl transition-colors">
-                  <span>Enter as Patient</span>
+                  <span>{currentUser?.role === 'PATIENT' ? 'Open Your Patient Portal' : 'Enter as Patient'}</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </div>
               </div>
@@ -273,7 +311,11 @@ export default function App() {
                 </div>
 
                 <div className="flex items-center space-x-2 text-[#0284C7] font-black text-xs shrink-0 self-end sm:self-center bg-[#E0F2FE] group-hover:bg-[#0284C7] group-hover:text-white px-4 py-2.5 rounded-xl transition-colors">
-                  <span>Enter Clinic Login</span>
+                  <span>
+                    {(currentUser?.role === 'RECEPTIONIST' || currentUser?.role === 'CLINIC_ADMIN' || currentUser?.role === 'SUPER_ADMIN')
+                      ? 'Open Your Clinic Console'
+                      : 'Enter Clinic Login'}
+                  </span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </div>
               </div>
