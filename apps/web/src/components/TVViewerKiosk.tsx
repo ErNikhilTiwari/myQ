@@ -38,40 +38,158 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
   }>>([]);
 
   const prevTokenRef = useRef<string>('');
+  const [voiceLanguage, setVoiceLanguage] = useState<'en' | 'hi'>('en');
+  const [isTestingVoice, setIsTestingVoice] = useState(false);
+
+  const audioEnabledRef = useRef(audioEnabled);
+  audioEnabledRef.current = audioEnabled;
+
+  const voiceLanguageRef = useRef(voiceLanguage);
+  voiceLanguageRef.current = voiceLanguage;
 
   // Auto-bind clinic for logged-in staff/receptionist profile
   const isReceptionistProfile = currentUser && (currentUser.role === 'RECEPTIONIST' || currentUser.role === 'CLINIC_ADMIN');
   const effectiveClinicId = (isReceptionistProfile && currentUser?.clinicId) ? currentUser.clinicId : selectedClinicId;
 
+  // Preload speech synthesis voices
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      const loadVoices = () => {
+        window.speechSynthesis.getVoices();
+      };
+      loadVoices();
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+  }, []);
+
   // Web Audio Synthetic Chime (Dual Frequency: 880Hz -> 1320Hz)
-  const playChime = () => {
-    try {
-      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const now = audioCtx.currentTime;
+  const playChime = (): Promise<void> => {
+    return new Promise((resolve) => {
+      try {
+        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        const now = audioCtx.currentTime;
 
-      // Note 1 (880Hz - A5)
-      const osc1 = audioCtx.createOscillator();
-      const gain1 = audioCtx.createGain();
-      osc1.frequency.setValueAtTime(880, now);
-      gain1.gain.setValueAtTime(0.3, now);
-      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
-      osc1.connect(gain1);
-      gain1.connect(audioCtx.destination);
-      osc1.start(now);
-      osc1.stop(now + 0.5);
+        // Note 1 (880Hz - A5)
+        const osc1 = audioCtx.createOscillator();
+        const gain1 = audioCtx.createGain();
+        osc1.frequency.setValueAtTime(880, now);
+        gain1.gain.setValueAtTime(0.35, now);
+        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+        osc1.connect(gain1);
+        gain1.connect(audioCtx.destination);
+        osc1.start(now);
+        osc1.stop(now + 0.45);
 
-      // Note 2 (1320Hz - E6)
-      const osc2 = audioCtx.createOscillator();
-      const gain2 = audioCtx.createGain();
-      osc2.frequency.setValueAtTime(1320, now + 0.2);
-      gain2.gain.setValueAtTime(0.3, now + 0.2);
-      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
-      osc2.connect(gain2);
-      gain2.connect(audioCtx.destination);
-      osc2.start(now + 0.2);
-      osc2.stop(now + 0.7);
-    } catch (e) {
-      console.warn('AudioContext failed:', e);
+        // Note 2 (1320Hz - E6)
+        const osc2 = audioCtx.createOscillator();
+        const gain2 = audioCtx.createGain();
+        osc2.frequency.setValueAtTime(1320, now + 0.22);
+        gain2.gain.setValueAtTime(0.35, now + 0.22);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.72);
+        osc2.connect(gain2);
+        gain2.connect(audioCtx.destination);
+        osc2.start(now + 0.22);
+        osc2.stop(now + 0.72);
+
+        setTimeout(() => {
+          resolve();
+        }, 800);
+      } catch (e) {
+        console.warn('AudioContext failed:', e);
+        resolve();
+      }
+    });
+  };
+
+  // Full Live Announcement: Chime -> Spoken Token & Patient Name -> Room & Doctor
+  const announceToken = async (serving: {
+    tokenNumber: string;
+    patientName: string;
+    roomNumber: string;
+    doctorName: string;
+  }) => {
+    if (!audioEnabledRef.current) return;
+
+    // 1. Play dual-note chime first
+    await playChime();
+
+    // 2. Synthesize spoken announcement
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel(); // Stop any pending utterance
+
+        const lang = voiceLanguageRef.current;
+        const rawName = serving.patientName?.trim();
+        const isGenericName = !rawName || rawName === 'Walk-in Patient' || rawName === 'Patient';
+        const patientName = isGenericName ? '' : rawName;
+
+        let text = '';
+        if (lang === 'hi') {
+          // Natural Hindi announcement
+          text = patientName
+            ? `टोकन नंबर ${serving.tokenNumber}। ${patientName}। कृपया ${serving.roomNumber}, ${serving.doctorName} के पास जाएँ।`
+            : `टोकन नंबर ${serving.tokenNumber}। कृपया ${serving.roomNumber}, ${serving.doctorName} के पास जाएँ।`;
+        } else {
+          // Clear English announcement (Default)
+          text = patientName
+            ? `Token number ${serving.tokenNumber}. ${patientName}. Please proceed to ${serving.roomNumber}, ${serving.doctorName}.`
+            : `Token number ${serving.tokenNumber}. Please proceed to ${serving.roomNumber}, ${serving.doctorName}.`;
+        }
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.88; // comfortable, clear hospital announcement pace
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+
+        const voices = window.speechSynthesis.getVoices();
+        if (lang === 'hi') {
+          const hiVoice = voices.find(
+            (v) => v.lang.toLowerCase().includes('hi') || v.name.toLowerCase().includes('hindi')
+          );
+          if (hiVoice) utterance.voice = hiVoice;
+          utterance.lang = 'hi-IN';
+        } else {
+          const inVoice = voices.find(
+            (v) => v.lang === 'en-IN' || v.lang.startsWith('en-IN') || v.name.toLowerCase().includes('india')
+          );
+          const enVoice = inVoice || voices.find((v) => v.lang.startsWith('en'));
+          if (enVoice) utterance.voice = enVoice;
+          utterance.lang = 'en-IN';
+        }
+
+        window.speechSynthesis.speak(utterance);
+      } catch (err) {
+        console.warn('Voice announcement error:', err);
+      }
+    }
+  };
+
+  const handleTestVoice = async () => {
+    setIsTestingVoice(true);
+    await announceToken(
+      currentServing || {
+        tokenNumber: 'OPD-101',
+        patientName: 'Ramesh Patel',
+        roomNumber: 'Room 101',
+        doctorName: 'Dr. Sharma',
+      }
+    );
+    setTimeout(() => setIsTestingVoice(false), 2000);
+  };
+
+  const handleToggleAudio = () => {
+    const nextState = !audioEnabled;
+    setAudioEnabled(nextState);
+    audioEnabledRef.current = nextState;
+    if (nextState) {
+      handleTestVoice();
+    } else {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
     }
   };
 
@@ -109,13 +227,15 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
               if (data.currentServing) {
                 const newServing = {
                   tokenNumber: data.currentServing.tokenNumber,
-                  patientName: data.currentServing.patientName || data.currentServing.user?.name || 'Walk-in Patient',
+                  patientName: data.currentServing.patientName || data.currentServing.user?.name || '',
                   roomNumber: data.queue.doctor?.roomNumber || 'Room 101',
                   doctorName: data.queue.doctor?.name || 'General OPD',
                 };
 
                 if (prevTokenRef.current && prevTokenRef.current !== newServing.tokenNumber) {
-                  if (audioEnabled) playChime();
+                  if (audioEnabledRef.current) {
+                    announceToken(newServing);
+                  }
                 }
                 prevTokenRef.current = newServing.tokenNumber;
                 setCurrentServing(newServing);
@@ -191,21 +311,56 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
           </div>
         </div>
 
-        {/* Chime Sound Control */}
-        <div className="flex items-center space-x-3 shrink-0">
+        {/* Live Audio & Voice Announcements Control */}
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          {/* Language Selector: English / Hindi */}
+          <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold">
+            <button
+              onClick={() => setVoiceLanguage('en')}
+              className={`px-2.5 py-1 rounded-lg transition ${
+                voiceLanguage === 'en'
+                  ? 'bg-white text-[#0284C7] shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              English
+            </button>
+            <button
+              onClick={() => setVoiceLanguage('hi')}
+              className={`px-2.5 py-1 rounded-lg transition ${
+                voiceLanguage === 'hi'
+                  ? 'bg-white text-[#0284C7] shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              हिंदी
+            </button>
+          </div>
+
+          {/* Test Voice Button */}
+          {audioEnabled && (
+            <button
+              onClick={handleTestVoice}
+              disabled={isTestingVoice}
+              className="flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-sky-50 text-[#0284C7] border border-sky-200 hover:bg-sky-100 transition active:scale-95 shadow-xs"
+              title="Test audio chime and voice announcement"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>{isTestingVoice ? 'Announcing...' : 'Test Voice'}</span>
+            </button>
+          )}
+
+          {/* Enable / Disable Live Sound */}
           <button
-            onClick={() => {
-              setAudioEnabled(!audioEnabled);
-              if (!audioEnabled) playChime();
-            }}
-            className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold transition shadow-sm ${
+            onClick={handleToggleAudio}
+            className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold transition shadow-sm active:scale-95 ${
               audioEnabled
                 ? 'bg-[#16A34A]/10 text-[#16A34A] border border-[#16A34A]/30'
                 : 'bg-[#D97706]/10 text-[#D97706] border border-[#D97706]/30'
             }`}
           >
             {audioEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-            <span>{audioEnabled ? 'Sound Active' : 'Enable Chime'}</span>
+            <span>{audioEnabled ? 'Voice Active' : 'Enable Live Voice'}</span>
           </button>
         </div>
       </div>
