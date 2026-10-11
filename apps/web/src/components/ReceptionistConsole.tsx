@@ -16,8 +16,15 @@ import {
   Building2,
   Lock,
   LogIn,
-  ShieldAlert
+  ShieldAlert,
+  BarChart3,
+  Stethoscope,
+  Layers,
+  LayoutDashboard
 } from 'lucide-react';
+import { ClinicAnalytics } from './ClinicAnalytics';
+import { DoctorManagement } from './DoctorManagement';
+import { ServiceQueueManagement } from './ServiceQueueManagement';
 
 interface QueueItem {
   id: string;
@@ -73,6 +80,9 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
 }) => {
   const [queues, setQueues] = useState<QueueSummary[]>([]);
   const [selectedQueueId, setSelectedQueueId] = useState<string>('');
+  
+  // Navigation tabs within Clinic Console
+  const [activeConsoleTab, setActiveConsoleTab] = useState<'QUEUE' | 'DOCTORS' | 'SERVICES' | 'ANALYTICS'>('QUEUE');
   
   // Active queue state
   const [currentServing, setCurrentServing] = useState<QueueItem | null>(null);
@@ -370,54 +380,137 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
           </p>
         </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center space-x-3 w-full sm:w-auto">
-          <button
-            onClick={() => setShowWalkinModal(true)}
-            className="flex-1 sm:flex-initial flex items-center justify-center space-x-2 bg-[#0284C7] hover:bg-[#0369A1] text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-sm transition active:scale-95"
-          >
-            <UserPlus className="w-4 h-4" />
-            <span>New Walk-in Patient</span>
-          </button>
+        {/* Action Controls & Navigation Tabs */}
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+          {/* Subview Navigation Pills */}
+          <div className="flex bg-[#F1F5F9] p-1 rounded-xl text-xs font-bold">
+            <button
+              onClick={() => setActiveConsoleTab('QUEUE')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition ${
+                activeConsoleTab === 'QUEUE' ? 'bg-white text-[#1E293B] shadow-sm' : 'text-[#64748B] hover:text-[#1E293B]'
+              }`}
+            >
+              <LayoutDashboard className="w-3.5 h-3.5 text-[#0284C7]" />
+              <span>Live Queue</span>
+            </button>
+            <button
+              onClick={() => setActiveConsoleTab('DOCTORS')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition ${
+                activeConsoleTab === 'DOCTORS' ? 'bg-white text-[#1E293B] shadow-sm' : 'text-[#64748B] hover:text-[#1E293B]'
+              }`}
+            >
+              <Stethoscope className="w-3.5 h-3.5 text-[#0284C7]" />
+              <span>Doctors & Chambers</span>
+            </button>
+            <button
+              onClick={() => setActiveConsoleTab('SERVICES')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition ${
+                activeConsoleTab === 'SERVICES' ? 'bg-white text-[#1E293B] shadow-sm' : 'text-[#64748B] hover:text-[#1E293B]'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5 text-[#0284C7]" />
+              <span>Services & Queues</span>
+            </button>
+            <button
+              onClick={() => setActiveConsoleTab('ANALYTICS')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition ${
+                activeConsoleTab === 'ANALYTICS' ? 'bg-white text-[#1E293B] shadow-sm' : 'text-[#64748B] hover:text-[#1E293B]'
+              }`}
+            >
+              <BarChart3 className="w-3.5 h-3.5 text-[#0284C7]" />
+              <span>Reports & Analytics</span>
+            </button>
+          </div>
+
+          {activeConsoleTab === 'QUEUE' && (
+            <button
+              onClick={() => setShowWalkinModal(true)}
+              className="flex items-center justify-center space-x-2 bg-[#0284C7] hover:bg-[#0369A1] text-white px-4 py-2 rounded-xl font-bold text-xs shadow-sm transition active:scale-95"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>New Walk-in Patient</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Queue Selector Tabs */}
-      <div className="flex items-center space-x-2 overflow-x-auto pb-3 mb-6 scrollbar-none">
-        {queues.length === 0 ? (
-          <div className="text-xs text-[#64748B]">No active queues found in this clinic facility.</div>
-        ) : (
-          queues.map((q) => (
-            <button
-              key={q.id}
-              onClick={() => setSelectedQueueId(q.id)}
-              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2 shrink-0 border ${
-                selectedQueueId === q.id
-                  ? 'bg-[#1E293B] border-[#1E293B] text-white shadow-sm'
-                  : 'bg-white border-slate-200 text-[#334155] hover:bg-slate-50'
-              }`}
-            >
-              <span>👨‍⚕️ {q.doctor?.name || q.name}</span>
-              <span className={`px-2 py-0.5 rounded text-[10px] font-mono ${
-                selectedQueueId === q.id ? 'bg-[#0F172A] text-slate-200' : 'bg-slate-100 text-[#64748B]'
-              }`}>
-                {q.doctor?.roomNumber || 'Room 1'}
-              </span>
-            </button>
-          ))
-        )}
-      </div>
+      {/* Conditional Content by Active Tab */}
+      {activeConsoleTab === 'DOCTORS' && (
+        <DoctorManagement 
+          clinicId={clinicId} 
+          token={token} 
+          onDoctorsUpdated={() => {
+            fetch(`/api/clinics/${clinicId}/queues`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            })
+              .then(r => r.json())
+              .then(res => { if (res.success && res.data) setQueues(res.data); })
+              .catch(console.error);
+          }} 
+        />
+      )}
 
-      {/* Grid Layout: Serving Counter + Waiting & On-Hold Columns */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 items-start">
-        
-        {/* Left Col: Primary Serving Chamber Card */}
-        <div className="bg-white border-2 border-[#0284C7]/30 rounded-3xl p-6 shadow-md flex flex-col justify-between h-full">
-          <div>
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <span className="text-xs font-black tracking-wider uppercase text-[#16A34A] flex items-center space-x-1.5">
-                <span className="w-2 h-2 rounded-full bg-[#16A34A] animate-pulse" />
-                <span>ACTIVE CONSULTATION</span>
+      {activeConsoleTab === 'SERVICES' && (
+        <ServiceQueueManagement 
+          clinicId={clinicId} 
+          token={token} 
+          onChanged={() => {
+            fetch(`/api/clinics/${clinicId}/queues`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            })
+              .then(r => r.json())
+              .then(res => { if (res.success && res.data) setQueues(res.data); })
+              .catch(console.error);
+          }} 
+        />
+      )}
+
+      {activeConsoleTab === 'ANALYTICS' && (
+        <ClinicAnalytics 
+          clinicId={clinicId} 
+          token={token} 
+          clinicName={activeClinicObj?.name || currentUser?.clinicName} 
+        />
+      )}
+
+      {activeConsoleTab === 'QUEUE' && (
+        <>
+          {/* Queue Selector Tabs */}
+          <div className="flex items-center space-x-2 overflow-x-auto pb-3 mb-6 scrollbar-none">
+            {queues.length === 0 ? (
+              <div className="text-xs text-[#64748B]">No active queues found in this clinic facility.</div>
+            ) : (
+              queues.map((q) => (
+                <button
+                  key={q.id}
+                  onClick={() => setSelectedQueueId(q.id)}
+                  className={`px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2 shrink-0 border ${
+                    selectedQueueId === q.id
+                      ? 'bg-[#1E293B] border-[#1E293B] text-white shadow-sm'
+                      : 'bg-white border-slate-200 text-[#334155] hover:bg-slate-50'
+                  }`}
+                >
+                  <span>👨‍⚕️ {q.doctor?.name || q.name}</span>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-mono ${
+                    selectedQueueId === q.id ? 'bg-[#0F172A] text-slate-200' : 'bg-slate-100 text-[#64748B]'
+                  }`}>
+                    {q.doctor?.roomNumber || 'Room 1'}
+                  </span>
+                </button>
+              ))
+            )}
+          </div>
+
+          {/* Grid Layout: Serving Counter + Waiting & On-Hold Columns */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 items-start">
+            
+            {/* Left Col: Primary Serving Chamber Card */}
+            <div className="bg-white border-2 border-[#0284C7]/30 rounded-3xl p-6 shadow-md flex flex-col justify-between h-full">
+              <div>
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <span className="text-xs font-black tracking-wider uppercase text-[#16A34A] flex items-center space-x-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#16A34A] animate-pulse" />
+                    <span>ACTIVE CONSULTATION</span>
               </span>
               <span className="text-xs font-mono text-[#64748B] font-bold">
                 {activeQueueObj?.doctor?.roomNumber || 'Room 101'}
@@ -654,6 +747,8 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
         </div>
 
       </div>
+      </>
+      )}
 
       {/* New Walk-in Patient Modal */}
       {showWalkinModal && (
