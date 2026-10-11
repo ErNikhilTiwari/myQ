@@ -367,6 +367,17 @@ export class QueuesService {
       orderBy: { sequenceNumber: 'asc' },
     });
 
+    // Dynamic Rolling ETA Algorithm (Phase 2, Section 30 & 11):
+    // Computes dynamic average consultation duration from completed tokens for this doctor/queue
+    let estimatedWaitMinutes = 0;
+    if (entry.status === QueueEntryStatus.WAITING) {
+      estimatedWaitMinutes = await this.calculateDynamicETA(
+        entry.queueId,
+        entry.queue.doctorId,
+        positionAhead,
+      );
+    }
+
     return {
       tokenNumber: entry.tokenNumber,
       status: entry.status as QueueEntryStatus,
@@ -375,11 +386,56 @@ export class QueuesService {
       doctorName: entry.queue.doctor?.name || null,
       currentServingToken: currentServing?.tokenNumber || null,
       positionAhead: entry.status === QueueEntryStatus.WAITING ? positionAhead : 0,
-      estimatedWaitMinutes: entry.status === QueueEntryStatus.WAITING ? positionAhead * 15 : 0,
+      estimatedWaitMinutes,
       holdReason: entry.holdReason,
       calledAt: entry.calledAt ? entry.calledAt.toISOString() : null,
       lastUpdated: new Date().toISOString(),
     };
+  }
+
+  /**
+   * Phase 2 Dynamic ETA Algorithm (rolling completed consultation history)
+   */
+  async calculateDynamicETA(
+    queueId: string,
+    doctorId: string | null,
+    peopleAhead: number,
+  ): Promise<number> {
+    if (peopleAhead <= 0) return 0;
+
+    // Look for completed tokens in this queue/doctor with valid service durations
+    const completedTokens = await this.prisma.queueEntry.findMany({
+      where: {
+        queueId,
+        status: QueueEntryStatus.COMPLETED,
+        startedAt: { not: null },
+        completedAt: { not: null },
+      },
+      take: 10,
+      orderBy: { completedAt: 'desc' },
+    });
+
+    let avgMinutes = 15; // default fallback
+    if (completedTokens.length > 0) {
+      let totalDurationMs = 0;
+      let validCount = 0;
+
+      for (const t of completedTokens) {
+        if (t.startedAt && t.completedAt) {
+          const dur = t.completedAt.getTime() - t.startedAt.getTime();
+          if (dur > 0 && dur < 120 * 60 * 1000) { // filter out outliers > 2 hrs
+            totalDurationMs += dur;
+            validCount++;
+          }
+        }
+      }
+
+      if (validCount > 0) {
+        avgMinutes = Math.max(5, Math.round(totalDurationMs / validCount / (1000 * 60)));
+      }
+    }
+
+    return peopleAhead * avgMinutes;
   }
 
   /**
