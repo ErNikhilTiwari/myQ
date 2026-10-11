@@ -9,6 +9,7 @@ interface TVViewerProps {
   clinics?: ClinicItem[];
   onSelectClinicId?: (id: string) => void;
   currentUser?: any;
+  token?: string | null;
 }
 
 export const TVViewerKiosk: React.FC<TVViewerProps> = ({ 
@@ -17,6 +18,7 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
   clinics = [],
   onSelectClinicId,
   currentUser,
+  token,
 }) => {
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [clinicName, setClinicName] = useState('');
@@ -91,7 +93,12 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
           }
           const q = qRes.data[0];
 
-          fetch(`/api/clinics/${effectiveClinicId}/queues/${q.id}`)
+          const headers: Record<string, string> = {};
+          if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+          }
+
+          fetch(`/api/clinics/${effectiveClinicId}/queues/${q.id}`, { headers })
             .then((d) => d.json())
             .then((detRes) => {
               if (!detRes.success || !detRes.data) return;

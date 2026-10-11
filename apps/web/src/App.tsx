@@ -362,6 +362,7 @@ export default function App() {
             onSelectClinicId={setSelectedClinicId}
             clinicSlug={currentClinic?.slug}
             currentUser={currentUser}
+            token={token}
           />
         )}
       </main>

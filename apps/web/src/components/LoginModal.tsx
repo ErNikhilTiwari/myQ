@@ -247,9 +247,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 placeholder="123456"
                 className="w-full bg-[#F8FAFC] border border-slate-300 rounded-xl px-4 py-2.5 text-center text-lg tracking-widest text-[#0284C7] font-mono font-bold focus:outline-none focus:border-[#0284C7] focus:bg-white"
               />
-              <p className="text-[11px] text-[#64748B] mt-1.5 text-center">
-                Demo mode active: Default mock OTP is <span className="font-mono font-bold text-[#0284C7]">123456</span>
-              </p>
+              <div className="bg-[#E0F2FE] border border-[#0284C7]/20 rounded-xl p-2.5 mt-2 text-center text-[11px] text-[#0284C7]">
+                <p className="font-semibold">Local Dev Testing:</p>
+                <p className="text-[10px] text-[#64748B] mt-0.5">
+                  Enter the code from your backend terminal (or use mock bypass <span className="font-mono font-bold text-[#0284C7]">123456</span>).
+                </p>
+              </div>
             </div>
 
             <button
