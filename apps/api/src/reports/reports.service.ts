@@ -285,4 +285,47 @@ export class ReportsService {
       noShowRatePercent,
     };
   }
+
+  /**
+   * Phase 3 Automated Clinic Insights & Bottleneck Detection
+   */
+  async generateClinicInsights(clinicId: string): Promise<any> {
+    const analytics = await this.getAdvancedAnalytics(clinicId);
+    const bottlenecks: string[] = [];
+    const recommendations: string[] = [];
+
+    // Analyze wait times
+    if (analytics.longestWaitMinutes > 25) {
+      bottlenecks.push(`High maximum waiting time detected (${analytics.longestWaitMinutes} mins).`);
+      recommendations.push('Consider adding a relief doctor during peak morning shifts.');
+    }
+
+    // Analyze no-show rates
+    if (analytics.noShowRatePercent > 10) {
+      bottlenecks.push(`Elevated patient no-show rate (${analytics.noShowRatePercent}%).`);
+      recommendations.push('Send automated WhatsApp reminder 15 minutes before estimated token time.');
+    } else {
+      recommendations.push('Patient attendance is healthy with minimal token dropouts.');
+    }
+
+    // Predicted tomorrow load
+    let load: 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL' = 'MODERATE';
+    const totalToday = analytics.hourlyTraffic.reduce((acc: number, h: any) => acc + h.tokensCount, 0);
+    if (totalToday > 50) load = 'HIGH';
+    else if (totalToday < 15) load = 'LOW';
+
+    const peakHourFormatted = `${String(analytics.peakHour).padStart(2, '0')}:00 - ${String(analytics.peakHour + 1).padStart(2, '0')}:00`;
+
+    return {
+      clinicId,
+      clinicName: analytics.clinicName,
+      summary: `AI Performance audit for ${analytics.clinicName}: Patient flow is steady with peak rush occurring around ${peakHourFormatted}.`,
+      bottlenecksDetected: bottlenecks.length > 0 ? bottlenecks : ['No operational bottlenecks observed.'],
+      recommendedActions: recommendations,
+      predictedTomorrowLoad: load,
+      estimatedPeakWindow: peakHourFormatted,
+      generatedAt: new Date().toISOString(),
+    };
+  }
 }
+

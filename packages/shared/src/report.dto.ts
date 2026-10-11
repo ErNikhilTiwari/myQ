@@ -49,3 +49,15 @@ export interface ExportReportQueryDto {
   date?: string;
 }
 
+export interface AIClinicInsightDto {
+  clinicId: string;
+  clinicName: string;
+  summary: string;
+  bottlenecksDetected: string[];
+  recommendedActions: string[];
+  predictedTomorrowLoad: 'LOW' | 'MODERATE' | 'HIGH' | 'CRITICAL';
+  estimatedPeakWindow: string; // e.g. "10:00 - 12:00"
+  generatedAt: string;
+}
+
+

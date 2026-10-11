@@ -74,9 +74,18 @@ export class AdsService {
       return null;
     }
 
-    // Pick first or random active ad
+    // Dynamic targeting priority: If clinic-targeted ad exists, prioritize it over network-wide ad
+    if (clinicId) {
+      const targetedAd = ads.find((a) => a.clinicId === clinicId);
+      if (targetedAd) {
+        return this.mapToDto(targetedAd);
+      }
+    }
+
+    // Otherwise serve network-wide ad
     const selectedAd = ads[0];
     return this.mapToDto(selectedAd);
+
   }
 
   /**

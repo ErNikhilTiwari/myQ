@@ -101,5 +101,19 @@ export class ReportsController {
     const data = await this.reportsService.getAdvancedAnalytics(clinicId, date);
     return { success: true, data };
   }
+
+  /**
+   * 5. Automated AI Clinic Insights & Bottleneck Detection (Phase 3)
+   */
+  @Get('clinics/:clinicId/reports/insights')
+  @UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.CLINIC_ADMIN)
+  async getInsights(
+    @Param('clinicId') clinicId: string,
+  ): Promise<ApiResponse> {
+    const data = await this.reportsService.generateClinicInsights(clinicId);
+    return { success: true, data };
+  }
 }
+
 
