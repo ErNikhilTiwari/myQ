@@ -371,7 +371,7 @@ export const PatientPortalView: React.FC<PatientPortalViewProps> = ({
                 className="flex items-center space-x-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-md transition active:scale-95"
               >
                 <Calendar className="w-4 h-4" />
-                <span>Book Now</span>
+                <span>Book Consultation</span>
               </button>
             ) : (
               <button
@@ -631,7 +631,7 @@ export const PatientPortalView: React.FC<PatientPortalViewProps> = ({
                 className="bg-[#0284C7] hover:bg-[#0369A1] text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-sm active:scale-95"
               >
                 <Calendar className="w-3.5 h-3.5" />
-                <span>Book Now</span>
+                <span>Book Appointment</span>
               </button>
             </div>
 
