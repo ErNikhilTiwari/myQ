@@ -136,7 +136,7 @@ export class QueuesController {
     const targetStatus = dto.targetStatus || dto.status || dto.toStatus;
     const data = await this.queuesService.transitionEntry(clinicId, entryId, {
       targetStatus,
-      holdReason: dto.holdReason,
+      holdReason: dto.holdReason || dto.reason || dto.cancelReason,
     });
     return { success: true, data };
   }

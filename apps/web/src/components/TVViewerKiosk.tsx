@@ -26,12 +26,14 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
   // TV Snapshot State
   const [currentServing, setCurrentServing] = useState<{
     tokenNumber: string;
+    patientName: string;
     roomNumber: string;
     doctorName: string;
   } | null>(null);
 
   const [nextWaiting, setNextWaiting] = useState<Array<{
     tokenNumber: string;
+    patientName: string;
     estimatedWaitMinutes: number;
   }>>([]);
 
@@ -107,6 +109,7 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
               if (data.currentServing) {
                 const newServing = {
                   tokenNumber: data.currentServing.tokenNumber,
+                  patientName: data.currentServing.patientName || data.currentServing.user?.name || 'Walk-in Patient',
                   roomNumber: data.queue.doctor?.roomNumber || 'Room 101',
                   doctorName: data.queue.doctor?.name || 'General OPD',
                 };
@@ -122,8 +125,9 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
 
               if (data.waiting) {
                 setNextWaiting(
-                  data.waiting.slice(0, 4).map((w: any, idx: number) => ({
+                  data.waiting.slice(0, 5).map((w: any, idx: number) => ({
                     tokenNumber: w.tokenNumber,
+                    patientName: w.patientName || w.user?.name || 'Patient',
                     estimatedWaitMinutes: (idx + 1) * 12,
                   }))
                 );
@@ -245,18 +249,40 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
                 </span>
               </div>
 
-              <div className="my-auto py-10">
+              <div className="my-auto py-8">
                 {currentServing ? (
                   <>
-                    <div className="text-8xl sm:text-9xl md:text-[11rem] font-black font-mono tracking-tight text-[#1E293B]">
+                    <div className="text-7xl sm:text-8xl md:text-9xl lg:text-[10rem] font-black font-mono tracking-tight text-[#1E293B] leading-none">
                       {currentServing.tokenNumber}
                     </div>
-                    <div className="text-2xl sm:text-3xl font-extrabold text-[#0284C7] mt-4 flex items-center justify-center space-x-3">
-                      <span className="bg-[#E0F2FE] text-[#0284C7] px-4 py-1.5 rounded-2xl font-bold">
-                        📍 {currentServing.roomNumber}
+
+                    {/* Distinct Prominent Patient Identification Badge */}
+                    <div className="mt-5 mb-5 inline-flex items-center space-x-3 bg-emerald-50 border-2 border-emerald-400/80 px-6 py-2.5 rounded-2xl shadow-sm max-w-full">
+                      <span className="bg-emerald-600 text-white font-black text-xs uppercase tracking-wider px-2.5 py-1 rounded-lg shrink-0">
+                        PATIENT
                       </span>
-                      <span className="text-slate-300">&bull;</span>
-                      <span className="text-[#334155]">{currentServing.doctorName}</span>
+                      <span className="text-2xl sm:text-3xl md:text-4xl font-black text-emerald-950 truncate">
+                        {currentServing.patientName}
+                      </span>
+                    </div>
+
+                    {/* Unambiguous Routing Details: Room vs Doctor */}
+                    <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mt-2">
+                      {/* Room Badge */}
+                      <div className="bg-sky-50 border-2 border-sky-300 text-sky-900 px-5 py-2.5 rounded-2xl flex items-center space-x-2.5 shadow-xs">
+                        <span className="text-xs uppercase font-black tracking-wider text-sky-700 bg-white border border-sky-200 px-2.5 py-0.5 rounded-md">
+                          ROOM / CHAMBER
+                        </span>
+                        <span className="text-xl sm:text-2xl font-black font-mono">{currentServing.roomNumber}</span>
+                      </div>
+
+                      {/* Doctor Badge */}
+                      <div className="bg-slate-100 border-2 border-slate-300 text-slate-800 px-5 py-2.5 rounded-2xl flex items-center space-x-2.5 shadow-xs">
+                        <span className="text-xs uppercase font-black tracking-wider text-slate-600 bg-white border border-slate-200 px-2.5 py-0.5 rounded-md">
+                          DOCTOR
+                        </span>
+                        <span className="text-xl sm:text-2xl font-black">{currentServing.doctorName}</span>
+                      </div>
                     </div>
                   </>
                 ) : (
@@ -292,13 +318,21 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
                     nextWaiting.map((item, idx) => (
                       <div
                         key={idx}
-                        className="bg-[#F8FAFC] border border-slate-200/80 p-4 rounded-2xl flex items-center justify-between transition hover:border-[#0284C7]/40"
+                        className="bg-[#F8FAFC] border border-slate-200/80 p-3.5 rounded-2xl flex items-center justify-between transition hover:border-[#0284C7]/40"
                       >
-                        <div className="flex items-center space-x-3">
-                          <span className="text-xs font-mono text-[#94A3B8] font-bold">#{idx + 1}</span>
-                          <span className="text-3xl font-black font-mono text-[#1E293B]">{item.tokenNumber}</span>
+                        <div className="flex items-center space-x-3 min-w-0">
+                          <span className="text-xs font-mono text-[#94A3B8] font-bold shrink-0">#{idx + 1}</span>
+                          <div className="min-w-0">
+                            <div className="text-2xl font-black font-mono text-[#1E293B]">{item.tokenNumber}</div>
+                            <div className="flex items-center space-x-1.5 mt-0.5 truncate">
+                              <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200 shrink-0">
+                                Patient
+                              </span>
+                              <span className="text-xs font-bold text-[#1E293B] truncate">{item.patientName}</span>
+                            </div>
+                          </div>
                         </div>
-                        <span className="text-xs font-bold text-[#0284C7] bg-[#E0F2FE] px-3 py-1 rounded-xl border border-[#0284C7]/20">
+                        <span className="text-xs font-bold text-[#0284C7] bg-[#E0F2FE] px-2.5 py-1 rounded-xl border border-[#0284C7]/20 whitespace-nowrap shrink-0 ml-2">
                           ~{item.estimatedWaitMinutes} min
                         </span>
                       </div>

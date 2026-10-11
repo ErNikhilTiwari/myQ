@@ -89,6 +89,8 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
   // Cancel Confirmation Modal
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [tokenToCancel, setTokenToCancel] = useState<QueueItem | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelReasonError, setCancelReasonError] = useState('');
 
   // Hold reason prompt
   const [holdingTokenId, setHoldingTokenId] = useState<string | null>(null);
@@ -129,6 +131,19 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
       .catch((err) => console.error('Error fetching queues:', err));
   }, [clinicId, isReceptionistAuthenticated, token]);
 
+  const normalizeEntry = (e: any): QueueItem => ({
+    id: e.id,
+    tokenNumber: e.tokenNumber,
+    sequenceNumber: e.sequenceNumber,
+    status: e.status,
+    patientName: e.patientName || e.user?.name || 'Walk-in Patient',
+    phoneNumber: e.phoneNumber || e.user?.phoneNumber || '',
+    estimatedWaitMinutes: e.estimatedWaitMinutes || e.estimatedWait || 0,
+    holdReason: e.holdReason,
+    calledAt: e.calledAt,
+    createdAt: e.createdAt,
+  });
+
   // Fetch active queue details with instant refresh support
   const fetchQueueDetails = React.useCallback(() => {
     if (!isReceptionistAuthenticated || !clinicId || !selectedQueueId) return;
@@ -142,10 +157,10 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
       .then((res) => {
         if (res.success && res.data) {
           const data = res.data;
-          setCurrentServing(data.currentServing || null);
-          setWaitingList(data.waiting || []);
-          setOnHoldList(data.onHold || []);
-          setCompletedList(data.completed || []);
+          setCurrentServing(data.currentServing ? normalizeEntry(data.currentServing) : null);
+          setWaitingList((data.waiting || []).map(normalizeEntry));
+          setOnHoldList((data.onHold || []).map(normalizeEntry));
+          setCompletedList((data.completed || []).map(normalizeEntry));
         }
       })
       .catch(() => {});
@@ -174,7 +189,8 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
       const data = await res.json();
       if (data.success) {
         const calledToken = data.data?.calledEntry?.tokenNumber || data.data?.tokenNumber || 'Next';
-        showToast('success', `Called Token ${calledToken}`);
+        const calledName = data.data?.calledEntry?.patientName || data.data?.calledEntry?.user?.name || '';
+        showToast('success', calledName ? `Called Token ${calledToken} (${calledName})` : `Called Token ${calledToken}`);
         fetchQueueDetails();
       } else {
         showToast('error', data.error?.message || data.message || 'Failed to call next token');
@@ -208,9 +224,9 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
       if (data.success) {
         let msg = `Token updated to ${toStatus}`;
         if (toStatus === 'NO_SHOW') msg = 'Patient marked as No-Show';
-        if (toStatus === 'CANCELLED') msg = 'Patient appointment cancelled';
+        if (toStatus === 'CANCELLED') msg = reason ? `Appointment cancelled (${reason})` : 'Patient appointment cancelled';
         if (toStatus === 'COMPLETED') msg = 'Consultation completed';
-        if (toStatus === 'ON_HOLD') msg = 'Patient placed on hold';
+        if (toStatus === 'ON_HOLD') msg = reason ? `Patient placed on hold (${reason})` : 'Patient placed on hold';
         showToast('success', msg);
         setHoldingTokenId(null);
         fetchQueueDetails();
@@ -409,19 +425,24 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
             </div>
 
             {/* Token Hero Section */}
-            <div className="text-center py-8">
+            <div className="text-center py-6">
               {currentServing ? (
                 <>
                   <div className="text-7xl font-black font-mono tracking-tight text-[#1E293B]">
                     {currentServing.tokenNumber}
                   </div>
-                  <div className="mt-3 text-lg font-bold text-[#1E293B]">
-                    {currentServing.patientName || 'Walk-in Patient'}
+                  <div className="mt-3.5 inline-flex items-center space-x-2 bg-emerald-50 border border-emerald-300/80 px-4 py-1.5 rounded-2xl shadow-xs">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-white border border-emerald-200 px-2 py-0.5 rounded-md">
+                      Patient
+                    </span>
+                    <span className="text-lg font-black text-emerald-950">
+                      {currentServing.patientName || 'Walk-in Patient'}
+                    </span>
                   </div>
-                  <div className="text-xs text-[#64748B] font-mono mt-1">
+                  <div className="text-xs text-[#64748B] font-mono mt-1.5 font-semibold">
                     {currentServing.phoneNumber || 'Counter Token'}
                   </div>
-                  <div className="mt-4 inline-flex items-center space-x-2 bg-[#E0F2FE] border border-[#0284C7]/20 text-[#0284C7] px-3.5 py-1 rounded-full text-xs font-bold">
+                  <div className="mt-3.5 inline-flex items-center space-x-2 bg-[#E0F2FE] border border-[#0284C7]/20 text-[#0284C7] px-3.5 py-1 rounded-full text-xs font-bold">
                     <Activity className="w-3.5 h-3.5 animate-spin" />
                     <span>In Chamber Consultation</span>
                   </div>
@@ -457,16 +478,19 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
                   <span>Put On Hold</span>
                 </button>
                 <button
-                  onClick={() => handleTransition(currentServing.id, 'NO_SHOW')}
+                  onClick={() => handleTransition(currentServing.id, 'ON_HOLD', 'Not Present')}
                   disabled={isSubmitting}
-                  className="bg-slate-200 hover:bg-slate-300 text-[#334155] py-2.5 rounded-xl font-bold text-xs flex items-center justify-center space-x-1 transition"
+                  className="bg-amber-50 hover:bg-amber-100 text-[#B45309] border border-amber-300 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center space-x-1 transition active:scale-95 shadow-sm"
+                  title="Marks patient as not present and moves to On-Hold list"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                  <span>No-Show</span>
+                  <span>No-Show (Hold)</span>
                 </button>
                 <button
                   onClick={() => {
                     setTokenToCancel(currentServing);
+                    setCancelReason('');
+                    setCancelReasonError('');
                     setShowCancelModal(true);
                   }}
                   disabled={isSubmitting}
@@ -524,8 +548,13 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
                         {idx + 1}
                       </span>
                       <div>
-                        <div className="font-extrabold text-[#1E293B] text-sm">{item.tokenNumber}</div>
-                        <div className="text-xs text-[#64748B] font-medium">{item.patientName}</div>
+                        <div className="flex items-center space-x-2">
+                          <span className="font-extrabold text-[#1E293B] text-sm font-mono">{item.tokenNumber}</span>
+                          <span className="text-[10px] font-bold text-sky-700 bg-sky-50 px-1.5 py-0.2 rounded border border-sky-200">
+                            Patient
+                          </span>
+                        </div>
+                        <div className="text-xs text-[#1E293B] font-bold mt-0.5">{item.patientName || 'Walk-in Patient'}</div>
                       </div>
                     </div>
 
@@ -567,8 +596,16 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
                     className="p-3 bg-[#FEF3C7]/40 border border-[#D97706]/30 rounded-2xl flex items-center justify-between"
                   >
                     <div>
-                      <div className="font-bold text-xs text-[#1E293B]">{h.tokenNumber} &bull; {h.patientName}</div>
-                      <div className="text-[10px] text-[#B45309]">{h.holdReason || 'Awaiting reports'}</div>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-bold text-xs font-mono text-[#1E293B]">{h.tokenNumber}</span>
+                        <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-1.5 py-0.2 rounded">
+                          Patient
+                        </span>
+                        <span className="text-xs font-bold text-[#1E293B]">{h.patientName || 'Walk-in Patient'}</span>
+                      </div>
+                      <div className="text-[11px] text-[#B45309] font-medium mt-0.5">
+                        <span className="font-semibold">Reason:</span> {h.holdReason || 'Not Present'}
+                      </div>
                     </div>
                     <button
                       onClick={() => handleTransition(h.id, 'WAITING')}
@@ -603,7 +640,8 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
                   >
                     <div className="flex items-center space-x-2">
                       <span className="font-bold font-mono text-[#1E293B]">{c.tokenNumber}</span>
-                      <span className="text-[#334155]">{c.patientName}</span>
+                      <span className="text-slate-300">&bull;</span>
+                      <span className="text-[#1E293B] font-semibold">{c.patientName || 'Walk-in Patient'}</span>
                     </div>
                     <span className="text-[10px] font-bold text-[#16A34A] bg-[#DCFCE7] px-2 py-0.5 rounded-full">
                       COMPLETED
@@ -741,24 +779,56 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
             <p className="text-xs text-[#64748B] mb-5 leading-relaxed">
               Do you want to cancel this patient appointment?
             </p>
-            <div className="bg-[#F8FAFC] border border-slate-200 rounded-2xl p-3.5 mb-5 text-xs text-left">
+            <div className="bg-[#F8FAFC] border border-slate-200 rounded-2xl p-3.5 mb-4 text-xs text-left">
               <div className="flex items-center justify-between">
                 <span className="font-extrabold text-[#1E293B] text-base font-mono">{tokenToCancel.tokenNumber}</span>
                 <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
                   Active Token
                 </span>
               </div>
-              <div className="text-[#334155] font-semibold mt-1">{tokenToCancel.patientName || 'Walk-in Patient'}</div>
+              <div className="text-[#334155] font-semibold mt-1">
+                <span className="text-[10px] text-slate-500 font-bold uppercase mr-1">Patient:</span>
+                {tokenToCancel.patientName || 'Walk-in Patient'}
+              </div>
               {tokenToCancel.phoneNumber && (
                 <div className="text-[11px] text-[#64748B] font-mono mt-0.5">{tokenToCancel.phoneNumber}</div>
               )}
             </div>
+
+            {/* Required Cancellation Reason Input Field */}
+            <div className="text-left mb-5">
+              <label className="block text-xs font-bold text-[#334155] mb-1">
+                Cancellation Reason <span className="text-rose-600">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. Left clinic / Patient requested / Emergency"
+                value={cancelReason}
+                onChange={(e) => {
+                  setCancelReason(e.target.value);
+                  if (cancelReasonError) setCancelReasonError('');
+                }}
+                className={`w-full bg-[#F8FAFC] border rounded-xl px-3.5 py-2.5 text-xs text-[#1E293B] font-semibold focus:outline-none focus:bg-white transition ${
+                  cancelReasonError ? 'border-rose-500 focus:border-rose-600' : 'border-slate-300 focus:border-[#DC2626]'
+                }`}
+              />
+              {cancelReasonError && (
+                <p className="text-[11px] text-rose-600 font-semibold mt-1.5 flex items-center space-x-1">
+                  <span>⚠️</span>
+                  <span>{cancelReasonError}</span>
+                </p>
+              )}
+            </div>
+
             <div className="flex space-x-2.5">
               <button
                 type="button"
                 onClick={() => {
                   setShowCancelModal(false);
                   setTokenToCancel(null);
+                  setCancelReason('');
+                  setCancelReasonError('');
                 }}
                 disabled={isSubmitting}
                 className="flex-1 bg-slate-100 hover:bg-slate-200 text-[#334155] py-2.5 rounded-xl text-xs font-bold transition"
@@ -768,9 +838,15 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
               <button
                 type="button"
                 onClick={async () => {
-                  await handleTransition(tokenToCancel.id, 'CANCELLED');
+                  if (!cancelReason.trim()) {
+                    setCancelReasonError('Cancellation reason is required.');
+                    return;
+                  }
+                  await handleTransition(tokenToCancel.id, 'CANCELLED', cancelReason.trim());
                   setShowCancelModal(false);
                   setTokenToCancel(null);
+                  setCancelReason('');
+                  setCancelReasonError('');
                 }}
                 disabled={isSubmitting}
                 className="flex-1 bg-[#DC2626] hover:bg-red-700 text-white py-2.5 rounded-xl text-xs font-bold transition shadow-sm"

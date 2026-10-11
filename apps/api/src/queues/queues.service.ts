@@ -113,6 +113,12 @@ export class QueuesService {
     const skipped = queue.queueEntries.filter((e) => e.status === 'SKIPPED');
     const completed = queue.queueEntries.filter((e) => e.status === 'COMPLETED');
 
+    const mapEntry = (e: any) => ({
+      ...e,
+      patientName: e.user?.name || 'Walk-in Patient',
+      phoneNumber: e.user?.phoneNumber || '',
+    });
+
     return {
       queue: {
         id: queue.id,
@@ -123,10 +129,11 @@ export class QueuesService {
         doctor: queue.doctor,
         service: queue.service,
       },
-      currentServing: currentServing || null,
-      waiting,
-      onHold,
-      skipped,
+      currentServing: currentServing ? mapEntry(currentServing) : null,
+      waiting: waiting.map(mapEntry),
+      onHold: onHold.map(mapEntry),
+      skipped: skipped.map(mapEntry),
+      completed: completed.map(mapEntry),
       completedCount: completed.length,
       totalToday: queue.queueEntries.length,
     };
@@ -306,6 +313,10 @@ export class QueuesService {
         dto.targetStatus === QueueEntryStatus.CANCELLED
       ) {
         updateData.completedAt = new Date();
+      }
+
+      if (dto.targetStatus === QueueEntryStatus.CANCELLED) {
+        updateData.holdReason = dto.holdReason || (dto as any).reason || 'Cancelled by staff';
       }
 
       return tx.queueEntry.update({
