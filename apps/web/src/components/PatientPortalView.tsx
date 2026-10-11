@@ -10,7 +10,6 @@ import {
   ShieldCheck, 
   AlertCircle,
   LogIn,
-  LogOut,
   User,
   Calendar,
   Sparkles,
@@ -367,26 +366,13 @@ export const PatientPortalView: React.FC<PatientPortalViewProps> = ({
           {/* Header Action Controls */}
           <div className="flex items-center space-x-2 w-full sm:w-auto justify-end">
             {isPatientLoggedIn ? (
-              <>
-                {/* Book Consultation Button */}
-                <button
-                  onClick={() => onOpenBooking && onOpenBooking('REMOTE')}
-                  className="flex items-center space-x-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-md transition active:scale-95"
-                >
-                  <Calendar className="w-4 h-4" />
-                  <span>Book Consultation</span>
-                </button>
-
-                {onLogout && (
-                  <button
-                    onClick={onLogout}
-                    className="p-2.5 rounded-xl border border-slate-200 text-slate-500 hover:text-red-600 hover:bg-red-50 transition"
-                    title="Log out"
-                  >
-                    <LogOut className="w-4 h-4" />
-                  </button>
-                )}
-              </>
+              <button
+                onClick={() => onOpenBooking && onOpenBooking('REMOTE')}
+                className="flex items-center space-x-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-md transition active:scale-95"
+              >
+                <Calendar className="w-4 h-4" />
+                <span>Book Now</span>
+              </button>
             ) : (
               <button
                 onClick={onOpenPatientLogin}
@@ -645,7 +631,7 @@ export const PatientPortalView: React.FC<PatientPortalViewProps> = ({
                 className="bg-[#0284C7] hover:bg-[#0369A1] text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-sm active:scale-95"
               >
                 <Calendar className="w-3.5 h-3.5" />
-                <span>Book Appointment</span>
+                <span>Book Now</span>
               </button>
             </div>
 
@@ -667,7 +653,7 @@ export const PatientPortalView: React.FC<PatientPortalViewProps> = ({
                   onClick={() => onOpenBooking && onOpenBooking('REMOTE')}
                   className="bg-[#0284C7] hover:bg-[#0369A1] text-white px-5 py-2.5 rounded-xl text-xs font-bold transition shadow-sm"
                 >
-                  Book Doctor Consultation
+                  Book Now
                 </button>
               </div>
             ) : (
