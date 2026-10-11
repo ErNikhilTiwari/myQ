@@ -350,16 +350,16 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
 
   return (
     <div className="flex-1 flex flex-col bg-[#F8FAFC] text-[#334155] p-4 md:p-6 overflow-y-auto">
-      {/* Toast Notification */}
+      {/* Toast Notification - Guaranteed top-most z-[99999] so it is never behind modals or blurred */}
       {feedbackMsg && (
         <div
-          className={`fixed top-16 right-6 z-50 px-4 py-3 rounded-xl shadow-lg flex items-center space-x-2 text-sm font-semibold transition animate-bounce ${
+          className={`fixed top-5 right-5 z-[99999] px-5 py-3.5 rounded-2xl shadow-2xl flex items-center space-x-2.5 text-xs sm:text-sm font-bold transition-all duration-200 animate-in slide-in-from-top-4 border pointer-events-auto ${
             feedbackMsg.type === 'success'
-              ? 'bg-[#16A34A] text-white border border-[#16A34A]'
-              : 'bg-[#DC2626] text-white border border-[#DC2626]'
+              ? 'bg-[#16A34A] text-white border-green-400/30 ring-4 ring-green-600/20'
+              : 'bg-[#DC2626] text-white border-red-400/30 ring-4 ring-red-600/20'
           }`}
         >
-          {feedbackMsg.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+          {feedbackMsg.type === 'success' ? <CheckCircle className="w-5 h-5 shrink-0" /> : <AlertCircle className="w-5 h-5 shrink-0" />}
           <span>{feedbackMsg.text}</span>
         </div>
       )}

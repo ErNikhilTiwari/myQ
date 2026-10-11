@@ -3,6 +3,7 @@ import { TVViewerKiosk } from './components/TVViewerKiosk';
 import { ReceptionistConsole } from './components/ReceptionistConsole';
 import { MobileTokenTracker } from './components/MobileTokenTracker';
 import { LoginModal, LoginProfile } from './components/LoginModal';
+import { SuperAdminDashboard } from './components/SuperAdminDashboard';
 import { ClinicItem } from './components/ClinicSearchSelect';
 import { 
   Monitor, 
@@ -15,22 +16,24 @@ import {
   CheckCircle2, 
   ShieldCheck,
   Building2,
-  ChevronLeft
+  ChevronLeft,
+  Crown
 } from 'lucide-react';
 
-export type AppView = 'LANDING' | 'PATIENT' | 'RECEPTIONIST' | 'TV_VIEWER';
+export type AppView = 'LANDING' | 'PATIENT' | 'RECEPTIONIST' | 'TV_VIEWER' | 'SUPER_ADMIN';
 
 export default function App() {
   // Check if someone is already logged in and determine initial view:
-  // If patient -> 'PATIENT', if clinic staff -> 'RECEPTIONIST', else -> 'LANDING'
+  // If patient -> 'PATIENT', if super admin -> 'SUPER_ADMIN', if clinic staff -> 'RECEPTIONIST', else -> 'LANDING'
   const getInitialView = (): AppView => {
     try {
       const savedUser = localStorage.getItem('user');
       const savedToken = localStorage.getItem('token');
       if (savedUser && savedToken) {
         const user = JSON.parse(savedUser);
+        if (user.role === 'SUPER_ADMIN') return 'SUPER_ADMIN';
         if (user.role === 'PATIENT') return 'PATIENT';
-        if (user.role === 'RECEPTIONIST' || user.role === 'CLINIC_ADMIN' || user.role === 'SUPER_ADMIN') {
+        if (user.role === 'RECEPTIONIST' || user.role === 'CLINIC_ADMIN') {
           return 'RECEPTIONIST';
         }
       }
@@ -192,6 +195,21 @@ export default function App() {
             <Monitor className="w-3.5 h-3.5" />
             <span>TV View</span>
           </button>
+
+          {/* Profile 4: Super Admin Portal (Active when logged in as Super Admin) */}
+          {currentUser?.role === 'SUPER_ADMIN' && (
+            <button
+              onClick={() => setActiveTab('SUPER_ADMIN')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg font-bold text-xs transition ${
+                activeTab === 'SUPER_ADMIN'
+                  ? 'bg-amber-500 text-slate-950 shadow-sm'
+                  : 'text-amber-400 hover:text-amber-300'
+              }`}
+            >
+              <Crown className="w-3.5 h-3.5" />
+              <span>Super Admin</span>
+            </button>
+          )}
         </div>
 
         {/* 3. Global Navbar Login Button */}
@@ -405,6 +423,20 @@ export default function App() {
             clinicSlug={currentClinic?.slug}
             currentUser={currentUser}
             token={token}
+          />
+        )}
+
+        {/* ========================================================================= */}
+        {/* 4. Super Admin Profile: Root Multi-Tenant System Portal                   */}
+        {/* ========================================================================= */}
+        {activeTab === 'SUPER_ADMIN' && (
+          <SuperAdminDashboard
+            token={token}
+            currentUser={currentUser}
+            onSelectClinicAsStaff={(clinicId) => {
+              setSelectedClinicId(clinicId);
+              setActiveTab('RECEPTIONIST');
+            }}
           />
         )}
       </main>
