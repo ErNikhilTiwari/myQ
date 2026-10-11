@@ -36,8 +36,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     switch (profileType) {
       case 'RECEPTIONIST':
         return {
-          title: 'Receptionist Login',
-          subtitle: 'Clinic Desk & Live Queue Operator Access',
+          title: 'Clinic Login',
+          subtitle: 'Clinic Operations, Queue Operator & Counter Desk Access',
           icon: <UserCheck className="w-5 h-5" />,
           accentColor: '#0284C7',
           bgColor: '#E0F2FE',
@@ -63,9 +63,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
   // Preset quick-test accounts filtered or ordered by profileType
   const allQuickAccounts = [
-    { label: 'Receptionist (ABC Health)', phone: '+919876500001', role: 'RECEPTIONIST', clinic: 'ABC Health Clinic' },
+    { label: 'Clinic Login (ABC Health)', phone: '+919876500001', role: 'RECEPTIONIST', clinic: 'ABC Health Clinic' },
     { label: 'Patient (Rahul)', phone: '+919876511111', role: 'PATIENT', clinic: 'Patient Account' },
-    { label: 'Clinic Admin', phone: '+919876500000', role: 'CLINIC_ADMIN', clinic: 'ABC Health Clinic' },
     { label: 'Super Admin', phone: '+919999999999', role: 'SUPER_ADMIN', clinic: 'System Root' },
   ];
 

@@ -311,15 +311,15 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
           </div>
 
           <span className="bg-[#E0F2FE] text-[#0284C7] text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-3">
-            Receptionist Security Gate
+            Clinic Security Gate
           </span>
 
           <h2 className="text-2xl font-black text-[#1E293B] mb-2 tracking-tight">
-            Staff Login Required
+            Clinic Login Required
           </h2>
 
           <p className="text-xs text-[#64748B] mb-6 leading-relaxed max-w-sm">
-            Access to live queue management, doctor chambers, patient tokens, and walk-in issuance requires active receptionist credentials.
+            Access to live queue management, doctor chambers, patient tokens, and walk-in issuance requires verified clinic login credentials.
           </p>
 
           <button
@@ -327,7 +327,7 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
             className="w-full bg-[#0284C7] hover:bg-[#0369A1] text-white py-3.5 rounded-2xl font-bold text-xs transition shadow-md flex items-center justify-center space-x-2 active:scale-95"
           >
             <LogIn className="w-4 h-4" />
-            <span>Reception Login</span>
+            <span>Clinic Login</span>
           </button>
 
           <p className="text-[11px] text-[#94A3B8] mt-4">
@@ -362,7 +362,7 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
               {activeClinicObj?.name || currentUser?.clinicName || 'Clinic Desk'}
             </h1>
             <span className="bg-[#E0F2FE] text-[#0284C7] text-xs px-2.5 py-0.5 rounded-full font-bold border border-[#0284C7]/20">
-              Reception Desk &bull; {currentUser?.name || 'Receptionist'}
+              Clinic Desk &bull; {currentUser?.name || 'Clinic Staff'}
             </span>
           </div>
           <p className="text-xs text-[#64748B] mt-0.5 font-medium">

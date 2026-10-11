@@ -41,7 +41,7 @@ export class ReportsController {
    */
   @Get('clinics/:clinicId/reports/monthly')
   @UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
-  @Roles(UserRole.SUPER_ADMIN, UserRole.CLINIC_ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.CLINIC_ADMIN, UserRole.RECEPTIONIST)
   async getMonthly(
     @Param('clinicId') clinicId: string,
     @Query('month') month?: string,
@@ -55,7 +55,7 @@ export class ReportsController {
    */
   @Get('clinics/:clinicId/reports/export')
   @UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
-  @Roles(UserRole.SUPER_ADMIN, UserRole.CLINIC_ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.CLINIC_ADMIN, UserRole.RECEPTIONIST)
   async exportReport(
     @Param('clinicId') clinicId: string,
     @Query() query: ExportReportQueryDto,
@@ -93,7 +93,7 @@ export class ReportsController {
    */
   @Get('clinics/:clinicId/reports/advanced-analytics')
   @UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
-  @Roles(UserRole.SUPER_ADMIN, UserRole.CLINIC_ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.CLINIC_ADMIN, UserRole.RECEPTIONIST)
   async getAdvancedAnalytics(
     @Param('clinicId') clinicId: string,
     @Query('date') date?: string,
@@ -107,7 +107,7 @@ export class ReportsController {
    */
   @Get('clinics/:clinicId/reports/insights')
   @UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
-  @Roles(UserRole.SUPER_ADMIN, UserRole.CLINIC_ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.CLINIC_ADMIN, UserRole.RECEPTIONIST)
   async getInsights(
     @Param('clinicId') clinicId: string,
   ): Promise<ApiResponse> {

@@ -78,7 +78,7 @@ export class QueuesController {
    */
   @Post('clinics/:clinicId/queues')
   @UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
-  @Roles(UserRole.SUPER_ADMIN, UserRole.CLINIC_ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.CLINIC_ADMIN, UserRole.RECEPTIONIST)
   async createQueue(
     @Param('clinicId') clinicId: string,
     @Body() dto: CreateQueueDto,

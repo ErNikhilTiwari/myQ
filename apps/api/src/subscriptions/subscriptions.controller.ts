@@ -26,7 +26,7 @@ export class SubscriptionsController {
    */
   @Get('clinics/:clinicId/subscription')
   @UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
-  @Roles(UserRole.SUPER_ADMIN, UserRole.CLINIC_ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.CLINIC_ADMIN, UserRole.RECEPTIONIST)
   async getSubscription(
     @Param('clinicId') clinicId: string,
   ): Promise<ApiResponse> {
@@ -39,7 +39,7 @@ export class SubscriptionsController {
    */
   @Post('clinics/:clinicId/subscription/upgrade')
   @UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
-  @Roles(UserRole.SUPER_ADMIN, UserRole.CLINIC_ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.CLINIC_ADMIN, UserRole.RECEPTIONIST)
   async upgrade(
     @Param('clinicId') clinicId: string,
     @Body() dto: UpgradeSubscriptionDto,

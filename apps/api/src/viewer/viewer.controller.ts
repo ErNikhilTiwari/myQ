@@ -51,7 +51,7 @@ export class ViewerController {
    */
   @Post('clinics/:clinicId/displays')
   @UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
-  @Roles(UserRole.SUPER_ADMIN, UserRole.CLINIC_ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.CLINIC_ADMIN, UserRole.RECEPTIONIST)
   async createDevice(
     @Param('clinicId') clinicId: string,
     @Body() dto: CreateDisplayDeviceDto,

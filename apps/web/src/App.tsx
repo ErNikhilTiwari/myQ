@@ -129,7 +129,7 @@ export default function App() {
             <span>Patient</span>
           </button>
 
-          {/* Profile 2: Receptionist (Chamber Console) */}
+          {/* Profile 2: Clinic Login (Chamber Console & Staff Desk) */}
           <button
             onClick={() => setActiveTab('RECEPTIONIST')}
             className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg font-bold text-xs transition ${
@@ -139,7 +139,7 @@ export default function App() {
             }`}
           >
             <LayoutDashboard className="w-3.5 h-3.5" />
-            <span>Receptionist</span>
+            <span>Clinic Login</span>
           </button>
 
           {/* Profile 3: TV View (Waiting Room Kiosk) */}
@@ -245,7 +245,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* TILE 2: Receptionist View (Chamber Console & Counter Registrations) */}
+              {/* TILE 2: Clinic Login (Chamber Console & Counter Registrations) */}
               <div
                 onClick={() => setActiveTab('RECEPTIONIST')}
                 className="group w-full bg-white border-2 border-slate-200/90 hover:border-[#0284C7] rounded-3xl p-6 sm:p-8 shadow-sm hover:shadow-xl transition-all duration-200 cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6"
@@ -260,11 +260,11 @@ export default function App() {
                         Profile 2
                       </span>
                       <span className="text-xs font-bold text-[#DC2626] bg-[#FEF2F2] px-2 py-0.5 rounded-full">
-                        Staff Auth Required
+                        Clinic Auth Required
                       </span>
                     </div>
                     <h2 className="text-lg sm:text-xl font-black text-[#1E293B] tracking-tight group-hover:text-[#0284C7] transition-colors">
-                      Receptionist &bull; Counter Operations Console
+                      Clinic Login &bull; Operations &amp; Counter Console
                     </h2>
                     <p className="text-xs text-[#64748B] mt-1 leading-relaxed max-w-lg">
                       Call next patients into doctor chambers, put tokens on hold, mark completed consultations, and issue instant walk-in registration tokens.
@@ -273,7 +273,7 @@ export default function App() {
                 </div>
 
                 <div className="flex items-center space-x-2 text-[#0284C7] font-black text-xs shrink-0 self-end sm:self-center bg-[#E0F2FE] group-hover:bg-[#0284C7] group-hover:text-white px-4 py-2.5 rounded-xl transition-colors">
-                  <span>Enter as Receptionist</span>
+                  <span>Enter Clinic Login</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </div>
               </div>

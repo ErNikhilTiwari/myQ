@@ -181,7 +181,7 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
 
               {isReceptionistProfile && (
                 <span className="bg-[#E0F2FE] text-[#0284C7] text-xs font-bold px-2.5 py-0.5 rounded-full border border-[#0284C7]/20">
-                  Auto-synced with Reception Profile
+                  Auto-synced with Clinic Profile
                 </span>
               )}
             </div>

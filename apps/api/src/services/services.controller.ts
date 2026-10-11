@@ -64,7 +64,7 @@ export class ServicesController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
-  @Roles(UserRole.SUPER_ADMIN, UserRole.CLINIC_ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.CLINIC_ADMIN, UserRole.RECEPTIONIST)
   async remove(
     @Param('clinicId') clinicId: string,
     @Param('id') id: string,

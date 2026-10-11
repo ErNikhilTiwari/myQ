@@ -130,7 +130,7 @@ export class AnnouncementsController {
    */
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
-  @Roles(UserRole.SUPER_ADMIN, UserRole.CLINIC_ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.CLINIC_ADMIN, UserRole.RECEPTIONIST)
   async archive(
     @Param('clinicId') clinicId: string,
     @Param('id') id: string,

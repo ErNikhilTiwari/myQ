@@ -38,7 +38,7 @@ export class ClinicsController {
 
   @Patch('clinics/:clinicId')
   @UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
-  @Roles(UserRole.SUPER_ADMIN, UserRole.CLINIC_ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.CLINIC_ADMIN, UserRole.RECEPTIONIST)
   async update(
     @Param('clinicId') clinicId: string,
     @Body() dto: UpdateClinicDto,
