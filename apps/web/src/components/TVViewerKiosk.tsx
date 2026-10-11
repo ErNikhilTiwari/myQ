@@ -339,9 +339,9 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
   }, [effectiveClinicId]);
 
   return (
-    <div className="flex-1 flex flex-col bg-[#F8FAFC] text-[#334155] p-4 sm:p-6 md:p-8 select-none justify-between min-h-[calc(100vh-50px)]">
+    <div className="flex-1 flex flex-col bg-[#F8FAFC] text-[#334155] p-3 sm:p-4 md:p-5 select-none justify-between min-h-[calc(100vh-52px)] h-full">
       {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-white border border-slate-200/80 rounded-2xl p-4 sm:px-6 shadow-sm mb-6 gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-white border border-slate-200/80 rounded-2xl p-3 sm:px-5 shadow-xs mb-3 gap-3 shrink-0">
         <div className="flex items-center space-x-4 w-full sm:w-auto">
           <div className="w-12 h-12 rounded-2xl bg-[#E0F2FE] border border-[#0284C7]/20 flex items-center justify-center text-2xl shrink-0">
             🏥
@@ -454,101 +454,101 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
           )}
         </div>
       ) : (
-        /* Active Single Unified Kiosk Layout */
-        <div className="flex-1 flex flex-col justify-center my-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+        /* Active Single Unified Kiosk Layout - Current Person, Live Queue Status & QR Code in Single View Followed by Ad in the Bottom */
+        <div className="flex-1 flex flex-col justify-center min-h-0">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 lg:gap-5 items-stretch h-full min-h-0">
             
-            {/* Left Hero Box (2/3): NOW SERVING Counter */}
-            <div className="lg:col-span-2 bg-white border-2 border-[#0284C7]/40 rounded-3xl p-8 md:p-12 shadow-lg flex flex-col justify-between text-center relative overflow-hidden">
-              <div className="flex justify-between items-center">
-                <span className="bg-[#16A34A] text-white font-black uppercase tracking-widest text-xs px-4 py-1.5 rounded-full shadow-sm">
+            {/* Column 1 (5/12): CURRENT PERSON / NOW SERVING Counter */}
+            <div className="lg:col-span-5 bg-white border-2 border-[#0284C7]/40 rounded-3xl p-5 md:p-6 shadow-md flex flex-col justify-between text-center relative overflow-hidden h-full">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                <span className="bg-[#16A34A] text-white font-black uppercase tracking-widest text-[11px] px-3.5 py-1 rounded-full shadow-xs">
                   🔔 NOW SERVING
                 </span>
-                <span className="text-[#0284C7] font-mono text-xs font-bold flex items-center space-x-1.5 bg-[#E0F2FE] px-3 py-1 rounded-full border border-[#0284C7]/20">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#16A34A] animate-ping" />
-                  <span>LIVE CHAMBER ROUTING</span>
+                <span className="text-[#0284C7] font-mono text-[11px] font-bold flex items-center space-x-1.5 bg-[#E0F2FE] px-2.5 py-0.5 rounded-full border border-[#0284C7]/20">
+                  <span className="w-2 h-2 rounded-full bg-[#16A34A] animate-ping" />
+                  <span>LIVE ROUTING</span>
                 </span>
               </div>
 
-              <div className="my-auto py-8">
+              <div className="my-auto py-3">
                 {currentServing ? (
                   <>
-                    <div className="text-7xl sm:text-8xl md:text-9xl lg:text-[10rem] font-black font-mono tracking-tight text-[#1E293B] leading-none">
+                    <div className="text-6xl sm:text-7xl lg:text-7xl xl:text-8xl 2xl:text-9xl font-black font-mono tracking-tight text-[#1E293B] leading-none">
                       {currentServing.tokenNumber}
                     </div>
 
                     {/* Distinct Prominent Patient Identification Badge */}
-                    <div className="mt-5 mb-5 inline-flex items-center space-x-3 bg-emerald-50 border-2 border-emerald-400/80 px-6 py-2.5 rounded-2xl shadow-sm max-w-full">
-                      <span className="bg-emerald-600 text-white font-black text-xs uppercase tracking-wider px-2.5 py-1 rounded-lg shrink-0">
+                    <div className="mt-3 mb-2 inline-flex items-center space-x-2.5 bg-emerald-50 border-2 border-emerald-400/80 px-4 py-1.5 rounded-2xl shadow-xs max-w-full">
+                      <span className="bg-emerald-600 text-white font-black text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-md shrink-0">
                         PATIENT
                       </span>
-                      <span className="text-2xl sm:text-3xl md:text-4xl font-black text-emerald-950 truncate">
+                      <span className="text-xl sm:text-2xl md:text-3xl font-black text-emerald-950 truncate">
                         {currentServing.patientName}
                       </span>
                     </div>
 
                     {/* Unambiguous Routing Details: Room vs Doctor */}
-                    <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mt-2">
+                    <div className="flex flex-wrap items-center justify-center gap-2 mt-1">
                       {/* Room Badge */}
-                      <div className="bg-sky-50 border-2 border-sky-300 text-sky-900 px-5 py-2.5 rounded-2xl flex items-center space-x-2.5 shadow-xs">
-                        <span className="text-xs uppercase font-black tracking-wider text-sky-700 bg-white border border-sky-200 px-2.5 py-0.5 rounded-md">
-                          ROOM / CHAMBER
+                      <div className="bg-sky-50 border-2 border-sky-300 text-sky-900 px-3 py-1 rounded-xl flex items-center space-x-1.5 shadow-2xs">
+                        <span className="text-[10px] uppercase font-black tracking-wider text-sky-700 bg-white border border-sky-200 px-1.5 py-0.5 rounded">
+                          ROOM
                         </span>
-                        <span className="text-xl sm:text-2xl font-black font-mono">{currentServing.roomNumber}</span>
+                        <span className="text-base sm:text-lg font-black font-mono">{currentServing.roomNumber}</span>
                       </div>
 
                       {/* Doctor Badge */}
-                      <div className="bg-slate-100 border-2 border-slate-300 text-slate-800 px-5 py-2.5 rounded-2xl flex items-center space-x-2.5 shadow-xs">
-                        <span className="text-xs uppercase font-black tracking-wider text-slate-600 bg-white border border-slate-200 px-2.5 py-0.5 rounded-md">
+                      <div className="bg-slate-100 border-2 border-slate-300 text-slate-800 px-3 py-1 rounded-xl flex items-center space-x-1.5 shadow-2xs">
+                        <span className="text-[10px] uppercase font-black tracking-wider text-slate-600 bg-white border border-slate-200 px-1.5 py-0.5 rounded">
                           DOCTOR
                         </span>
-                        <span className="text-xl sm:text-2xl font-black">{currentServing.doctorName}</span>
+                        <span className="text-base sm:text-lg font-black truncate max-w-[200px]">{currentServing.doctorName}</span>
                       </div>
                     </div>
                   </>
                 ) : (
                   <div className="py-6">
-                    <div className="text-slate-300 text-6xl mb-4">🛋️</div>
-                    <div className="text-2xl font-black text-[#1E293B]">Counter Standing By</div>
-                    <p className="text-sm text-[#64748B] mt-2">Next patient will be called shortly</p>
+                    <div className="text-slate-300 text-5xl mb-3">🛋️</div>
+                    <div className="text-xl sm:text-2xl font-black text-[#1E293B]">Counter Standing By</div>
+                    <p className="text-xs text-[#64748B] mt-1">Next patient will be called shortly</p>
                   </div>
                 )}
               </div>
 
-              <div className="text-xs uppercase tracking-widest text-[#64748B] font-bold border-t border-slate-100 pt-4">
+              <div className="text-[11px] uppercase tracking-widest text-[#64748B] font-bold border-t border-slate-100 pt-2.5">
                 Please proceed directly to the doctor consultation chamber
               </div>
             </div>
 
-            {/* Middle Box (1/3): NEXT IN LINE */}
-            <div className="bg-white border border-slate-200/90 rounded-3xl p-6 flex flex-col justify-between shadow-md">
+            {/* Column 2 (4/12): LIVE QUEUE STATUS / NEXT IN LINE */}
+            <div className="lg:col-span-4 bg-white border border-slate-200/90 rounded-3xl p-5 md:p-6 flex flex-col justify-between shadow-md h-full">
               <div>
-                <h3 className="text-xs font-black uppercase tracking-wider text-[#1E293B] border-b border-slate-100 pb-3 mb-4 flex items-center justify-between">
+                <h3 className="text-xs font-black uppercase tracking-wider text-[#1E293B] border-b border-slate-100 pb-2.5 mb-3 flex items-center justify-between">
                   <span>⏳ NEXT IN LINE</span>
-                  <span className="text-[#0284C7] font-mono font-bold text-[11px] bg-[#E0F2FE] px-2 py-0.5 rounded">
+                  <span className="text-[#0284C7] font-mono font-bold text-[10px] bg-[#E0F2FE] px-2 py-0.5 rounded">
                     ESTIMATED WAIT
                   </span>
                 </h3>
 
-                <div className="space-y-3">
+                <div className="space-y-2.5">
                   {nextWaiting.length === 0 ? (
-                    <div className="text-center py-12 text-[#94A3B8] text-xs">
+                    <div className="text-center py-10 text-[#94A3B8] text-xs">
                       No patients currently waiting in line
                     </div>
                   ) : (
                     nextWaiting.slice(0, 4).map((item, idx) => (
                       <div
                         key={idx}
-                        className="bg-[#F8FAFC] border border-slate-200/80 p-3 rounded-2xl flex items-center justify-between transition hover:border-[#0284C7]/40"
+                        className="bg-[#F8FAFC] border border-slate-200/80 p-2.5 rounded-2xl flex items-center justify-between transition hover:border-[#0284C7]/40"
                       >
-                        <div className="flex items-center space-x-2.5 min-w-0">
+                        <div className="flex items-center space-x-2 min-w-0">
                           <span className="text-xs font-mono text-[#94A3B8] font-bold shrink-0">#{idx + 1}</span>
                           <div className="min-w-0">
-                            <div className="text-xl font-black font-mono text-[#1E293B]">{item.tokenNumber}</div>
+                            <div className="text-lg font-black font-mono text-[#1E293B] leading-tight">{item.tokenNumber}</div>
                             <div className="text-xs font-bold text-[#1E293B] truncate">{item.patientName}</div>
                           </div>
                         </div>
-                        <span className="text-xs font-bold text-[#0284C7] bg-[#E0F2FE] px-2 py-0.5 rounded-lg border border-[#0284C7]/20 whitespace-nowrap shrink-0">
+                        <span className="text-xs font-bold text-[#0284C7] bg-[#E0F2FE] px-2 py-0.5 rounded-lg border border-[#0284C7]/20 whitespace-nowrap shrink-0 font-mono">
                           ~{item.estimatedWaitMinutes}m
                         </span>
                       </div>
@@ -558,10 +558,10 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
               </div>
 
               {/* Waiting metrics summary */}
-              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-[#64748B]">
+              <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-[#64748B]">
                 <span className="flex items-center space-x-1">
                   <Users className="w-3.5 h-3.5 text-[#0284C7]" />
-                  <span>Total in Queue:</span>
+                  <span>In Queue:</span>
                   <b className="text-[#1E293B] font-mono">{totalWaitingCount}</b>
                 </span>
                 <span className="flex items-center space-x-1">
@@ -572,73 +572,75 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
               </div>
             </div>
 
-            {/* Right Box (1/3): ROTATING SECURE IN-CLINIC QR CODE (Section 1 & 3) */}
-            <div className="bg-gradient-to-br from-slate-900 to-[#0F172A] text-white rounded-3xl p-6 flex flex-col justify-between shadow-xl border-2 border-emerald-500/40 relative overflow-hidden">
+            {/* Column 3 (3/12): ROTATING SECURE IN-CLINIC QR CODE */}
+            <div className="lg:col-span-3 bg-gradient-to-br from-slate-900 to-[#0F172A] text-white rounded-3xl p-5 md:p-6 flex flex-col justify-between shadow-xl border-2 border-emerald-500/40 relative overflow-hidden h-full">
               <div className="absolute -top-12 -right-12 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl" />
 
               <div>
-                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                  <span className="bg-emerald-500 text-slate-950 font-black text-[10px] tracking-wider uppercase px-2.5 py-1 rounded-md flex items-center space-x-1">
+                <div className="flex items-center justify-between pb-2.5 border-b border-slate-800">
+                  <span className="bg-emerald-500 text-slate-950 font-black text-[10px] tracking-wider uppercase px-2 py-0.5 rounded flex items-center space-x-1">
                     <QrCode className="w-3 h-3" />
                     <span>IN-CLINIC BOOKING</span>
                   </span>
 
                   <span className="text-xs font-extrabold text-emerald-400 font-mono flex items-center space-x-1">
                     <RefreshCw className={`w-3 h-3 ${isQrLoading ? 'animate-spin' : ''}`} />
-                    <span>Rotates in {qrData?.secondsRemaining || 30}s</span>
+                    <span>{qrData?.secondsRemaining || 30}s</span>
                   </span>
                 </div>
 
                 {/* Pricing Hero Banner */}
-                <div className="mt-3 text-center">
-                  <div className="text-xs font-bold text-slate-300">Scan to Book Appointment for</div>
-                  <div className="text-3xl font-black text-emerald-400 mt-0.5">
+                <div className="mt-2.5 text-center">
+                  <div className="text-[11px] font-bold text-slate-300">Scan to Book for</div>
+                  <div className="text-2xl sm:text-3xl font-black text-emerald-400 mt-0.5">
                     ₹{qrData?.price || 200}
-                    <span className="text-xs text-slate-400 line-through ml-2 font-normal">₹250</span>
+                    <span className="text-xs text-slate-400 line-through ml-1.5 font-normal">₹250</span>
                   </div>
                 </div>
 
                 {/* QR Code Container */}
-                <div className="mt-4 flex flex-col items-center justify-center">
-                  <div className="bg-white p-3 rounded-2xl shadow-2xl border-4 border-emerald-400 relative">
+                <div className="mt-3 flex flex-col items-center justify-center">
+                  <div className="bg-white p-2.5 rounded-2xl shadow-2xl border-4 border-emerald-400 relative">
                     {qrData?.token ? (
                       <img
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(
                           `${window.location.origin}/?clinic=${effectiveClinicId}&qr=${qrData.token}&type=IN_CLINIC`
                         )}`}
                         alt="Scan QR for discounted in-clinic appointment"
-                        className="w-36 h-36 object-contain"
+                        className="w-28 h-28 sm:w-32 sm:h-32 object-contain"
                         loading="eager"
                       />
                     ) : (
-                      <div className="w-36 h-36 flex items-center justify-center text-slate-400 text-xs">
+                      <div className="w-28 h-28 sm:w-32 sm:h-32 flex items-center justify-center text-slate-400 text-xs">
                         {qrNetworkError ? 'Offline - showing last queue' : 'Loading QR...'}
                       </div>
                     )}
                   </div>
                 </div>
 
-                <p className="text-[11px] text-center text-slate-300 mt-3 font-medium leading-tight">
-                  Point phone camera at screen to book instant appointment with assigned token
+                <p className="text-[10px] text-center text-slate-300 mt-2.5 font-medium leading-tight">
+                  Point camera at screen to book instant appointment with assigned token
                 </p>
               </div>
 
               {/* Security validation guarantee */}
-              <div className="pt-3 border-t border-slate-800 flex items-center justify-center space-x-1 text-[10px] text-emerald-400 font-semibold text-center">
+              <div className="pt-2.5 border-t border-slate-800 flex items-center justify-center space-x-1 text-[10px] text-emerald-400 font-semibold text-center">
                 <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
-                <span>Cryptographically verified &bull; Expired codes rejected</span>
+                <span>Verified &bull; Expired codes rejected</span>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Optimized Minimal TV Banner Ad Space */}
-      <QueueBottomAd
-        clinicId={effectiveClinicId}
-        refreshIntervalSeconds={45}
-        showFallbackOnNoFill={true}
-      />
+      {/* Optimized Minimal TV Banner Ad Space - Full Width Followed at the Bottom */}
+      <div className="shrink-0 mt-3">
+        <QueueBottomAd
+          clinicId={effectiveClinicId}
+          refreshIntervalSeconds={45}
+          showFallbackOnNoFill={true}
+        />
+      </div>
     </div>
   );
 };
