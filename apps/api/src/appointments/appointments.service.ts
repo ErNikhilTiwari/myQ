@@ -407,7 +407,7 @@ export class AppointmentsService {
       data: { currentSeq: { increment: 1 } },
     });
 
-    const tokenNumber = `A-${String(updatedQueue.currentSeq).padStart(2, '0')}`;
+    const tokenNumber = `A${String(updatedQueue.currentSeq).padStart(2, '0')}`;
     const publicToken = `pt_${nanoid()}`;
 
     // Create queue entry

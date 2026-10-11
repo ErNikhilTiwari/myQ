@@ -167,7 +167,7 @@ export class PaymentsService {
           });
 
           const prefix = appt.bookingType === 'IN_CLINIC' ? 'Q' : 'A';
-          tokenNumber = `${prefix}-${String(updatedQueue.currentSeq).padStart(2, '0')}`;
+          tokenNumber = `${prefix}${String(updatedQueue.currentSeq).padStart(2, '0')}`;
           const publicToken = `pt_${nanoid()}`;
 
           // Create Queue Entry

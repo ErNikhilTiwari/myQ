@@ -256,27 +256,29 @@ export default function App() {
 
         {/* 3. Global Action & Login Controls */}
         <div className="flex items-center space-x-2">
-          {/* Quick Doctor Appointment Booking Button (Requires Patient Login) */}
-          <button
-            onClick={() => {
-              if (!token || !currentUser || currentUser.role !== 'PATIENT') {
-                setLoginProfile('PATIENT');
-                setIsLoginOpen(true);
-                setPendingBookingAfterLogin(true);
-                setBookingModalType('REMOTE');
-                setBookingQrToken('');
-              } else {
-                setBookingModalType('REMOTE');
-                setBookingQrToken('');
-                setIsBookingOpen(true);
-              }
-            }}
-            className="flex items-center space-x-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white px-3 py-1.5 rounded-xl font-bold text-xs shadow-sm transition active:scale-95"
-          >
-            <Calendar className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Book Appointment</span>
-            <span className="sm:hidden">Book</span>
-          </button>
+          {/* Quick Doctor Appointment Booking Button (Only visible on Customer/Patient tab) */}
+          {activeTab === 'PATIENT' && (
+            <button
+              onClick={() => {
+                if (!token || !currentUser || currentUser.role !== 'PATIENT') {
+                  setLoginProfile('PATIENT');
+                  setIsLoginOpen(true);
+                  setPendingBookingAfterLogin(true);
+                  setBookingModalType('REMOTE');
+                  setBookingQrToken('');
+                } else {
+                  setBookingModalType('REMOTE');
+                  setBookingQrToken('');
+                  setIsBookingOpen(true);
+                }
+              }}
+              className="flex items-center space-x-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white px-3 py-1.5 rounded-xl font-bold text-xs shadow-sm transition active:scale-95"
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Book Appointment</span>
+              <span className="sm:hidden">Book</span>
+            </button>
+          )}
 
           {currentUser ? (
             <div className="flex items-center space-x-2">

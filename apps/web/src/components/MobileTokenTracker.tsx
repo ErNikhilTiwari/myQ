@@ -200,7 +200,7 @@ export const MobileTokenTracker: React.FC<MobileTokenTrackerProps> = ({
       return;
     }
     if (!tokenInput.trim()) {
-      setErrorMsg('Please enter a token number (e.g. A-01).');
+      setErrorMsg('Please enter a token number (e.g. A01).');
       return;
     }
 
@@ -250,7 +250,7 @@ export const MobileTokenTracker: React.FC<MobileTokenTrackerProps> = ({
 
   const handleTestPushNotification = () => {
     dispatchInteractiveNotification(
-      `🔔 Token ${tokenData?.tokenNumber || 'A-01'} Called (Preview)`,
+      `🔔 Token ${tokenData?.tokenNumber || 'A01'} Called (Preview)`,
       `Please proceed to ${tokenData?.doctorName || 'Room 101, Dr. Jenkins'}. This is an interactive test alert.`,
       true
     );
@@ -351,7 +351,7 @@ export const MobileTokenTracker: React.FC<MobileTokenTrackerProps> = ({
                   type="text"
                   value={tokenInput}
                   onChange={(e) => setTokenInput(e.target.value)}
-                  placeholder="Token (e.g. A-01)"
+                  placeholder="Token (e.g. A01)"
                   className="w-full bg-[#F8FAFC] border border-slate-300 rounded-2xl px-4 py-2.5 text-xs text-[#1E293B] font-mono uppercase tracking-wider placeholder-slate-400 focus:outline-none focus:border-[#0284C7] focus:bg-white"
                 />
               </div>

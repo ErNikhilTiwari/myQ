@@ -81,7 +81,7 @@ describe('Receptionist Dashboard & Full-Day Simulation (E2E Integration)', () =>
       .expect(201);
 
     expect(p1.body.success).toBe(true);
-    expect(p1.body.data.entry.tokenNumber).toBe('W-01');
+    expect(p1.body.data.entry.tokenNumber).toBe('W01');
     expect(p1.body.data.isExistingPatient).toBe(false);
     expect(p1.body.data.user.phoneNumber).toBe('+919876599001');
 
@@ -97,7 +97,7 @@ describe('Receptionist Dashboard & Full-Day Simulation (E2E Integration)', () =>
       })
       .expect(201);
 
-    expect(p2.body.data.entry.tokenNumber).toBe('W-02');
+    expect(p2.body.data.entry.tokenNumber).toBe('W02');
 
     // Walk-in 3: Returning Patient Sunita (should reuse existing user!)
     const p3 = await request(app.getHttpServer())
@@ -111,22 +111,22 @@ describe('Receptionist Dashboard & Full-Day Simulation (E2E Integration)', () =>
       })
       .expect(201);
 
-    expect(p3.body.data.entry.tokenNumber).toBe('W-03');
+    expect(p3.body.data.entry.tokenNumber).toBe('W03');
     expect(p3.body.data.isExistingPatient).toBe(true);
     expect(p3.body.data.user.id).toBe(p1.body.data.user.id); // Same user ID preserved!
   });
 
   it('3. Runs full operational day: Call Next, Put on Hold, Recall, and Complete all', async () => {
-    // Call 1st patient (W-01)
+    // Call 1st patient (W01)
     const call1 = await request(app.getHttpServer())
       .post(`/api/clinics/${clinicA.id}/queues/${queueA.id}/call-next`)
       .set('Authorization', `Bearer ${receptionistAToken}`)
       .expect(200);
 
-    expect(call1.body.data.calledEntry.tokenNumber).toBe('W-01');
+    expect(call1.body.data.calledEntry.tokenNumber).toBe('W01');
     const tokenW01Id = call1.body.data.calledEntry.id;
 
-    // Put W-01 on hold (Awaiting doctor review)
+    // Put W01 on hold (Awaiting doctor review)
     await request(app.getHttpServer())
       .post(`/api/clinics/${clinicA.id}/queues/entries/${tokenW01Id}/transition`)
       .set('Authorization', `Bearer ${receptionistAToken}`)
@@ -145,43 +145,43 @@ describe('Receptionist Dashboard & Full-Day Simulation (E2E Integration)', () =>
     expect(stats.body.data.onHoldCount).toBe(1);
     expect(stats.body.data.waitingCount).toBe(2);
 
-    // Call Next patient (W-02)
+    // Call Next patient (W02)
     const call2 = await request(app.getHttpServer())
       .post(`/api/clinics/${clinicA.id}/queues/${queueA.id}/call-next`)
       .set('Authorization', `Bearer ${receptionistAToken}`)
       .expect(200);
 
-    expect(call2.body.data.calledEntry.tokenNumber).toBe('W-02');
+    expect(call2.body.data.calledEntry.tokenNumber).toBe('W02');
     const tokenW02Id = call2.body.data.calledEntry.id;
 
-    // Complete W-02
+    // Complete W02
     await request(app.getHttpServer())
       .post(`/api/clinics/${clinicA.id}/queues/entries/${tokenW02Id}/transition`)
       .set('Authorization', `Bearer ${receptionistAToken}`)
       .send({ targetStatus: QueueEntryStatus.COMPLETED })
       .expect(200);
 
-    // Recall W-01 from hold
+    // Recall W01 from hold
     await request(app.getHttpServer())
       .post(`/api/clinics/${clinicA.id}/queues/entries/${tokenW01Id}/transition`)
       .set('Authorization', `Bearer ${receptionistAToken}`)
       .send({ targetStatus: QueueEntryStatus.CALLED })
       .expect(200);
 
-    // Complete W-01
+    // Complete W01
     await request(app.getHttpServer())
       .post(`/api/clinics/${clinicA.id}/queues/entries/${tokenW01Id}/transition`)
       .set('Authorization', `Bearer ${receptionistAToken}`)
       .send({ targetStatus: QueueEntryStatus.COMPLETED })
       .expect(200);
 
-    // Call Next patient (W-03)
+    // Call Next patient (W03)
     const call3 = await request(app.getHttpServer())
       .post(`/api/clinics/${clinicA.id}/queues/${queueA.id}/call-next`)
       .set('Authorization', `Bearer ${receptionistAToken}`)
       .expect(200);
 
-    expect(call3.body.data.calledEntry.tokenNumber).toBe('W-03');
+    expect(call3.body.data.calledEntry.tokenNumber).toBe('W03');
     const tokenW03Id = call3.body.data.calledEntry.id;
 
     // Complete W-03

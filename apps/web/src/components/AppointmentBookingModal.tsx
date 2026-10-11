@@ -306,7 +306,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
         throw new Error(verifyJson.error?.message || verifyJson.message || 'Payment verification failed.');
       }
 
-      const finalToken = verifyJson.data?.tokenNumber || 'Q-01';
+      const finalToken = verifyJson.data?.tokenNumber || 'Q01';
       setConfirmedTokenNumber(finalToken);
       setConfirmedAppointment(appointment);
       setStep('SUCCESS');

@@ -58,7 +58,7 @@ describe('Queue Core & State Machine (E2E Integration)', () => {
   });
 
   describe('1. Atomic Sequence Token Issuance', () => {
-    it('issues sequential tokens A-01 and A-02', async () => {
+    it('issues sequential tokens A01 and A02', async () => {
       const res1 = await request(app.getHttpServer())
         .post(`/api/clinics/${clinicA.id}/queues/${queueA.id}/issue-token`)
         .set('Authorization', `Bearer ${receptionistAToken}`)
@@ -66,7 +66,7 @@ describe('Queue Core & State Machine (E2E Integration)', () => {
         .expect(201);
 
       expect(res1.body.success).toBe(true);
-      expect(res1.body.data.tokenNumber).toBe('A-01');
+      expect(res1.body.data.tokenNumber).toBe('A01');
       expect(res1.body.data.sequenceNumber).toBe(1);
       expect(res1.body.data.publicToken).toMatch(/^qt_/);
 
@@ -76,7 +76,7 @@ describe('Queue Core & State Machine (E2E Integration)', () => {
         .send({ userId: patientUser.id, tokenPrefix: 'A' })
         .expect(201);
 
-      expect(res2.body.data.tokenNumber).toBe('A-02');
+      expect(res2.body.data.tokenNumber).toBe('A02');
       expect(res2.body.data.sequenceNumber).toBe(2);
     });
 

@@ -182,7 +182,7 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
     setIsTestingVoice(true);
     await announceToken(
       currentServing || {
-        tokenNumber: 'OPD-101',
+        tokenNumber: 'OPD101',
         patientName: 'Ramesh Patel',
         roomNumber: 'Room 101',
         doctorName: 'Dr. Sharma',

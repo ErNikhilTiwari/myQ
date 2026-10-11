@@ -166,7 +166,7 @@ export class QueuesService {
       });
 
       const seq = updatedQueue.currentSeq;
-      const tokenNumber = `${prefix}-${String(seq).padStart(2, '0')}`;
+      const tokenNumber = `${prefix}${String(seq).padStart(2, '0')}`;
       const publicToken = `qt_${crypto.randomBytes(16).toString('hex')}`;
 
       // 3. Calculate initial estimated wait time
@@ -470,11 +470,15 @@ export class QueuesService {
     }
 
     const cleanToken = tokenNumber.trim().toUpperCase();
+    const tokenNoHyphen = cleanToken.replace(/-/g, '');
+    const tokenWithHyphen = cleanToken.includes('-')
+      ? cleanToken
+      : cleanToken.replace(/^([A-Za-z]+)(\d+)$/, '$1-$2');
 
     const entry = await this.prisma.queueEntry.findFirst({
       where: {
         queue: { clinicId: clinic.id },
-        tokenNumber: cleanToken,
+        tokenNumber: { in: [cleanToken, tokenNoHyphen, tokenWithHyphen] },
       },
       orderBy: { createdAt: 'desc' },
     });

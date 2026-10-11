@@ -267,7 +267,7 @@ export const PatientPortalView: React.FC<PatientPortalViewProps> = ({
       return;
     }
     if (!tokenInput.trim()) {
-      setErrorMsg('Please enter a token number (e.g. A-01 or Q-01).');
+      setErrorMsg('Please enter a token number (e.g. A01 or Q01).');
       return;
     }
 
@@ -368,14 +368,13 @@ export const PatientPortalView: React.FC<PatientPortalViewProps> = ({
           <div className="flex items-center space-x-2 w-full sm:w-auto justify-end">
             {isPatientLoggedIn ? (
               <>
-                {/* Book Consultation Button (Strictly shows non-discounted rate ₹250 for home/remote) */}
+                {/* Book Consultation Button */}
                 <button
                   onClick={() => onOpenBooking && onOpenBooking('REMOTE')}
                   className="flex items-center space-x-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-md transition active:scale-95"
                 >
                   <Calendar className="w-4 h-4" />
                   <span>Book Consultation</span>
-                  <span className="bg-white/20 font-mono text-[10px] px-2 py-0.5 rounded">₹250</span>
                 </button>
 
                 {onLogout && (
@@ -429,14 +428,6 @@ export const PatientPortalView: React.FC<PatientPortalViewProps> = ({
                 <span>My Appointments ({myAppointments.length})</span>
               </button>
             </div>
-
-            <button
-              onClick={() => onOpenBooking && onOpenBooking('REMOTE')}
-              className="hidden sm:flex items-center space-x-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-xl border border-emerald-200 transition"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Schedule New Visit</span>
-            </button>
           </div>
         )}
 
@@ -504,7 +495,7 @@ export const PatientPortalView: React.FC<PatientPortalViewProps> = ({
                     type="text"
                     value={tokenInput}
                     onChange={(e) => setTokenInput(e.target.value)}
-                    placeholder="e.g. A-01 or Q-02"
+                    placeholder="e.g. A01 or Q02"
                     className="flex-1 bg-[#F8FAFC] border border-slate-300 rounded-2xl px-4 py-2.5 text-xs text-[#1E293B] font-mono uppercase tracking-wider placeholder-slate-400 focus:outline-none focus:border-[#0284C7] focus:bg-white font-bold"
                   />
                   <button
@@ -654,7 +645,7 @@ export const PatientPortalView: React.FC<PatientPortalViewProps> = ({
                 className="bg-[#0284C7] hover:bg-[#0369A1] text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-sm active:scale-95"
               >
                 <Calendar className="w-3.5 h-3.5" />
-                <span>Book New (₹250)</span>
+                <span>Book Appointment</span>
               </button>
             </div>
 
@@ -676,7 +667,7 @@ export const PatientPortalView: React.FC<PatientPortalViewProps> = ({
                   onClick={() => onOpenBooking && onOpenBooking('REMOTE')}
                   className="bg-[#0284C7] hover:bg-[#0369A1] text-white px-5 py-2.5 rounded-xl text-xs font-bold transition shadow-sm"
                 >
-                  Book Doctor Consultation (₹250)
+                  Book Doctor Consultation
                 </button>
               </div>
             ) : (

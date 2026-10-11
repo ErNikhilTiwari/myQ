@@ -141,7 +141,7 @@ async function main() {
     data: {
       queueId: queue1.id,
       userId: patient1.id,
-      tokenNumber: 'A-01',
+      tokenNumber: 'A01',
       sequenceNumber: 1,
       status: 'WAITING',
       publicToken: 'pub_tok_abc_001',
