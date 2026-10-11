@@ -86,8 +86,89 @@ export class ClinicsService {
         phoneNumber: dto.phoneNumber,
         email: dto.email,
         address: dto.address,
+        city: dto.city,
+        chainId: dto.chainId || null,
       },
     });
+  }
+
+  /**
+   * Hospital Chain Management (Phase 3 Multi-Location Enterprise)
+   */
+  async createChain(dto: { name: string; code: string; headquarters?: string }) {
+    const existing = await this.prisma.hospitalChain.findUnique({
+      where: { code: dto.code.toUpperCase() },
+    });
+    if (existing) {
+      throw new ConflictException(`Hospital chain with code "${dto.code}" already exists.`);
+    }
+
+    return this.prisma.hospitalChain.create({
+      data: {
+        name: dto.name,
+        code: dto.code.toUpperCase(),
+        headquarters: dto.headquarters,
+      },
+    });
+  }
+
+  async getChains() {
+    const chains = await this.prisma.hospitalChain.findMany({
+      where: { isActive: true },
+      include: {
+        clinics: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            city: true,
+            phoneNumber: true,
+            address: true,
+            isActive: true,
+          },
+        },
+        _count: {
+          select: { clinics: true },
+        },
+      },
+      orderBy: { name: 'asc' },
+    });
+
+    return chains.map((c) => ({
+      id: c.id,
+      name: c.name,
+      code: c.code,
+      headquarters: c.headquarters,
+      isActive: c.isActive,
+      createdAt: c.createdAt.toISOString(),
+      clinicsCount: c._count.clinics,
+      clinics: c.clinics,
+    }));
+  }
+
+  async getChainById(id: string) {
+    const chain = await this.prisma.hospitalChain.findUnique({
+      where: { id },
+      include: {
+        clinics: {
+          include: {
+            _count: {
+              select: {
+                doctors: true,
+                services: true,
+                queues: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!chain) {
+      throw new NotFoundException(`Hospital chain with ID "${id}" not found.`);
+    }
+
+    return chain;
   }
 
   /**
@@ -137,3 +218,4 @@ export class ClinicsService {
     });
   }
 }
+

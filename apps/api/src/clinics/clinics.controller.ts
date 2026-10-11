@@ -62,4 +62,30 @@ export class ClinicsController {
     const data = await this.clinicsService.create(dto);
     return { success: true, data };
   }
+
+  /**
+   * Hospital Chains (Phase 3 Multi-Location Enterprise)
+   */
+  @Get('hospital-chains')
+  async getChains(): Promise<ApiResponse> {
+    const data = await this.clinicsService.getChains();
+    return { success: true, data };
+  }
+
+  @Get('hospital-chains/:id')
+  async getChainById(@Param('id') id: string): Promise<ApiResponse> {
+    const data = await this.clinicsService.getChainById(id);
+    return { success: true, data };
+  }
+
+  @Post('super/hospital-chains')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  async createChain(
+    @Body() dto: { name: string; code: string; headquarters?: string },
+  ): Promise<ApiResponse> {
+    const data = await this.clinicsService.createChain(dto);
+    return { success: true, data };
+  }
 }
+

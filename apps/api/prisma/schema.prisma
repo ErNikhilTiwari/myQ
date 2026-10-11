@@ -42,17 +42,34 @@ model PatientProfile {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model HospitalChain {
+  id          String   @id @default(uuid())
+  name        String
+  code        String   @unique // e.g. "APOLLO", "MANIPAL"
+  headquarters String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  clinics Clinic[]
+
+  @@index([code])
+}
+
 model Clinic {
   id          String   @id @default(uuid())
+  chainId     String?  // Optional multi-location chain parent
   name        String
   slug        String   @unique
   phoneNumber String
   email       String?
   address     String?
+  city        String?
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  chain          HospitalChain? @relation(fields: [chainId], references: [id], onDelete: SetNull)
   staff          ClinicStaff[]
   doctors        Doctor[]
   services       Service[]
@@ -68,6 +85,7 @@ model Clinic {
   auditLogs             AuditLog[]
 
   @@index([slug])
+  @@index([chainId])
 }
 
 model ClinicStaff {
