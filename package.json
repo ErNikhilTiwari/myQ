@@ -11,7 +11,9 @@
     "test": "npm run test --workspaces",
     "lint": "npm run lint --workspaces",
     "typecheck": "npm run typecheck --workspaces",
-    "dev": "npm run dev --workspaces"
+    "dev": "npm run dev --workspaces",
+    "host": "npm run build --workspace=@queueapp/web && npm run build --workspace=@queueapp/api && node apps/api/dist/src/main.js",
+    "host:quick": "node apps/api/dist/src/main.js"
   },
   "devDependencies": {
     "@types/node": "^20.11.24",

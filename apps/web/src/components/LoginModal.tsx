@@ -127,10 +127,48 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         onLoginSuccess(user, accessToken);
         onClose();
       } else {
-        setErrorMsg(data.error?.message || data.message || 'Invalid OTP code.');
+        const msg = data.error?.message || data.message || (typeof data.error === 'string' ? data.error : 'Invalid OTP code.');
+        setErrorMsg(msg);
       }
     } catch (err: any) {
       setErrorMsg(err.message || 'Error verifying OTP code.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInstantDemoLogin = async (phone: string) => {
+    setErrorMsg(null);
+    setLoading(true);
+    setPhoneNumber(phone);
+    setOtp('123456');
+
+    try {
+      const res = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phoneNumber: phone.trim(),
+          otp: '123456',
+        }),
+      });
+      const data = await res.json();
+      const accessToken = data.data?.tokens?.accessToken || data.data?.token;
+
+      if (data.success && accessToken) {
+        const user = data.data.user;
+        localStorage.setItem('token', accessToken);
+        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('queueapp_token', accessToken);
+        localStorage.setItem('queueapp_user', JSON.stringify(user));
+        onLoginSuccess(user, accessToken);
+        onClose();
+      } else {
+        const msg = data.error?.message || data.message || 'Quick login failed. Make sure API backend is running on port 4000.';
+        setErrorMsg(msg);
+      }
+    } catch (err: any) {
+      setErrorMsg('Cannot reach backend on port 4000. Please ensure API server is started.');
     } finally {
       setLoading(false);
     }
@@ -199,27 +237,40 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
             {/* Quick-test Presets for Solo Dev / Reviewer */}
             <div className="pt-3 border-t border-slate-100">
-              <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider block mb-2 flex items-center space-x-1">
-                <Sparkles className="w-3 h-3 text-[#D97706]" />
-                <span>Quick-Select Demo Accounts:</span>
-              </span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider flex items-center space-x-1">
+                  <Sparkles className="w-3 h-3 text-[#D97706]" />
+                  <span>Instant Demo Accounts:</span>
+                </span>
+                <span className="text-[10px] text-[#0284C7] font-semibold">1-Click Sign In</span>
+              </div>
+              <div className="grid grid-cols-1 gap-2">
                 {quickAccounts.map((acc, i) => (
-                  <button
+                  <div
                     key={i}
-                    type="button"
-                    onClick={() => {
-                      setPhoneNumber(acc.phone);
-                    }}
-                    className={`text-left p-2.5 rounded-xl border text-[11px] transition ${
-                      phoneNumber === acc.phone
-                        ? 'bg-[#E0F2FE] border-[#0284C7] text-[#0284C7]'
-                        : 'bg-[#F8FAFC] border-slate-200 text-[#334155] hover:bg-slate-100'
-                    }`}
+                    className="flex items-center justify-between p-2.5 rounded-xl border border-slate-200 bg-[#F8FAFC] hover:border-[#0284C7] hover:bg-sky-50/50 transition group"
                   >
-                    <div className="font-bold truncate">{acc.label}</div>
-                    <div className="text-[10px] font-mono text-[#64748B]">{acc.phone}</div>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => setPhoneNumber(acc.phone)}
+                      className="text-left flex-1"
+                    >
+                      <div className="font-bold text-xs text-[#1E293B] group-hover:text-[#0284C7] transition">
+                        {acc.label}
+                      </div>
+                      <div className="text-[10px] font-mono text-[#64748B]">
+                        {acc.phone} • {acc.clinic}
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={loading}
+                      onClick={() => handleInstantDemoLogin(acc.phone)}
+                      className="ml-2 px-3 py-1.5 bg-[#0284C7] hover:bg-[#0369A1] text-white text-[11px] font-bold rounded-lg shadow-sm shrink-0 transition flex items-center space-x-1"
+                    >
+                      <span>⚡ Sign In</span>
+                    </button>
+                  </div>
                 ))}
               </div>
             </div>
