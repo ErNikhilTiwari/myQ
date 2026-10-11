@@ -116,16 +116,18 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         }),
       });
       const data = await res.json();
-      if (data.success && data.data?.token) {
-        const { user, token } = data.data;
-        localStorage.setItem('token', token);
+      const accessToken = data.data?.tokens?.accessToken || data.data?.token;
+
+      if (data.success && accessToken) {
+        const user = data.data.user;
+        localStorage.setItem('token', accessToken);
         localStorage.setItem('user', JSON.stringify(user));
-        localStorage.setItem('queueapp_token', token);
+        localStorage.setItem('queueapp_token', accessToken);
         localStorage.setItem('queueapp_user', JSON.stringify(user));
-        onLoginSuccess(user, token);
+        onLoginSuccess(user, accessToken);
         onClose();
       } else {
-        setErrorMsg(data.error?.message || 'Invalid OTP code.');
+        setErrorMsg(data.error?.message || data.message || 'Invalid OTP code.');
       }
     } catch (err: any) {
       setErrorMsg(err.message || 'Error verifying OTP code.');
