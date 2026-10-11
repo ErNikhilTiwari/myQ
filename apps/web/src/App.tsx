@@ -3,25 +3,15 @@ import { TVViewerKiosk } from './components/TVViewerKiosk';
 import { ReceptionistConsole } from './components/ReceptionistConsole';
 import { MobileTokenTracker } from './components/MobileTokenTracker';
 import { LoginModal } from './components/LoginModal';
+import { ClinicSearchSelect, ClinicItem } from './components/ClinicSearchSelect';
 import { Monitor, LayoutDashboard, Smartphone, Building2, LogIn, LogOut } from 'lucide-react';
-
-interface Clinic {
-  id: string;
-  name: string;
-  slug: string;
-  phone?: string;
-  address?: string;
-}
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'RECEPTIONIST' | 'TV_VIEWER' | 'MOBILE_TRACKER'>('RECEPTIONIST');
   
-  // Multi-Tenant Clinic State
-  const [clinics, setClinics] = useState<Clinic[]>([
-    { id: '1', name: 'ABC Health Clinic', slug: 'abc-health' },
-    { id: '2', name: 'City Dental Care', slug: 'city-dental' },
-  ]);
-  const [selectedClinicId, setSelectedClinicId] = useState<string>('1');
+  // Multi-Tenant Clinic State - EMPTY BY DEFAULT
+  const [clinics, setClinics] = useState<ClinicItem[]>([]);
+  const [selectedClinicId, setSelectedClinicId] = useState<string>('');
 
   // Authentication State
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'));
@@ -36,11 +26,9 @@ export default function App() {
     fetch('/api/clinics')
       .then((res) => res.json())
       .then((res) => {
-        if (res.success && res.data && res.data.length > 0) {
+        if (res.success && res.data) {
           setClinics(res.data);
-          if (!res.data.some((c: Clinic) => c.id === selectedClinicId)) {
-            setSelectedClinicId(res.data[0].id);
-          }
+          // Keep empty by default unless user is logged in with a clinic assignment
         }
       })
       .catch((err) => {
@@ -48,6 +36,7 @@ export default function App() {
       });
   }, []);
 
+  // When staff logs in, auto-bind to their assigned clinic
   const handleLoginSuccess = (user: any, newToken: string) => {
     setCurrentUser(user);
     setToken(newToken);
@@ -61,9 +50,10 @@ export default function App() {
     localStorage.removeItem('user');
     setToken(null);
     setCurrentUser(null);
+    setSelectedClinicId('');
   };
 
-  const currentClinic = clinics.find((c) => c.id === selectedClinicId) || clinics[0];
+  const currentClinic = clinics.find((c) => c.id === selectedClinicId);
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#334155] flex flex-col font-sans antialiased">
@@ -78,21 +68,15 @@ export default function App() {
             </span>
           </div>
 
-          {/* Global Multi-Tenant Clinic Switcher */}
-          <div className="hidden lg:flex items-center space-x-1.5 bg-[#0F172A] border border-slate-700 rounded-xl px-3 py-1 text-slate-200">
-            <Building2 className="w-3.5 h-3.5 text-[#38BDF8]" />
+          {/* Global Multi-Tenant Clinic Search & Select */}
+          <div className="hidden lg:flex items-center space-x-1.5 text-slate-200">
             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Clinic:</span>
-            <select
-              value={selectedClinicId}
-              onChange={(e) => setSelectedClinicId(e.target.value)}
-              className="bg-transparent text-white font-bold text-xs outline-none cursor-pointer"
-            >
-              {clinics.map((c) => (
-                <option key={c.id} value={c.id} className="bg-[#1E293B] text-white">
-                  {c.name}
-                </option>
-              ))}
-            </select>
+            <ClinicSearchSelect
+              clinics={clinics}
+              selectedClinicId={selectedClinicId}
+              onSelectClinicId={setSelectedClinicId}
+              variant="navbar"
+            />
           </div>
         </div>
 
@@ -190,6 +174,8 @@ export default function App() {
         {activeTab === 'MOBILE_TRACKER' && (
           <MobileTokenTracker
             clinics={clinics}
+            selectedClinicId={selectedClinicId}
+            onSelectClinicId={setSelectedClinicId}
             defaultClinicSlug={currentClinic?.slug}
           />
         )}

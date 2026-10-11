@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { ClinicSearchSelect } from './ClinicSearchSelect';
 import { 
   Users, 
   UserPlus, 
@@ -291,21 +292,16 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center space-x-3 w-full sm:w-auto">
-          {/* Multi-Tenant Clinic Switcher Dropdown */}
-          <div className="flex items-center space-x-2 bg-[#F8FAFC] border border-slate-300 px-3 py-1.5 rounded-xl">
-            <Building2 className="w-4 h-4 text-[#0284C7]" />
-            <select
-              value={selectedClinicId}
-              onChange={(e) => onSelectClinicId(e.target.value)}
-              className="bg-transparent text-xs font-bold text-[#1E293B] focus:outline-none cursor-pointer"
-            >
-              {clinics.map((c) => (
-                <option key={c.id} value={c.id} className="bg-white text-[#1E293B]">
-                  {c.name}
-                </option>
-              ))}
-            </select>
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+          {/* Multi-Tenant Clinic Search & Select */}
+          <div className="w-64">
+            <ClinicSearchSelect
+              clinics={clinics}
+              selectedClinicId={selectedClinicId}
+              onSelectClinicId={onSelectClinicId}
+              placeholder="Search & select clinic..."
+              variant="card"
+            />
           </div>
 
           <button
@@ -313,7 +309,12 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
               if (!token) onOpenLogin();
               else setShowWalkinModal(true);
             }}
-            className="flex-1 sm:flex-initial flex items-center justify-center space-x-2 bg-[#0284C7] hover:bg-[#0369A1] text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-sm transition active:scale-95"
+            disabled={!selectedClinicId}
+            className={`flex-1 sm:flex-initial flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl font-bold text-xs shadow-sm transition active:scale-95 ${
+              selectedClinicId
+                ? 'bg-[#0284C7] hover:bg-[#0369A1] text-white'
+                : 'bg-slate-100 text-[#94A3B8] cursor-not-allowed border border-slate-200'
+            }`}
           >
             <UserPlus className="w-4 h-4" />
             <span>New Walk-in Patient</span>
@@ -343,34 +344,56 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
         </div>
       )}
 
-      {/* Queue Selector Tabs */}
-      <div className="flex items-center space-x-2 overflow-x-auto pb-3 mb-6 scrollbar-none">
-        {queues.length === 0 ? (
-          <div className="text-xs text-[#64748B]">No queues configured in this clinic.</div>
-        ) : (
-          queues.map((q) => (
-            <button
-              key={q.id}
-              onClick={() => setSelectedQueueId(q.id)}
-              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2 shrink-0 border ${
-                selectedQueueId === q.id
-                  ? 'bg-[#1E293B] border-[#1E293B] text-white shadow-sm'
-                  : 'bg-white border-slate-200 text-[#334155] hover:bg-slate-50'
-              }`}
-            >
-              <span>👨‍⚕️ {q.doctor?.name || q.name}</span>
-              <span className={`px-2 py-0.5 rounded text-[10px] font-mono ${
-                selectedQueueId === q.id ? 'bg-[#0F172A] text-slate-200' : 'bg-slate-100 text-[#64748B]'
-              }`}>
-                {q.doctor?.roomNumber || 'Room 1'}
-              </span>
-            </button>
-          ))
-        )}
-      </div>
+      {/* Empty Clinic State or Main Console Grid */}
+      {!selectedClinicId ? (
+        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-white border border-slate-200/90 rounded-3xl shadow-sm my-auto min-h-[400px]">
+          <div className="w-16 h-16 rounded-2xl bg-[#E0F2FE] border border-[#0284C7]/20 flex items-center justify-center text-3xl mb-4">
+            🏢
+          </div>
+          <h2 className="text-xl font-black text-[#1E293B] mb-2">No Clinic Selected</h2>
+          <p className="text-xs text-[#64748B] max-w-sm mb-6">
+            Please select a clinic to view patient queues, call next tokens, and issue counter registrations.
+          </p>
+          <div className="w-72">
+            <ClinicSearchSelect
+              clinics={clinics}
+              selectedClinicId={selectedClinicId}
+              onSelectClinicId={onSelectClinicId}
+              placeholder="Search & choose clinic..."
+              variant="card"
+            />
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Queue Selector Tabs */}
+          <div className="flex items-center space-x-2 overflow-x-auto pb-3 mb-6 scrollbar-none">
+            {queues.length === 0 ? (
+              <div className="text-xs text-[#64748B]">No queues configured in this clinic.</div>
+            ) : (
+              queues.map((q) => (
+                <button
+                  key={q.id}
+                  onClick={() => setSelectedQueueId(q.id)}
+                  className={`px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center space-x-2 shrink-0 border ${
+                    selectedQueueId === q.id
+                      ? 'bg-[#1E293B] border-[#1E293B] text-white shadow-sm'
+                      : 'bg-white border-slate-200 text-[#334155] hover:bg-slate-50'
+                  }`}
+                >
+                  <span>👨‍⚕️ {q.doctor?.name || q.name}</span>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-mono ${
+                    selectedQueueId === q.id ? 'bg-[#0F172A] text-slate-200' : 'bg-slate-100 text-[#64748B]'
+                  }`}>
+                    {q.doctor?.roomNumber || 'Room 1'}
+                  </span>
+                </button>
+              ))
+            )}
+          </div>
 
-      {/* Grid Layout: Serving Counter + Waiting & On-Hold Columns */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 items-start">
+          {/* Grid Layout: Serving Counter + Waiting & On-Hold Columns */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 items-start">
         
         {/* Left Col: Primary Serving Chamber Card */}
         <div className="bg-white border-2 border-[#0284C7]/30 rounded-3xl p-6 shadow-md flex flex-col justify-between h-full">
@@ -590,6 +613,8 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
         </div>
 
       </div>
+      </>
+      )}
 
       {/* New Walk-in Patient Modal */}
       {showWalkinModal && (

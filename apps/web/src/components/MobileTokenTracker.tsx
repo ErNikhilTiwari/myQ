@@ -10,6 +10,7 @@ import {
   ShieldCheck, 
   AlertCircle 
 } from 'lucide-react';
+import { ClinicSearchSelect, ClinicItem } from './ClinicSearchSelect';
 
 interface PublicTokenStatus {
   tokenNumber: string;
@@ -26,32 +27,30 @@ interface PublicTokenStatus {
 }
 
 interface MobileTokenTrackerProps {
-  clinics?: Array<{ id: string; name: string; slug: string }>;
+  clinics?: ClinicItem[];
+  selectedClinicId?: string;
+  onSelectClinicId?: (id: string) => void;
   defaultClinicSlug?: string;
 }
 
 export const MobileTokenTracker: React.FC<MobileTokenTrackerProps> = ({
-  clinics = [
-    { id: '1', name: 'ABC Health Clinic', slug: 'abc-health' },
-    { id: '2', name: 'City Dental Care', slug: 'city-dental' },
-  ],
-  defaultClinicSlug = 'abc-health',
+  clinics = [],
+  selectedClinicId = '',
+  onSelectClinicId,
+  defaultClinicSlug = '',
 }) => {
-  const [clinicSlug, setClinicSlug] = useState(defaultClinicSlug);
-  const [tokenInput, setTokenInput] = useState('A-01');
+  const [tokenInput, setTokenInput] = useState('');
   const [tokenData, setTokenData] = useState<PublicTokenStatus | null>(null);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [notificationsAllowed, setNotificationsAllowed] = useState(false);
 
-  // Auto lookup default token on mount
-  useEffect(() => {
-    handleLookup();
-  }, []);
+  const selectedClinic = clinics.find((c) => c.id === selectedClinicId);
+  const clinicSlug = selectedClinic?.slug || defaultClinicSlug;
 
   // Poll for token status updates every 4 seconds if token is active
   useEffect(() => {
-    if (!tokenData || tokenData.status === 'COMPLETED' || tokenData.status === 'CANCELLED') return;
+    if (!tokenData || !clinicSlug || tokenData.status === 'COMPLETED' || tokenData.status === 'CANCELLED') return;
 
     const interval = setInterval(() => {
       fetch(`/api/queue/lookup?clinicSlug=${clinicSlug}&tokenNumber=${tokenData.tokenNumber}`)
@@ -69,7 +68,14 @@ export const MobileTokenTracker: React.FC<MobileTokenTrackerProps> = ({
 
   const handleLookup = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!tokenInput.trim()) return;
+    if (!clinicSlug) {
+      setErrorMsg('Please select a clinic first.');
+      return;
+    }
+    if (!tokenInput.trim()) {
+      setErrorMsg('Please enter a token number (e.g. A-01).');
+      return;
+    }
 
     setLoading(true);
     setErrorMsg(null);
@@ -138,24 +144,20 @@ export const MobileTokenTracker: React.FC<MobileTokenTrackerProps> = ({
             </span>
           </div>
 
-          {/* Clinic Switcher & Quick Lookup Form */}
-          <div className="space-y-2.5">
-            <div className="flex items-center space-x-2">
-              <label className="text-[11px] text-[#64748B] font-bold">Clinic:</label>
-              <select
-                value={clinicSlug}
-                onChange={(e) => {
-                  setClinicSlug(e.target.value);
+          {/* Clinic Search & Select */}
+          <div className="space-y-3">
+            <div>
+              <label className="text-[11px] text-[#64748B] font-bold block mb-1">Clinic Facility:</label>
+              <ClinicSearchSelect
+                clinics={clinics}
+                selectedClinicId={selectedClinicId}
+                onSelectClinicId={(id) => {
+                  if (onSelectClinicId) onSelectClinicId(id);
                   setTokenData(null);
                 }}
-                className="flex-1 bg-[#F8FAFC] border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs text-[#1E293B] font-semibold focus:outline-none focus:border-[#0284C7] cursor-pointer"
-              >
-                {clinics.map((c) => (
-                  <option key={c.id} value={c.slug}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+                placeholder="Search & choose clinic..."
+                variant="card"
+              />
             </div>
 
             <form onSubmit={handleLookup} className="flex space-x-2">
@@ -170,8 +172,12 @@ export const MobileTokenTracker: React.FC<MobileTokenTrackerProps> = ({
               </div>
               <button
                 type="submit"
-                disabled={loading}
-                className="bg-[#0284C7] hover:bg-[#0369A1] text-white px-4 py-2.5 rounded-2xl text-xs font-bold transition flex items-center space-x-1 shadow-sm"
+                disabled={loading || !selectedClinicId}
+                className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition flex items-center space-x-1 shadow-sm ${
+                  selectedClinicId
+                    ? 'bg-[#0284C7] hover:bg-[#0369A1] text-white'
+                    : 'bg-slate-100 text-[#94A3B8] cursor-not-allowed border border-slate-200'
+                }`}
               >
                 <Search className="w-3.5 h-3.5" />
                 <span>{loading ? '...' : 'Track'}</span>
@@ -273,6 +279,12 @@ export const MobileTokenTracker: React.FC<MobileTokenTrackerProps> = ({
             <div className="text-center text-[10px] text-[#94A3B8] font-mono">
               Auto-syncs every 4 seconds &bull; Last updated {new Date(tokenData.lastUpdated).toLocaleTimeString()}
             </div>
+          </div>
+        ) : !selectedClinicId ? (
+          <div className="bg-white border border-slate-200/90 rounded-3xl p-8 text-center text-[#64748B] text-xs">
+            <div className="text-3xl mb-2">🔍</div>
+            <div className="font-bold text-[#1E293B] text-sm mb-1">Select your clinic to track</div>
+            <p>Search and select your clinic in the box above to track live token progress.</p>
           </div>
         ) : null}
       </div>
