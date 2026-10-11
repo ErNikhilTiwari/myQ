@@ -69,30 +69,61 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     { label: 'Super Admin', phone: '+919999999999', role: 'SUPER_ADMIN', clinic: 'System Root' },
   ];
 
-  const quickAccounts = profileType === 'RECEPTIONIST'
-    ? allQuickAccounts.filter((a) => a.role === 'RECEPTIONIST' || a.role === 'CLINIC_ADMIN')
-    : profileType === 'PATIENT'
-    ? allQuickAccounts.filter((a) => a.role === 'PATIENT')
-    : allQuickAccounts;
+  // Present relevant profile accounts at top, followed by all demo accounts
+  const quickAccounts = [
+    ...(profileType === 'RECEPTIONIST'
+      ? allQuickAccounts.filter((a) => a.role === 'RECEPTIONIST' || a.role === 'CLINIC_ADMIN')
+      : profileType === 'PATIENT'
+      ? allQuickAccounts.filter((a) => a.role === 'PATIENT')
+      : []),
+    ...allQuickAccounts.filter((a) => 
+      profileType === 'RECEPTIONIST'
+        ? a.role !== 'RECEPTIONIST' && a.role !== 'CLINIC_ADMIN'
+        : profileType === 'PATIENT'
+        ? a.role !== 'PATIENT'
+        : true
+    ),
+  ];
 
   const headerInfo = getHeaderInfo();
+
+  const cleanPhoneNumber = (raw: string): string => {
+    let clean = raw.trim().replace(/[\s-]/g, '');
+    if (!clean.startsWith('+')) {
+      if (clean.length === 10) clean = `+91${clean}`;
+    }
+    return clean;
+  };
 
   const handleSendOtp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setErrorMsg(null);
     setLoading(true);
 
+    const validPhone = cleanPhoneNumber(phoneNumber);
+
     try {
       const res = await fetch('/api/auth/send-otp', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phoneNumber: phoneNumber.trim() }),
+        headers: { 
+          'Content-Type': 'application/json',
+          'Bypass-Tunnel-Reminder': 'true',
+        },
+        body: JSON.stringify({ phoneNumber: validPhone }),
       });
-      const data = await res.json();
+
+      const rawText = await res.text();
+      let data: any;
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        throw new Error(`Server returned non-JSON response (${res.status}). Ensure API backend is active.`);
+      }
+
       if (data.success) {
         setStep('OTP');
       } else {
-        setErrorMsg(data.error?.message || 'Failed to send OTP.');
+        setErrorMsg(data.error?.message || data.message || 'Failed to send OTP.');
       }
     } catch (err: any) {
       setErrorMsg(err.message || 'Error communicating with auth server.');
@@ -106,16 +137,29 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     setErrorMsg(null);
     setLoading(true);
 
+    const validPhone = cleanPhoneNumber(phoneNumber);
+
     try {
       const res = await fetch('/api/auth/verify-otp', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Bypass-Tunnel-Reminder': 'true',
+        },
         body: JSON.stringify({
-          phoneNumber: phoneNumber.trim(),
+          phoneNumber: validPhone,
           otp: otp.trim(),
         }),
       });
-      const data = await res.json();
+
+      const rawText = await res.text();
+      let data: any;
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        throw new Error(`Server returned non-JSON response (${res.status}).`);
+      }
+
       const accessToken = data.data?.tokens?.accessToken || data.data?.token;
 
       if (data.success && accessToken) {
@@ -140,19 +184,31 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const handleInstantDemoLogin = async (phone: string) => {
     setErrorMsg(null);
     setLoading(true);
-    setPhoneNumber(phone);
+    const validPhone = cleanPhoneNumber(phone);
+    setPhoneNumber(validPhone);
     setOtp('123456');
 
     try {
       const res = await fetch('/api/auth/verify-otp', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Bypass-Tunnel-Reminder': 'true',
+        },
         body: JSON.stringify({
-          phoneNumber: phone.trim(),
+          phoneNumber: validPhone,
           otp: '123456',
         }),
       });
-      const data = await res.json();
+
+      const rawText = await res.text();
+      let data: any;
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        throw new Error(`Server returned non-JSON response (${res.status}). Ensure port 4000 is running.`);
+      }
+
       const accessToken = data.data?.tokens?.accessToken || data.data?.token;
 
       if (data.success && accessToken) {
@@ -227,13 +283,23 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-[#0284C7] hover:bg-[#0369A1] text-white py-3 rounded-xl font-bold text-xs transition shadow-sm flex items-center justify-center space-x-2"
-            >
-              <span>{loading ? 'Sending OTP...' : 'Send OTP Code'}</span>
-            </button>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="submit"
+                disabled={loading}
+                className="bg-[#0284C7] hover:bg-[#0369A1] text-white py-2.5 rounded-xl font-bold text-xs transition shadow-sm flex items-center justify-center space-x-1"
+              >
+                <span>{loading ? 'Sending...' : 'Send OTP Code'}</span>
+              </button>
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => handleInstantDemoLogin(phoneNumber)}
+                className="bg-[#16A34A] hover:bg-[#15803D] text-white py-2.5 rounded-xl font-bold text-xs transition shadow-sm flex items-center justify-center space-x-1"
+              >
+                <span>⚡ Instant Sign In</span>
+              </button>
+            </div>
 
             {/* Quick-test Presets for Solo Dev / Reviewer */}
             <div className="pt-3 border-t border-slate-100">

@@ -59,7 +59,9 @@ export const MobileTokenTracker: React.FC<MobileTokenTrackerProps> = ({
     if (!tokenData || !clinicSlug || tokenData.status === 'COMPLETED' || tokenData.status === 'CANCELLED') return;
 
     const interval = setInterval(() => {
-      fetch(`/api/queue/lookup?clinicSlug=${clinicSlug}&tokenNumber=${tokenData.tokenNumber}`)
+      fetch(`/api/queue/lookup?clinicSlug=${clinicSlug}&tokenNumber=${tokenData.tokenNumber}`, {
+        headers: { 'Bypass-Tunnel-Reminder': 'true' },
+      })
         .then((res) => res.json())
         .then((res) => {
           if (res.success && res.data) {
@@ -88,7 +90,10 @@ export const MobileTokenTracker: React.FC<MobileTokenTrackerProps> = ({
 
     try {
       const res = await fetch(
-        `/api/queue/lookup?clinicSlug=${clinicSlug}&tokenNumber=${tokenInput.trim().toUpperCase()}`
+        `/api/queue/lookup?clinicSlug=${clinicSlug}&tokenNumber=${tokenInput.trim().toUpperCase()}`,
+        {
+          headers: { 'Bypass-Tunnel-Reminder': 'true' },
+        }
       );
       const data = await res.json();
       if (data.success && data.data) {
