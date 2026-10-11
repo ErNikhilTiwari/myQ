@@ -38,6 +38,7 @@ interface AppointmentBookingModalProps {
   qrToken?: string;
   currentUser?: any;
   token?: string | null;
+  onOpenPatientLogin?: () => void;
   onLoginSuccess?: (user: any, token: string) => void;
   onBookingConfirmed?: (tokenNumber: string, clinicId: string) => void;
 }
@@ -51,6 +52,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
   qrToken: initialQrToken = '',
   currentUser,
   token,
+  onOpenPatientLogin,
   onLoginSuccess,
   onBookingConfirmed,
 }) => {
@@ -211,14 +213,14 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
       return;
     }
 
-    // If not authenticated, ensure phone login first
+    // Enforce authentication: User MUST be logged in to book appointment
     if (!token && !currentUser) {
-      if (!patientPhone10) {
-        setErrorMsg('Please provide your 10-digit mobile number for appointment booking & SMS updates.');
-        return;
+      setErrorMsg('Patient login is required to book an appointment.');
+      if (onOpenPatientLogin) {
+        onClose();
+        onOpenPatientLogin();
       }
-      const newAuthToken = await handleQuickPatientLogin();
-      if (!newAuthToken) return;
+      return;
     }
 
     setStep('PAYMENT');
@@ -363,71 +365,54 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
           {/* STEP 1: APPOINTMENT DETAILS & PRICING TIER */}
           {step === 'DETAILS' && (
             <form onSubmit={handleProceedToPayment} className="space-y-5">
-              {/* Dual Booking Option Toggle */}
+              {/* Pricing Fee Card (Remote shows strictly non-discounted; In-Clinic shows locked TV discount) */}
               <div>
                 <label className="text-xs font-bold text-[#1E293B] block mb-2">
-                  Select Booking Option
+                  Appointment Consultation Fee
                 </label>
-                <div className="grid grid-cols-2 gap-3">
-                  {/* Option 1: In-Clinic TV QR */}
-                  <button
-                    type="button"
-                    onClick={() => setBookingType('IN_CLINIC')}
-                    className={`p-3.5 rounded-2xl border-2 text-left transition flex flex-col justify-between ${
-                      bookingType === 'IN_CLINIC'
-                        ? 'border-emerald-500 bg-emerald-50/50 text-emerald-950 shadow-sm'
-                        : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between w-full mb-1">
-                      <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
-                        1. In-Clinic QR
-                      </span>
-                      {bookingType === 'IN_CLINIC' && <CheckCircle className="w-4 h-4 text-emerald-600" />}
+                {bookingType === 'IN_CLINIC' ? (
+                  /* In-Clinic TV QR Scanned Mode */
+                  <div className="p-4 rounded-2xl border-2 border-emerald-500 bg-emerald-50/70 text-emerald-950 flex items-center justify-between shadow-xs">
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-200/80 text-emerald-900 flex items-center space-x-1">
+                          <QrCode className="w-3 h-3 text-emerald-700" />
+                          <span>In-Clinic TV Screen Discount</span>
+                        </span>
+                        <span className="text-[10px] font-bold text-emerald-700 bg-white border border-emerald-200 px-2 py-0.5 rounded-full">
+                          ₹50 Discount Applied
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-emerald-800/80 mt-1">
+                        Cryptographically verified code from waiting room TV screen
+                      </p>
                     </div>
-                    <div className="text-lg font-black font-mono text-emerald-700 mt-1">
-                      ₹{inClinicFee}
+                    <div className="text-right">
+                      <div className="text-2xl font-black font-mono text-emerald-700">₹{inClinicFee}</div>
+                      <div className="text-[10px] text-slate-400 line-through">Standard ₹{remoteFee}</div>
                     </div>
-                    <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
-                      Scanned from clinic waiting room TV screen
-                    </p>
-                  </button>
-
-                  {/* Option 2: Remote Booking */}
-                  <button
-                    type="button"
-                    onClick={() => setBookingType('REMOTE')}
-                    className={`p-3.5 rounded-2xl border-2 text-left transition flex flex-col justify-between ${
-                      bookingType === 'REMOTE'
-                        ? 'border-[#0284C7] bg-[#E0F2FE]/50 text-sky-950 shadow-sm'
-                        : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between w-full mb-1">
-                      <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-[#E0F2FE] text-[#0284C7]">
-                        2. Remote Online
-                      </span>
-                      {bookingType === 'REMOTE' && <CheckCircle className="w-4 h-4 text-[#0284C7]" />}
+                  </div>
+                ) : (
+                  /* Standard Remote Booking Mode - ONLY Non-Discounted Price */
+                  <div className="p-4 rounded-2xl border-2 border-[#0284C7]/30 bg-[#F0F9FF] text-sky-950 flex items-center justify-between shadow-xs">
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-[#E0F2FE] text-[#0284C7] flex items-center space-x-1">
+                          <Globe className="w-3 h-3" />
+                          <span>Doctor Consultation Booking</span>
+                        </span>
+                        <span className="text-[10px] font-bold text-[#0284C7] bg-white border border-sky-200 px-2 py-0.5 rounded-full">
+                          Standard Fee
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 mt-1">
+                        Online scheduled consultation with priority queue token allocation
+                      </p>
                     </div>
-                    <div className="text-lg font-black font-mono text-[#0284C7] mt-1">
-                      ₹{remoteFee}
+                    <div className="text-right">
+                      <div className="text-2xl font-black font-mono text-[#0284C7]">₹{remoteFee}</div>
+                      <div className="text-[10px] text-slate-500 font-medium">Standard rate</div>
                     </div>
-                    <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
-                      Book doctor consultation from home
-                    </p>
-                  </button>
-                </div>
-
-                {/* If In-Clinic mode is active, display verification status */}
-                {bookingType === 'IN_CLINIC' && (
-                  <div className="mt-2.5 p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-xs text-emerald-800">
-                    <span className="flex items-center space-x-1.5 font-bold">
-                      <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                      <span>{qrToken ? 'TV QR Code Verified' : 'Scan TV Screen QR to claim ₹200 fee'}</span>
-                    </span>
-                    <span className="font-mono text-[11px] bg-white px-2 py-0.5 rounded border border-emerald-200 font-bold">
-                      Discount Active
-                    </span>
                   </div>
                 )}
               </div>
@@ -511,56 +496,47 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                 </div>
               </div>
 
-              {/* Patient Contact Verification (If not authenticated) */}
-              {!token && !currentUser ? (
-                <div className="bg-[#F8FAFC] border border-slate-200 rounded-2xl p-4 space-y-3">
-                  <div className="flex items-center space-x-2 text-xs font-bold text-[#1E293B]">
-                    <User className="w-4 h-4 text-[#0284C7]" />
-                    <span>Patient Details & Mobile Verification</span>
+              {/* Patient Profile / Authentication State */}
+              {!token || !currentUser ? (
+                <div className="bg-amber-50 border border-amber-200/90 rounded-2xl p-4 text-center space-y-2">
+                  <div className="text-xs font-bold text-amber-900 flex items-center justify-center space-x-1.5">
+                    <Lock className="w-4 h-4 text-amber-600" />
+                    <span>Patient Authentication Required to Book</span>
                   </div>
-
-                  <div>
-                    <label className="text-[11px] font-bold text-slate-500 block mb-1">
-                      Patient Full Name
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Rahul Sharma"
-                      value={patientName}
-                      onChange={(e) => setPatientName(e.target.value)}
-                      className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-bold text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-[11px] font-bold text-slate-500 block mb-1">
-                      10-Digit Mobile Number (+91)
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-2 text-xs font-bold text-slate-400 font-mono">+91</span>
-                      <input
-                        type="tel"
-                        maxLength={10}
-                        placeholder="9876511111"
-                        value={patientPhone10}
-                        onChange={(e) => setPatientPhone10(e.target.value)}
-                        className="w-full bg-white border border-slate-300 rounded-xl pl-12 pr-3.5 py-2 text-xs font-bold font-mono text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <p className="text-[10px] text-slate-400">
-                    Test Mode: Instant sign-in enabled with OTP <b className="font-mono text-slate-600">123456</b>.
+                  <p className="text-[11px] text-amber-700 leading-relaxed">
+                    You must be signed in as a patient to book appointments and receive a confirmed queue token.
                   </p>
+                  {onOpenPatientLogin && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        onOpenPatientLogin();
+                      }}
+                      className="bg-[#0284C7] hover:bg-[#0369A1] text-white px-5 py-2 rounded-xl text-xs font-bold shadow-sm transition active:scale-95 inline-flex items-center space-x-1.5 mt-1"
+                    >
+                      <User className="w-3.5 h-3.5" />
+                      <span>Log in with Mobile Number</span>
+                    </button>
+                  )}
                 </div>
               ) : (
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs">
-                  <span className="text-slate-600">
-                    Booking as: <b className="text-[#1E293B]">{currentUser?.name || 'Registered Patient'}</b>
-                  </span>
-                  <span className="font-mono text-slate-500 text-[11px] font-bold">
-                    {currentUser?.phoneNumber || ''}
+                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between text-xs">
+                  <div className="flex items-center space-x-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                      <User className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-[#1E293B]">
+                        {currentUser?.name || 'Registered Patient'}
+                      </div>
+                      <div className="text-[11px] font-mono text-slate-500 font-bold">
+                        {currentUser?.phoneNumber || ''}
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                    Verified Patient
                   </span>
                 </div>
               )}

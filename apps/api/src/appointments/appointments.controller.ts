@@ -51,6 +51,18 @@ export class AppointmentsController {
   }
 
   /**
+   * 1b. Get authenticated patient's appointments
+   */
+  @Get('appointments/my')
+  @UseGuards(JwtAuthGuard)
+  async getMyAppointments(
+    @CurrentUser('id') userId: string,
+  ): Promise<ApiResponse> {
+    const data = await this.appointmentsService.getMyPatientAppointments(userId);
+    return { success: true, data };
+  }
+
+  /**
    * 2. Get appointment details (Owner or Staff)
    */
   @Get('appointments/:id')

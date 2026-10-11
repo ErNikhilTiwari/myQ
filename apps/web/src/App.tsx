@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { TVViewerKiosk } from './components/TVViewerKiosk';
 import { ReceptionistConsole } from './components/ReceptionistConsole';
 import { MobileTokenTracker } from './components/MobileTokenTracker';
+import { PatientPortalView } from './components/PatientPortalView';
 import { LoginModal, LoginProfile } from './components/LoginModal';
 import { SuperAdminDashboard } from './components/SuperAdminDashboard';
 import { AppointmentBookingModal } from './components/AppointmentBookingModal';
@@ -74,6 +75,7 @@ export default function App() {
   const [bookingModalType, setBookingModalType] = useState<'IN_CLINIC' | 'REMOTE'>('REMOTE');
   const [bookingQrToken, setBookingQrToken] = useState<string>('');
   const [activeTrackingToken, setActiveTrackingToken] = useState<string>('');
+  const [pendingBookingAfterLogin, setPendingBookingAfterLogin] = useState(false);
 
   // Fetch available clinics from backend & inspect URL for In-Clinic TV QR scan
   useEffect(() => {
@@ -103,7 +105,16 @@ export default function App() {
         setActiveTab('PATIENT');
         setBookingModalType('IN_CLINIC');
         if (qrParam) setBookingQrToken(qrParam);
-        setIsBookingOpen(true);
+
+        // Customer needs to login to book appointment using TV QR
+        const savedToken = localStorage.getItem('token');
+        if (savedToken) {
+          setIsBookingOpen(true);
+        } else {
+          setLoginProfile('PATIENT');
+          setIsLoginOpen(true);
+          setPendingBookingAfterLogin(true);
+        }
       }
     } catch {}
   }, []);
@@ -118,6 +129,10 @@ export default function App() {
     // Automatically route to their designated profile view
     if (user.role === 'PATIENT') {
       setActiveTab('PATIENT');
+      if (pendingBookingAfterLogin) {
+        setIsBookingOpen(true);
+        setPendingBookingAfterLogin(false);
+      }
     } else if (user.role === 'RECEPTIONIST' || user.role === 'CLINIC_ADMIN' || user.role === 'SUPER_ADMIN') {
       setActiveTab('RECEPTIONIST');
     }
@@ -150,7 +165,7 @@ export default function App() {
     setIsLoginOpen(true);
   };
 
-  const currentClinic = clinics.find((c) => c.id === selectedClinicId);
+  const currentClinic = clinics.find((c: ClinicItem) => c.id === selectedClinicId);
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#334155] flex flex-col font-sans antialiased">
@@ -241,12 +256,20 @@ export default function App() {
 
         {/* 3. Global Action & Login Controls */}
         <div className="flex items-center space-x-2">
-          {/* Quick Doctor Appointment Booking Button */}
+          {/* Quick Doctor Appointment Booking Button (Requires Patient Login) */}
           <button
             onClick={() => {
-              setBookingModalType('REMOTE');
-              setBookingQrToken('');
-              setIsBookingOpen(true);
+              if (!token || !currentUser || currentUser.role !== 'PATIENT') {
+                setLoginProfile('PATIENT');
+                setIsLoginOpen(true);
+                setPendingBookingAfterLogin(true);
+                setBookingModalType('REMOTE');
+                setBookingQrToken('');
+              } else {
+                setBookingModalType('REMOTE');
+                setBookingQrToken('');
+                setIsBookingOpen(true);
+              }
             }}
             className="flex items-center space-x-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white px-3 py-1.5 rounded-xl font-bold text-xs shadow-sm transition active:scale-95"
           >
@@ -427,22 +450,32 @@ export default function App() {
         )}
 
         {/* ========================================================================= */}
-        {/* 1. Patient Profile: Zero-login basic tracking with optional Patient Login */}
+        {/* 1. Patient Profile: Full Patient Portal & Live Token Tracker             */}
         {/* ========================================================================= */}
         {activeTab === 'PATIENT' && (
-          <MobileTokenTracker
+          <PatientPortalView
             clinics={clinics}
             selectedClinicId={selectedClinicId}
             onSelectClinicId={setSelectedClinicId}
             defaultClinicSlug={currentClinic?.slug}
-            onOpenPatientLogin={openPatientLogin}
-            onOpenBookingModal={() => {
-              setBookingModalType('REMOTE');
-              setBookingQrToken('');
-              setIsBookingOpen(true);
-            }}
-            activeTrackingToken={activeTrackingToken}
             currentUser={currentUser}
+            token={token}
+            onOpenPatientLogin={openPatientLogin}
+            onOpenBooking={(type = 'REMOTE', qrToken = '') => {
+              if (!token || !currentUser || currentUser.role !== 'PATIENT') {
+                setLoginProfile('PATIENT');
+                setIsLoginOpen(true);
+                setPendingBookingAfterLogin(true);
+                setBookingModalType(type);
+                setBookingQrToken(qrToken);
+              } else {
+                setBookingModalType(type);
+                setBookingQrToken(qrToken);
+                setIsBookingOpen(true);
+              }
+            }}
+            onLogout={handleLogout}
+            activeTrackingToken={activeTrackingToken}
           />
         )}
 
@@ -506,6 +539,7 @@ export default function App() {
         qrToken={bookingQrToken}
         currentUser={currentUser}
         token={token}
+        onOpenPatientLogin={openPatientLogin}
         onLoginSuccess={handleLoginSuccess}
         onBookingConfirmed={(tokenNum, clinicId) => {
           if (clinicId) setSelectedClinicId(clinicId);

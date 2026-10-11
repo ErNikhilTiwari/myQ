@@ -470,6 +470,30 @@ export class AppointmentsService {
     return list.map((a) => this.mapToDto(a));
   }
 
+  /**
+   * 7. List authenticated patient's own appointments
+   */
+  async getMyPatientAppointments(userId: string): Promise<any[]> {
+    const list = await this.prisma.appointment.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: true,
+        doctor: true,
+        service: true,
+        queueEntry: true,
+        clinic: true,
+      },
+    });
+
+    return list.map((a: any) => ({
+      ...this.mapToDto(a),
+      clinicName: a.clinic?.name || 'Clinic',
+      clinicSlug: a.clinic?.slug || '',
+      clinicAddress: a.clinic?.address || '',
+    }));
+  }
+
   private mapToDto(a: any): AppointmentDto {
     return {
       id: a.id,
