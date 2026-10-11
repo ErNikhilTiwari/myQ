@@ -111,8 +111,10 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
   // UI Toast message
   const [feedbackMsg, setFeedbackMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Effective clinic ID is the mapped receptionist clinic
-  const clinicId = currentUser?.clinicId || selectedClinicId;
+  // Effective clinic ID is the mapped receptionist clinic or selected facility
+  const clinicId = currentUser?.role === 'SUPER_ADMIN'
+    ? (selectedClinicId || currentUser?.clinicId || (clinics.length > 0 ? clinics[0].id : ''))
+    : (currentUser?.clinicId || selectedClinicId || (clinics.length > 0 ? clinics[0].id : ''));
   const isReceptionistAuthenticated = Boolean(
     token && currentUser && (currentUser.role === 'RECEPTIONIST' || currentUser.role === 'CLINIC_ADMIN' || currentUser.role === 'SUPER_ADMIN')
   );
@@ -499,7 +501,7 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
         <ClinicAnalytics 
           clinicId={clinicId} 
           token={token} 
-          clinicName={activeClinicObj?.name || currentUser?.clinicName} 
+          clinicName={activeClinicObj?.name || currentUser?.clinicName || clinics.find(c => c.id === clinicId)?.name} 
         />
       )}
 
