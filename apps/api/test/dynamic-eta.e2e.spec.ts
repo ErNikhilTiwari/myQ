@@ -30,10 +30,27 @@ describe('Phase 2 — Advanced Dynamic ETA Prediction (E2E Integration)', () => 
 
     clinicA = await prisma.clinic.findUnique({ where: { slug: 'abc-health' } });
     doctorA = await prisma.doctor.findFirst({ where: { clinicId: clinicA.id } });
-    queueA = await prisma.queue.findFirst({ where: { clinicId: clinicA.id } });
+    const serviceA = await prisma.service.findFirst({ where: { clinicId: clinicA.id } });
+
+    // Create a fresh isolated test queue for ETA tests
+    queueA = await prisma.queue.create({
+      data: {
+        clinicId: clinicA.id,
+        doctorId: doctorA.id,
+        serviceId: serviceA!.id,
+        name: `Dynamic ETA Test Queue ${Date.now()}`,
+        isPaused: false,
+        currentSeq: 0,
+      },
+    });
   }, 30000);
 
   afterAll(async () => {
+    // Clean up test queue entries and queue
+    if (queueA) {
+      await prisma.queueEntry.deleteMany({ where: { queueId: queueA.id } });
+      await prisma.queue.delete({ where: { id: queueA.id } });
+    }
     await app.close();
   });
 
@@ -43,6 +60,7 @@ describe('Phase 2 — Advanced Dynamic ETA Prediction (E2E Integration)', () => 
       doctorA.id,
       4, // 4 people ahead
     );
+
 
     // 4 people * 15 min = 60 min
     expect(eta).toBe(60);

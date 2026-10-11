@@ -87,4 +87,19 @@ export class ReportsController {
 
     res.json({ success: true, data });
   }
+
+  /**
+   * 4. Get advanced analytics (Hourly traffic, peak hours, completion rate)
+   */
+  @Get('clinics/:clinicId/reports/advanced-analytics')
+  @UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.CLINIC_ADMIN)
+  async getAdvancedAnalytics(
+    @Param('clinicId') clinicId: string,
+    @Query('date') date?: string,
+  ): Promise<ApiResponse> {
+    const data = await this.reportsService.getAdvancedAnalytics(clinicId, date);
+    return { success: true, data };
+  }
 }
+

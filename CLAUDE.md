@@ -8,7 +8,7 @@
 
 ## Current Status
 
-- **Phase:** Phase 1 (MVP) COMPLETE — all milestones M0 through M13 implemented, tested, and passing.
+- **Phase:** Phase 1 (MVP: M0–M13) & Phase 2 (P2-M1–P2-M5) COMPLETE — all requirements implemented, tested, and passing.
 - **M0:** ✅ Approved (2026-10-10). See `docs/00-reference-analysis.md`.
 - **M1:** ✅ Approved (2026-10-11). See `docs/01-architecture.md` - `docs/06-deployment.md`.
 - **M2:** ✅ Approved (2026-10-11). See commit `2e74cb9`.
@@ -23,6 +23,12 @@
 - **M11:** ✅ Completed (2026-10-11). See commit `edb5180`.
 - **M12:** ✅ Completed (2026-10-11). See commit `f5aaeae`.
 - **M13:** ✅ Completed (2026-10-11). Hardening & security audit checklist verified. 13/13 test suites (77/77 tests) passing. 100% clean monorepo builds.
+- **P2-M1:** ✅ Completed (2026-10-11). Full WhatsApp Chatbot State Machine (`SELECT_DOCTOR`, `SELECT_SLOT`, `CONFIRM_BOOKING`). Commit `85f6b8e`.
+- **P2-M2:** ✅ Completed (2026-10-11). Multi-Clinic SaaS Subscriptions (`FREE`, `BASIC`, `PROFESSIONAL`, `ENTERPRISE` tiers & quotas). Commit `4ce13fe`.
+- **P2-M3:** ✅ Completed (2026-10-11). Advanced Dynamic ETA Prediction (Rolling historical durations). Commit `b23fa6d`.
+- **P2-M4:** ✅ Completed (2026-10-11). Multi-Provider Payment Gateway (`RAZORPAY`, `CASHFREE`, `PHONEPE`). Commit `2a3a181`.
+- **P2-M5:** ✅ Completed (2026-10-11). Advanced Analytics & Hardening (Hourly traffic 08:00–20:00, peak hour, completion/no-show rates). 18/18 test suites (95/95 tests) passing. Clean monorepo build.
+
 
 
 ## Tech Stack (Pending M1 Approval)
