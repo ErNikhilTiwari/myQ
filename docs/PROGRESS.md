@@ -38,6 +38,17 @@
 
 ---
 
+## Phase 3 Milestone Status Overview
+
+| # | Milestone | Status | Deliverables & Verification | Completion Date |
+|---|---|---|---|---|
+| **P3-M1** | Multi-Location Hospital Chains | ✅ **Completed** | `HospitalChain` network provisioning, multi-branch clinic hierarchy, branch discovery APIs, 4/4 tests pass | 2026-10-11 |
+| **P3-M2** | AI Clinic Insights & Dynamic Ad Targeting | ✅ **Completed** | Automated bottleneck detection, tomorrow load prediction (`LOW` to `CRITICAL`), clinic-specific ad priority, 3/3 tests pass | 2026-10-11 |
+| **P3-M3** | AI NLU Intent Classifier & FAQ RAG | ✅ **Completed** | Router → Orchestrator → Handler NLU, scoped clinic FAQ knowledge retrieval for timings/fees/location, 3/3 tests pass | 2026-10-11 |
+| **P3-M4** | Web Push Notifications | ✅ **Completed** | Browser subscription registration, receptionist one-click push alert dispatch, unsubscribe lifecycle, 3/3 tests pass | 2026-10-11 |
+
+---
+
 ## Decisions Log & Approved Changes
 - **ADR-001**: Inspiration only from reference repositories (`FQM`, `QueueLess`, `RAG-GoogleCalender-Chatbot`). Zero code copy.
 - **ADR-002**: Relational PostgreSQL with Row-Level Security (RLS) instead of MongoDB (SQLite for local dev/e2e tests).
@@ -51,11 +62,15 @@
 - **ADR-010**: Multi-tenant SaaS monetization tier quotas enforced on write operations (doctor creation, displays).
 - **ADR-011**: Dynamic ETA calculates rolling mean consultation duration from the last 10 completed tokens per queue/doctor.
 - **ADR-012**: Multi-provider payment gateway architecture supporting Razorpay, Cashfree, and PhonePe via normalized DTO contracts.
+- **ADR-013**: Enterprise multi-location hospital chains model supporting aggregated branch discovery and network management.
+- **ADR-014**: Router → Orchestrator → Handler pattern for AI NLU intent classification; clinic knowledge retrieval scoped strictly per clinic tenant.
+- **ADR-015**: Web Push Notification layer for browser alerts with fail-safe dispatch and multi-device subscription tracking.
 
 ---
 
 ## Current Status & Verification
-- **Total Test Suites:** 18 passed, 18 total across `@queueapp/api`.
-- **Total Tests:** 95 passed, 95 total (100% pass rate).
+- **Total Test Suites:** 22 passed, 22 total across `@queueapp/api`.
+- **Total Tests:** 108 passed, 108 total (100% pass rate).
 - **Monorepo Build Status:** Clean production build across all workspaces (`@queueapp/shared`, `@queueapp/api`, `@queueapp/web`).
+
 

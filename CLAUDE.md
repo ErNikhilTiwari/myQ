@@ -28,6 +28,11 @@
 - **P2-M3:** ✅ Completed (2026-10-11). Advanced Dynamic ETA Prediction (Rolling historical durations). Commit `b23fa6d`.
 - **P2-M4:** ✅ Completed (2026-10-11). Multi-Provider Payment Gateway (`RAZORPAY`, `CASHFREE`, `PHONEPE`). Commit `2a3a181`.
 - **P2-M5:** ✅ Completed (2026-10-11). Advanced Analytics & Hardening (Hourly traffic 08:00–20:00, peak hour, completion/no-show rates). 18/18 test suites (95/95 tests) passing. Clean monorepo build.
+- **P3-M1:** ✅ Completed (2026-10-11). Multi-Location Hospital Chains network hierarchy. Commit `4ce996e`.
+- **P3-M2:** ✅ Completed (2026-10-11). AI Clinic Insights, bottleneck detection & dynamic ad targeting. Commit `5adae98`.
+- **P3-M3:** ✅ Completed (2026-10-11). AI NLU Intent Classifier & scoped clinic knowledge FAQ RAG. Commit `0ce977c`.
+- **P3-M4:** ✅ Completed (2026-10-11). Web Push Notifications with multi-device subscription lifecycle. 22/22 test suites (108/108 tests) passing. 100% clean monorepo builds.
+
 
 
 
