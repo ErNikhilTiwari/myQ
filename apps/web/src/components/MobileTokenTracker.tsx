@@ -50,11 +50,73 @@ export const MobileTokenTracker: React.FC<MobileTokenTrackerProps> = ({
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [notificationsAllowed, setNotificationsAllowed] = useState(false);
+  const [isPushSupported, setIsPushSupported] = useState(true);
+  const [swRegistration, setSwRegistration] = useState<ServiceWorkerRegistration | null>(null);
+  const [previousStatus, setPreviousStatus] = useState<string | null>(null);
 
   const selectedClinic = clinics.find((c) => c.id === selectedClinicId);
   const clinicSlug = selectedClinic?.slug || defaultClinicSlug;
 
-  // Poll for token status updates every 4 seconds if token is active
+  // 1. Register Service Worker on mount for Interactive Push
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator && 'Notification' in window) {
+      setIsPushSupported(true);
+      if (Notification.permission === 'granted') {
+        setNotificationsAllowed(true);
+      }
+
+      navigator.serviceWorker
+        .register('/sw.js')
+        .then((reg) => {
+          setSwRegistration(reg);
+        })
+        .catch((err) => {
+          console.warn('Service Worker registration skipped or failed:', err);
+        });
+    } else {
+      setIsPushSupported(false);
+    }
+  }, []);
+
+  // 2. Dispatch interactive push notification with sound/vibration
+  const dispatchInteractiveNotification = (title: string, body: string, isUrgent = false) => {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+    const options = {
+      body,
+      icon: '/vite.svg',
+      badge: '/vite.svg',
+      tag: 'token-status-alert',
+      vibrate: isUrgent ? [300, 100, 300, 100, 400] : [200, 100, 200],
+      requireInteraction: isUrgent,
+      data: {
+        url: window.location.href,
+      },
+    };
+
+    if (swRegistration && swRegistration.showNotification) {
+      swRegistration.showNotification(title, options);
+    } else {
+      new Notification(title, options);
+    }
+
+    // Play a gentle audible alert if supported
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(isUrgent ? 987.77 : 659.25, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.4);
+    } catch {}
+  };
+
+  // 3. Poll for token status updates every 4 seconds and trigger push when called or updated
   useEffect(() => {
     if (!tokenData || !clinicSlug || tokenData.status === 'COMPLETED' || tokenData.status === 'CANCELLED') return;
 
@@ -65,14 +127,44 @@ export const MobileTokenTracker: React.FC<MobileTokenTrackerProps> = ({
         .then((res) => res.json())
         .then((res) => {
           if (res.success && res.data) {
-            setTokenData(res.data);
+            const updated = res.data;
+            // Check for status transitions
+            if (previousStatus && previousStatus !== updated.status) {
+              if (updated.status === 'CALLED') {
+                dispatchInteractiveNotification(
+                  `🔔 Token ${updated.tokenNumber} IS CALLED!`,
+                  `Your turn has arrived! Please proceed to ${updated.doctorName || 'Doctor Chamber'} right away.`,
+                  true
+                );
+              } else if (updated.status === 'IN_SERVICE') {
+                dispatchInteractiveNotification(
+                  `🩺 Token ${updated.tokenNumber} In Consultation`,
+                  `Consultation with ${updated.doctorName || 'Doctor'} has started.`
+                );
+              } else if (updated.status === 'ON_HOLD') {
+                dispatchInteractiveNotification(
+                  `⏸️ Token ${updated.tokenNumber} Placed On Hold`,
+                  `Reason: ${updated.holdReason || 'Pending clinical steps'}. Reception will recall shortly.`
+                );
+              }
+            } else if (updated.positionAhead === 1 && tokenData.positionAhead > 1) {
+              // Up next alert
+              dispatchInteractiveNotification(
+                `⚡ You are NEXT in line!`,
+                `Only 1 patient ahead of Token ${updated.tokenNumber}. Please wait near the chamber.`,
+                false
+              );
+            }
+
+            setPreviousStatus(updated.status);
+            setTokenData(updated);
           }
         })
         .catch(() => {});
     }, 4000);
 
     return () => clearInterval(interval);
-  }, [clinicSlug, tokenData?.tokenNumber, tokenData?.status]);
+  }, [clinicSlug, tokenData?.tokenNumber, tokenData?.status, previousStatus]);
 
   const handleLookup = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -98,6 +190,7 @@ export const MobileTokenTracker: React.FC<MobileTokenTrackerProps> = ({
       const data = await res.json();
       if (data.success && data.data) {
         setTokenData(data.data);
+        setPreviousStatus(data.data.status);
       } else {
         setErrorMsg(data.error?.message || 'Token not found. Please check token number.');
       }
@@ -108,16 +201,32 @@ export const MobileTokenTracker: React.FC<MobileTokenTrackerProps> = ({
     }
   };
 
-  const handleEnablePush = () => {
+  const handleEnablePush = async () => {
     if ('Notification' in window) {
-      Notification.requestPermission().then((perm) => {
+      try {
+        const perm = await Notification.requestPermission();
         if (perm === 'granted') {
           setNotificationsAllowed(true);
+          dispatchInteractiveNotification(
+            '🏥 Live Queue Notifications Activated',
+            `You will receive immediate interactive alerts when Token ${tokenData?.tokenNumber || ''} is called!`,
+            false
+          );
+        } else {
+          alert('Notification permission was blocked in browser settings. Please allow notifications for live token alerts.');
         }
-      });
-    } else {
-      setNotificationsAllowed(true);
+      } catch (err) {
+        console.error('Error requesting notification permission:', err);
+      }
     }
+  };
+
+  const handleTestPushNotification = () => {
+    dispatchInteractiveNotification(
+      `🔔 Token ${tokenData?.tokenNumber || 'A-01'} Called (Preview)`,
+      `Please proceed to ${tokenData?.doctorName || 'Room 101, Dr. Jenkins'}. This is an interactive test alert.`,
+      true
+    );
   };
 
   const getStatusBadge = (status: string) => {
@@ -286,19 +395,29 @@ export const MobileTokenTracker: React.FC<MobileTokenTrackerProps> = ({
               </div>
             )}
 
-            {/* Browser Push Notification Permission Prompt */}
+            {/* Interactive Web Push Notification Controls */}
             {!notificationsAllowed ? (
               <button
                 onClick={handleEnablePush}
-                className="w-full bg-[#0284C7] hover:bg-[#0369A1] text-white py-3 rounded-2xl text-xs font-bold transition flex items-center justify-center space-x-2 shadow-sm"
+                className="w-full bg-[#0284C7] hover:bg-[#0369A1] text-white py-3.5 rounded-2xl text-xs font-bold transition flex items-center justify-center space-x-2 shadow-sm active:scale-95"
               >
-                <Bell className="w-4 h-4" />
-                <span>Notify me when my turn arrives</span>
+                <Bell className="w-4 h-4 animate-bounce" />
+                <span>Enable Interactive Push Alerts</span>
               </button>
             ) : (
-              <div className="bg-[#DCFCE7] border border-[#16A34A]/30 p-2.5 rounded-xl text-center text-[11px] font-bold text-[#16A34A] flex items-center justify-center space-x-1.5">
-                <CheckCircle className="w-3.5 h-3.5" />
-                <span>Alerts active: We'll ping your phone when called!</span>
+              <div className="space-y-2">
+                <div className="bg-[#DCFCE7] border border-[#16A34A]/30 p-2.5 rounded-xl text-center text-[11px] font-bold text-[#16A34A] flex items-center justify-center space-x-1.5 shadow-xs">
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  <span>Interactive Push Active: Your phone will buzz when called!</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleTestPushNotification}
+                  className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-2 rounded-xl text-xs font-semibold transition flex items-center justify-center space-x-1.5 border border-slate-200"
+                >
+                  <Bell className="w-3.5 h-3.5 text-[#0284C7]" />
+                  <span>Send Test Interactive Push Notification</span>
+                </button>
               </div>
             )}
 
