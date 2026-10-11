@@ -8,7 +8,9 @@ import {
   MapPin, 
   ArrowRight, 
   ShieldCheck, 
-  AlertCircle 
+  AlertCircle,
+  LogIn,
+  User
 } from 'lucide-react';
 import { ClinicSearchSelect, ClinicItem } from './ClinicSearchSelect';
 
@@ -31,6 +33,8 @@ interface MobileTokenTrackerProps {
   selectedClinicId?: string;
   onSelectClinicId?: (id: string) => void;
   defaultClinicSlug?: string;
+  onOpenPatientLogin?: () => void;
+  currentUser?: any;
 }
 
 export const MobileTokenTracker: React.FC<MobileTokenTrackerProps> = ({
@@ -38,6 +42,8 @@ export const MobileTokenTracker: React.FC<MobileTokenTrackerProps> = ({
   selectedClinicId = '',
   onSelectClinicId,
   defaultClinicSlug = '',
+  onOpenPatientLogin,
+  currentUser,
 }) => {
   const [tokenInput, setTokenInput] = useState('');
   const [tokenData, setTokenData] = useState<PublicTokenStatus | null>(null);
@@ -69,7 +75,7 @@ export const MobileTokenTracker: React.FC<MobileTokenTrackerProps> = ({
   const handleLookup = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!clinicSlug) {
-      setErrorMsg('Please select a clinic first.');
+      setErrorMsg('Please select a clinic facility first.');
       return;
     }
     if (!tokenInput.trim()) {
@@ -135,13 +141,29 @@ export const MobileTokenTracker: React.FC<MobileTokenTrackerProps> = ({
             <div className="flex items-center space-x-2.5">
               <span className="text-2xl">📱</span>
               <div>
-                <h1 className="text-base font-black text-[#1E293B]">Live Token Tracker</h1>
-                <p className="text-[11px] text-[#64748B]">Zero-Login QR Token Status</p>
+                <h1 className="text-base font-black text-[#1E293B]">Patient Token Tracker</h1>
+                <p className="text-[11px] text-[#64748B]">Zero-Login Public QR Token Status</p>
               </div>
             </div>
-            <span className="bg-[#E0F2FE] text-[#0284C7] text-[10px] font-bold px-2 py-0.5 rounded-full border border-[#0284C7]/20">
-              Live Sync
-            </span>
+
+            {/* Patient Login Button */}
+            {currentUser?.role === 'PATIENT' ? (
+              <span className="bg-[#DCFCE7] text-[#16A34A] text-[10px] font-bold px-2 py-0.5 rounded-full border border-[#16A34A]/30">
+                Logged In &bull; {currentUser.name || 'Patient'}
+              </span>
+            ) : onOpenPatientLogin ? (
+              <button
+                onClick={onOpenPatientLogin}
+                className="bg-[#E0F2FE] hover:bg-[#BAE6FD] text-[#0284C7] text-xs font-bold px-3 py-1.5 rounded-xl border border-[#0284C7]/20 flex items-center space-x-1 transition shadow-sm"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Patient Login</span>
+              </button>
+            ) : (
+              <span className="bg-[#E0F2FE] text-[#0284C7] text-[10px] font-bold px-2 py-0.5 rounded-full border border-[#0284C7]/20">
+                Live Sync
+              </span>
+            )}
           </div>
 
           {/* Clinic Search & Select */}
@@ -283,8 +305,8 @@ export const MobileTokenTracker: React.FC<MobileTokenTrackerProps> = ({
         ) : !selectedClinicId ? (
           <div className="bg-white border border-slate-200/90 rounded-3xl p-8 text-center text-[#64748B] text-xs">
             <div className="text-3xl mb-2">🔍</div>
-            <div className="font-bold text-[#1E293B] text-sm mb-1">Select your clinic to track</div>
-            <p>Search and select your clinic in the box above to track live token progress.</p>
+            <div className="font-bold text-[#1E293B] text-sm mb-1">Select your clinic facility</div>
+            <p>Search and select your clinic in the box above to track live token progress with zero login required.</p>
           </div>
         ) : null}
       </div>

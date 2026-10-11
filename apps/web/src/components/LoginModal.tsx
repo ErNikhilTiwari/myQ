@@ -1,14 +1,29 @@
 import React, { useState } from 'react';
-import { LogIn, KeyRound, Phone, CheckCircle, AlertCircle, X, Sparkles } from 'lucide-react';
+import { LogIn, KeyRound, Phone, CheckCircle, AlertCircle, X, Sparkles, UserCheck, Shield } from 'lucide-react';
+
+export type LoginProfile = 'PATIENT' | 'RECEPTIONIST' | 'GENERAL';
 
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
   onLoginSuccess: (user: any, token: string) => void;
+  profileType?: LoginProfile; // Explicit role context
 }
 
-export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLoginSuccess }) => {
-  const [phoneNumber, setPhoneNumber] = useState('+919876500001');
+export const LoginModal: React.FC<LoginModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  onLoginSuccess,
+  profileType = 'GENERAL'
+}) => {
+  // Set default phone according to selected profile
+  const getDefaultPhone = () => {
+    if (profileType === 'RECEPTIONIST') return '+919876500001';
+    if (profileType === 'PATIENT') return '+919876511111';
+    return '+919876500001';
+  };
+
+  const [phoneNumber, setPhoneNumber] = useState(getDefaultPhone());
   const [otp, setOtp] = useState('123456');
   const [step, setStep] = useState<'PHONE' | 'OTP'>('PHONE');
   const [loading, setLoading] = useState(false);
@@ -16,13 +31,51 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
 
   if (!isOpen) return null;
 
-  // Preset quick-test accounts
-  const quickAccounts = [
-    { label: 'Receptionist (ABC Health)', phone: '+919876500001', role: 'RECEPTIONIST' },
-    { label: 'Clinic Admin', phone: '+919876500000', role: 'CLINIC_ADMIN' },
-    { label: 'Super Admin', phone: '+919999999999', role: 'SUPER_ADMIN' },
-    { label: 'Patient (Rahul)', phone: '+919876511111', role: 'PATIENT' },
+  // Header Title & Subtitle customized per profile
+  const getHeaderInfo = () => {
+    switch (profileType) {
+      case 'RECEPTIONIST':
+        return {
+          title: 'Receptionist Login',
+          subtitle: 'Clinic Desk & Live Queue Operator Access',
+          icon: <UserCheck className="w-5 h-5" />,
+          accentColor: '#0284C7',
+          bgColor: '#E0F2FE',
+        };
+      case 'PATIENT':
+        return {
+          title: 'Patient Login',
+          subtitle: 'Sync Your Bookings, Appointments & Token Alerts',
+          icon: <KeyRound className="w-5 h-5" />,
+          accentColor: '#16A34A',
+          bgColor: '#DCFCE7',
+        };
+      default:
+        return {
+          title: 'Account Login',
+          subtitle: 'Sign in to your Healthcare OS profile',
+          icon: <Shield className="w-5 h-5" />,
+          accentColor: '#0284C7',
+          bgColor: '#E0F2FE',
+        };
+    }
+  };
+
+  // Preset quick-test accounts filtered or ordered by profileType
+  const allQuickAccounts = [
+    { label: 'Receptionist (ABC Health)', phone: '+919876500001', role: 'RECEPTIONIST', clinic: 'ABC Health Clinic' },
+    { label: 'Patient (Rahul)', phone: '+919876511111', role: 'PATIENT', clinic: 'Patient Account' },
+    { label: 'Clinic Admin', phone: '+919876500000', role: 'CLINIC_ADMIN', clinic: 'ABC Health Clinic' },
+    { label: 'Super Admin', phone: '+919999999999', role: 'SUPER_ADMIN', clinic: 'System Root' },
   ];
+
+  const quickAccounts = profileType === 'RECEPTIONIST'
+    ? allQuickAccounts.filter((a) => a.role === 'RECEPTIONIST' || a.role === 'CLINIC_ADMIN')
+    : profileType === 'PATIENT'
+    ? allQuickAccounts.filter((a) => a.role === 'PATIENT')
+    : allQuickAccounts;
+
+  const headerInfo = getHeaderInfo();
 
   const handleSendOtp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -95,12 +148,15 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
 
         {/* Modal Header */}
         <div className="flex items-center space-x-3 mb-6">
-          <div className="w-10 h-10 rounded-2xl bg-[#E0F2FE] border border-[#0284C7]/20 flex items-center justify-center text-[#0284C7]">
-            <KeyRound className="w-5 h-5" />
+          <div
+            className="w-10 h-10 rounded-2xl flex items-center justify-center border"
+            style={{ backgroundColor: headerInfo.bgColor, color: headerInfo.accentColor, borderColor: `${headerInfo.accentColor}30` }}
+          >
+            {headerInfo.icon}
           </div>
           <div>
-            <h3 className="text-lg font-black text-[#1E293B]">Staff & Patient Login</h3>
-            <p className="text-xs text-[#64748B]">Passwordless OTP Authentication</p>
+            <h3 className="text-lg font-black text-[#1E293B]">{headerInfo.title}</h3>
+            <p className="text-xs text-[#64748B]">{headerInfo.subtitle}</p>
           </div>
         </div>
 
@@ -145,7 +201,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin
                 <Sparkles className="w-3 h-3 text-[#D97706]" />
                 <span>Quick-Select Demo Accounts:</span>
               </span>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {quickAccounts.map((acc, i) => (
                   <button
                     key={i}

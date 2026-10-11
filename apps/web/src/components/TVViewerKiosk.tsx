@@ -8,13 +8,15 @@ interface TVViewerProps {
   selectedClinicId?: string;
   clinics?: ClinicItem[];
   onSelectClinicId?: (id: string) => void;
+  currentUser?: any;
 }
 
 export const TVViewerKiosk: React.FC<TVViewerProps> = ({ 
-  clinicSlug = 'abc-health',
+  clinicSlug = '',
   selectedClinicId = '',
   clinics = [],
-  onSelectClinicId
+  onSelectClinicId,
+  currentUser,
 }) => {
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [clinicName, setClinicName] = useState('');
@@ -32,6 +34,10 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
   }>>([]);
 
   const prevTokenRef = useRef<string>('');
+
+  // Auto-bind clinic for logged-in staff/receptionist profile
+  const isReceptionistProfile = currentUser && (currentUser.role === 'RECEPTIONIST' || currentUser.role === 'CLINIC_ADMIN');
+  const effectiveClinicId = (isReceptionistProfile && currentUser?.clinicId) ? currentUser.clinicId : selectedClinicId;
 
   // Web Audio Synthetic Chime (Dual Frequency: 880Hz -> 1320Hz)
   const playChime = () => {
@@ -65,9 +71,9 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
     }
   };
 
-  // Poll live queue data when clinic is selected
+  // Poll live queue data when clinic is selected or auto-bound
   useEffect(() => {
-    if (!selectedClinicId) {
+    if (!effectiveClinicId) {
       setClinicName('');
       setCurrentServing(null);
       setNextWaiting([]);
@@ -75,7 +81,7 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
     }
 
     const pollTV = () => {
-      fetch(`/api/clinics/${selectedClinicId}/queues`)
+      fetch(`/api/clinics/${effectiveClinicId}/queues`)
         .then((r) => r.json())
         .then((qRes) => {
           if (!qRes.success || !qRes.data || qRes.data.length === 0) {
@@ -85,7 +91,7 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
           }
           const q = qRes.data[0];
 
-          fetch(`/api/clinics/${selectedClinicId}/queues/${q.id}`)
+          fetch(`/api/clinics/${effectiveClinicId}/queues/${q.id}`)
             .then((d) => d.json())
             .then((detRes) => {
               if (!detRes.success || !detRes.data) return;
@@ -123,15 +129,17 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
     };
 
     // Update clinic name
-    const foundClinic = clinics.find((c) => c.id === selectedClinicId);
+    const foundClinic = clinics.find((c) => c.id === effectiveClinicId);
     if (foundClinic) {
       setClinicName(foundClinic.name);
+    } else if (currentUser?.clinicName) {
+      setClinicName(currentUser.clinicName);
     }
 
     pollTV();
     const interval = setInterval(pollTV, 3000);
     return () => clearInterval(interval);
-  }, [audioEnabled, selectedClinicId, clinics]);
+  }, [audioEnabled, effectiveClinicId, clinics, currentUser]);
 
   return (
     <div className="flex-1 flex flex-col bg-[#F8FAFC] text-[#334155] p-4 sm:p-6 md:p-8 select-none justify-between min-h-[calc(100vh-50px)]">
@@ -146,7 +154,9 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
               <h1 className="text-xl md:text-2xl font-black tracking-tight text-[#1E293B]">
                 {clinicName || 'TV Viewer Kiosk'}
               </h1>
-              {onSelectClinicId && (
+
+              {/* Only show clinic selector if NOT already mapped to a receptionist profile */}
+              {!isReceptionistProfile && onSelectClinicId && (
                 <div className="w-64">
                   <ClinicSearchSelect
                     clinics={clinics}
@@ -156,6 +166,12 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
                     variant="card"
                   />
                 </div>
+              )}
+
+              {isReceptionistProfile && (
+                <span className="bg-[#E0F2FE] text-[#0284C7] text-xs font-bold px-2.5 py-0.5 rounded-full border border-[#0284C7]/20">
+                  Auto-synced with Reception Profile
+                </span>
               )}
             </div>
             <p className="text-xs text-[#64748B] font-medium mt-0.5">
@@ -184,7 +200,7 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
       </div>
 
       {/* Main Kiosk Content Area */}
-      {!selectedClinicId ? (
+      {!effectiveClinicId ? (
         /* Empty Clinic Selected Prompt */
         <div className="flex-1 flex flex-col items-center justify-center p-8 text-center my-auto">
           <div className="w-20 h-20 rounded-3xl bg-[#E0F2FE] border border-[#0284C7]/20 flex items-center justify-center text-4xl mb-4 shadow-sm">
@@ -192,9 +208,9 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
           </div>
           <h2 className="text-2xl font-black text-[#1E293B] mb-2">No Clinic Selected</h2>
           <p className="text-sm text-[#64748B] max-w-md mb-6">
-            Please search and select a clinic tenant from the search bar above to launch live token broadcasting for that facility.
+            Please search and select a clinic from the search bar above to launch live token broadcasting for that facility.
           </p>
-          {onSelectClinicId && (
+          {!isReceptionistProfile && onSelectClinicId && (
             <div className="w-80">
               <ClinicSearchSelect
                 clinics={clinics}
@@ -294,7 +310,7 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
 
       {/* Optimized Minimal TV Banner Ad Space */}
       <QueueBottomAd
-        clinicId={selectedClinicId}
+        clinicId={effectiveClinicId}
         refreshIntervalSeconds={45}
         showFallbackOnNoFill={true}
       />
