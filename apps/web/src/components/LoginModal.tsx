@@ -16,14 +16,14 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   onLoginSuccess,
   profileType = 'GENERAL'
 }) => {
-  // Set default phone according to selected profile
-  const getDefaultPhone = () => {
-    if (profileType === 'RECEPTIONIST') return '+919876500001';
-    if (profileType === 'PATIENT') return '+919876511111';
-    return '+919876500001';
+  // Set default 10-digit phone according to selected profile
+  const getDefaultPhone10 = () => {
+    if (profileType === 'RECEPTIONIST') return '9876500001';
+    if (profileType === 'PATIENT') return '9876511111';
+    return '9876500001';
   };
 
-  const [phoneNumber, setPhoneNumber] = useState(getDefaultPhone());
+  const [phone10, setPhone10] = useState(getDefaultPhone10());
   const [otp, setOtp] = useState('123456');
   const [step, setStep] = useState<'PHONE' | 'OTP'>('PHONE');
   const [loading, setLoading] = useState(false);
@@ -87,20 +87,18 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
   const headerInfo = getHeaderInfo();
 
-  const cleanPhoneNumber = (raw: string): string => {
-    let clean = raw.trim().replace(/[\s-]/g, '');
-    if (!clean.startsWith('+')) {
-      if (clean.length === 10) clean = `+91${clean}`;
-    }
-    return clean;
-  };
-
   const handleSendOtp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setErrorMsg(null);
-    setLoading(true);
 
-    const validPhone = cleanPhoneNumber(phoneNumber);
+    const clean10 = phone10.replace(/\D/g, '').slice(0, 10);
+    if (clean10.length !== 10) {
+      setErrorMsg('Please enter a valid 10-digit Indian phone number.');
+      return;
+    }
+
+    setLoading(true);
+    const validPhone = `+91${clean10}`;
 
     try {
       const res = await fetch('/api/auth/send-otp', {
@@ -135,9 +133,15 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
-    setLoading(true);
 
-    const validPhone = cleanPhoneNumber(phoneNumber);
+    const clean10 = phone10.replace(/\D/g, '').slice(0, 10);
+    if (clean10.length !== 10) {
+      setErrorMsg('Please enter a valid 10-digit Indian phone number.');
+      return;
+    }
+
+    setLoading(true);
+    const validPhone = `+91${clean10}`;
 
     try {
       const res = await fetch('/api/auth/verify-otp', {
@@ -184,9 +188,10 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const handleInstantDemoLogin = async (phone: string) => {
     setErrorMsg(null);
     setLoading(true);
-    const validPhone = cleanPhoneNumber(phone);
-    setPhoneNumber(validPhone);
+    const clean10 = phone.replace('+91', '').replace(/\D/g, '').slice(0, 10);
+    setPhone10(clean10);
     setOtp('123456');
+    const validPhone = `+91${clean10}`;
 
     try {
       const res = await fetch('/api/auth/verify-otp', {
@@ -268,19 +273,29 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           <form onSubmit={handleSendOtp} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-[#334155] mb-1.5">
-                Phone Number (with country code)
+                Mobile Phone Number
               </label>
-              <div className="relative">
-                <Phone className="w-4 h-4 text-[#94A3B8] absolute left-3.5 top-3" />
+              <div className="flex space-x-2">
+                {/* Fixed Unchangeable Country Code Box */}
+                <div className="bg-slate-100 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-[#1E293B] select-none flex items-center justify-center shrink-0">
+                  +91
+                </div>
+                {/* 10-Digit Only Number Input Box */}
                 <input
-                  type="text"
+                  type="tel"
+                  inputMode="numeric"
                   required
-                  placeholder="+919876500001"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  className="w-full bg-[#F8FAFC] border border-slate-300 rounded-xl pl-10 pr-4 py-2.5 text-xs text-[#1E293B] font-mono focus:outline-none focus:border-[#0284C7] focus:bg-white"
+                  maxLength={10}
+                  placeholder="9876500001"
+                  value={phone10}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
+                    setPhone10(digits);
+                  }}
+                  className="flex-1 bg-[#F8FAFC] border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-[#1E293B] font-mono font-semibold focus:outline-none focus:border-[#0284C7] focus:bg-white"
                 />
               </div>
+              <p className="text-[10px] text-[#64748B] mt-1">10 digits only, no spaces or special characters.</p>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
@@ -294,7 +309,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               <button
                 type="button"
                 disabled={loading}
-                onClick={() => handleInstantDemoLogin(phoneNumber)}
+                onClick={() => handleInstantDemoLogin(phone10)}
                 className="bg-[#16A34A] hover:bg-[#15803D] text-white py-2.5 rounded-xl font-bold text-xs transition shadow-sm flex items-center justify-center space-x-1"
               >
                 <span>⚡ Instant Sign In</span>
@@ -318,7 +333,10 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                   >
                     <button
                       type="button"
-                      onClick={() => setPhoneNumber(acc.phone)}
+                      onClick={() => {
+                        const cleanDigits = acc.phone.replace('+91', '').replace(/\D/g, '').slice(0, 10);
+                        setPhone10(cleanDigits);
+                      }}
                       className="text-left flex-1"
                     >
                       <div className="font-bold text-xs text-[#1E293B] group-hover:text-[#0284C7] transition">

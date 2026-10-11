@@ -83,8 +83,12 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
   // Registration Form Modal
   const [showWalkinModal, setShowWalkinModal] = useState(false);
   const [walkinName, setWalkinName] = useState('');
-  const [walkinPhone, setWalkinPhone] = useState('+91');
+  const [walkinPhone10, setWalkinPhone10] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Cancel Confirmation Modal
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [tokenToCancel, setTokenToCancel] = useState<QueueItem | null>(null);
 
   // Hold reason prompt
   const [holdingTokenId, setHoldingTokenId] = useState<string | null>(null);
@@ -202,7 +206,12 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
       });
       const data = await res.json();
       if (data.success) {
-        showToast('success', `Token updated to ${toStatus}`);
+        let msg = `Token updated to ${toStatus}`;
+        if (toStatus === 'NO_SHOW') msg = 'Patient marked as No-Show';
+        if (toStatus === 'CANCELLED') msg = 'Patient appointment cancelled';
+        if (toStatus === 'COMPLETED') msg = 'Consultation completed';
+        if (toStatus === 'ON_HOLD') msg = 'Patient placed on hold';
+        showToast('success', msg);
         setHoldingTokenId(null);
         fetchQueueDetails();
       } else {
@@ -225,8 +234,14 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
       return;
     }
 
-    if (!walkinName.trim() || !walkinPhone.trim()) {
-      showToast('error', 'Please enter valid patient name and phone number');
+    const clean10 = walkinPhone10.replace(/\D/g, '').slice(0, 10);
+    if (!walkinName.trim()) {
+      showToast('error', 'Please enter patient full name');
+      return;
+    }
+
+    if (clean10.length !== 10) {
+      showToast('error', 'Please enter a valid 10-digit mobile number');
       return;
     }
 
@@ -241,7 +256,7 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
         body: JSON.stringify({
           queueId: selectedQueueId,
           name: walkinName.trim(),
-          phoneNumber: walkinPhone.trim(),
+          phoneNumber: `+91${clean10}`,
         }),
       });
       const data = await res.json();
@@ -249,7 +264,7 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
         const issuedToken = data.data?.entry?.tokenNumber || data.data?.tokenNumber || 'Token';
         showToast('success', `Walk-in token ${issuedToken} issued successfully!`);
         setWalkinName('');
-        setWalkinPhone('+91');
+        setWalkinPhone10('');
         setShowWalkinModal(false);
         fetchQueueDetails();
       } else {
@@ -450,9 +465,12 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
                   <span>No-Show</span>
                 </button>
                 <button
-                  onClick={() => handleTransition(currentServing.id, 'CANCELLED')}
+                  onClick={() => {
+                    setTokenToCancel(currentServing);
+                    setShowCancelModal(true);
+                  }}
                   disabled={isSubmitting}
-                  className="bg-rose-50 hover:bg-rose-100 text-[#DC2626] py-2.5 rounded-xl font-bold text-xs flex items-center justify-center space-x-1 transition border border-rose-200"
+                  className="bg-rose-50 hover:bg-rose-100 text-[#DC2626] py-2.5 rounded-xl font-bold text-xs flex items-center justify-center space-x-1 transition border border-rose-200 active:scale-95 shadow-sm"
                 >
                   <AlertCircle className="w-3.5 h-3.5" />
                   <span>Cancel</span>
@@ -637,15 +655,26 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#334155] mb-1">Mobile Phone (for SMS tracking)</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="+919876543210"
-                  value={walkinPhone}
-                  onChange={(e) => setWalkinPhone(e.target.value)}
-                  className="w-full bg-[#F8FAFC] border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-[#1E293B] font-mono focus:outline-none focus:border-[#0284C7] focus:bg-white"
-                />
+                <label className="block text-xs font-bold text-[#334155] mb-1">Mobile Phone (10 Digits)</label>
+                <div className="flex space-x-2">
+                  <div className="bg-slate-100 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-[#1E293B] select-none flex items-center justify-center shrink-0">
+                    +91
+                  </div>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    required
+                    maxLength={10}
+                    placeholder="9876543210"
+                    value={walkinPhone10}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      setWalkinPhone10(digits);
+                    }}
+                    className="flex-1 bg-[#F8FAFC] border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-[#1E293B] font-mono font-semibold focus:outline-none focus:border-[#0284C7] focus:bg-white"
+                  />
+                </div>
+                <p className="text-[10px] text-[#64748B] mt-1">10 digits only, no spaces or country code.</p>
               </div>
 
               <div className="pt-2 flex space-x-3">
@@ -695,6 +724,58 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
                 className="flex-1 bg-[#D97706] hover:bg-[#B45309] text-white py-2 rounded-xl text-xs font-bold shadow-sm"
               >
                 Confirm Hold
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Patient Warning Confirmation Modal */}
+      {showCancelModal && tokenToCancel && (
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-rose-200 rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl relative animate-in fade-in zoom-in-95 duration-150 text-center">
+            <div className="w-12 h-12 rounded-2xl bg-rose-100 text-[#DC2626] flex items-center justify-center mx-auto mb-4 border border-rose-200">
+              <AlertCircle className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-black text-[#1E293B] mb-1.5">Cancel Patient Appointment?</h3>
+            <p className="text-xs text-[#64748B] mb-5 leading-relaxed">
+              Do you want to cancel this patient appointment?
+            </p>
+            <div className="bg-[#F8FAFC] border border-slate-200 rounded-2xl p-3.5 mb-5 text-xs text-left">
+              <div className="flex items-center justify-between">
+                <span className="font-extrabold text-[#1E293B] text-base font-mono">{tokenToCancel.tokenNumber}</span>
+                <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+                  Active Token
+                </span>
+              </div>
+              <div className="text-[#334155] font-semibold mt-1">{tokenToCancel.patientName || 'Walk-in Patient'}</div>
+              {tokenToCancel.phoneNumber && (
+                <div className="text-[11px] text-[#64748B] font-mono mt-0.5">{tokenToCancel.phoneNumber}</div>
+              )}
+            </div>
+            <div className="flex space-x-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCancelModal(false);
+                  setTokenToCancel(null);
+                }}
+                disabled={isSubmitting}
+                className="flex-1 bg-slate-100 hover:bg-slate-200 text-[#334155] py-2.5 rounded-xl text-xs font-bold transition"
+              >
+                No, Keep Patient
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  await handleTransition(tokenToCancel.id, 'CANCELLED');
+                  setShowCancelModal(false);
+                  setTokenToCancel(null);
+                }}
+                disabled={isSubmitting}
+                className="flex-1 bg-[#DC2626] hover:bg-red-700 text-white py-2.5 rounded-xl text-xs font-bold transition shadow-sm"
+              >
+                {isSubmitting ? 'Cancelling...' : 'Yes, Cancel'}
               </button>
             </div>
           </div>

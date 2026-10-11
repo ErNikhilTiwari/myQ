@@ -300,7 +300,11 @@ export class QueuesService {
         updateData.startedAt = new Date();
       }
 
-      if (dto.targetStatus === QueueEntryStatus.COMPLETED) {
+      if (
+        dto.targetStatus === QueueEntryStatus.COMPLETED ||
+        dto.targetStatus === QueueEntryStatus.NO_SHOW ||
+        dto.targetStatus === QueueEntryStatus.CANCELLED
+      ) {
         updateData.completedAt = new Date();
       }
 

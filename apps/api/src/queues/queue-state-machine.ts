@@ -15,13 +15,26 @@ export class QueueStateMachine {
       QueueEntryStatus.SKIPPED,
       QueueEntryStatus.ON_HOLD,
       QueueEntryStatus.COMPLETED,
+      QueueEntryStatus.NO_SHOW,
+      QueueEntryStatus.CANCELLED,
     ],
-    [QueueEntryStatus.IN_SERVICE]: [QueueEntryStatus.COMPLETED, QueueEntryStatus.ON_HOLD],
-    [QueueEntryStatus.SKIPPED]: [QueueEntryStatus.CALLED, QueueEntryStatus.CANCELLED],
+    [QueueEntryStatus.IN_SERVICE]: [
+      QueueEntryStatus.COMPLETED,
+      QueueEntryStatus.ON_HOLD,
+      QueueEntryStatus.NO_SHOW,
+      QueueEntryStatus.CANCELLED,
+    ],
+    [QueueEntryStatus.SKIPPED]: [
+      QueueEntryStatus.CALLED,
+      QueueEntryStatus.CANCELLED,
+      QueueEntryStatus.NO_SHOW,
+    ],
     [QueueEntryStatus.ON_HOLD]: [
       QueueEntryStatus.CALLED,
       QueueEntryStatus.WAITING,
       QueueEntryStatus.CANCELLED,
+      QueueEntryStatus.NO_SHOW,
+      QueueEntryStatus.COMPLETED,
     ],
     [QueueEntryStatus.COMPLETED]: [], // Terminal state
     [QueueEntryStatus.CANCELLED]: [], // Terminal state
