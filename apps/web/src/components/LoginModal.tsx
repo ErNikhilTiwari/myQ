@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { LogIn, KeyRound, Phone, CheckCircle, AlertCircle, X, Sparkles, UserCheck, Shield } from 'lucide-react';
 
-export type LoginProfile = 'PATIENT' | 'RECEPTIONIST' | 'GENERAL';
+export type LoginProfile = 'PATIENT' | 'RECEPTIONIST' | 'CLINIC_ADMIN' | 'SUPER_ADMIN' | 'GENERAL';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -18,9 +18,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 }) => {
   // Set default 10-digit phone according to selected profile
   const getDefaultPhone10 = () => {
+    if (profileType === 'CLINIC_ADMIN') return '9876500002';
     if (profileType === 'RECEPTIONIST') return '9876500001';
     if (profileType === 'PATIENT') return '9876511111';
-    return '9876500001';
+    if (profileType === 'SUPER_ADMIN') return '9999999999';
+    return '9876500002';
   };
 
   const [phone10, setPhone10] = useState(getDefaultPhone10());
@@ -34,21 +36,37 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   // Header Title & Subtitle customized per profile
   const getHeaderInfo = () => {
     switch (profileType) {
-      case 'RECEPTIONIST':
+      case 'CLINIC_ADMIN':
         return {
-          title: 'Clinic Login',
-          subtitle: 'Clinic Operations, Queue Operator & Counter Desk Access',
-          icon: <UserCheck className="w-5 h-5" />,
+          title: 'Clinic Owner & Admin Login',
+          subtitle: 'Full Clinic Management Suite, Doctors, Services, Pricing & Analytics',
+          icon: <Shield className="w-5 h-5" />,
           accentColor: '#0284C7',
           bgColor: '#E0F2FE',
+        };
+      case 'RECEPTIONIST':
+        return {
+          title: 'Receptionist Counter Login',
+          subtitle: 'Front Desk Queue Operator, Call Next, Tokens & TV Display Access',
+          icon: <UserCheck className="w-5 h-5" />,
+          accentColor: '#0F766E',
+          bgColor: '#CCFBF1',
         };
       case 'PATIENT':
         return {
           title: 'Patient Login',
-          subtitle: 'Sync Your Bookings, Appointments & Token Alerts',
+          subtitle: 'Sync Your Bookings, Appointments & Live Token Alerts',
           icon: <KeyRound className="w-5 h-5" />,
           accentColor: '#16A34A',
           bgColor: '#DCFCE7',
+        };
+      case 'SUPER_ADMIN':
+        return {
+          title: 'Super Admin Login',
+          subtitle: 'Global Platform Control & Multi-Tenant Infrastructure',
+          icon: <Shield className="w-5 h-5" />,
+          accentColor: '#D97706',
+          bgColor: '#FEF3C7',
         };
       default:
         return {
@@ -61,27 +79,32 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     }
   };
 
-  // Preset quick-test accounts filtered or ordered by profileType
+  // Preset quick-test accounts
   const allQuickAccounts = [
-    { label: 'Clinic Login (ABC Health)', phone: '+919876500001', role: 'RECEPTIONIST', clinic: 'ABC Health Clinic' },
+    { label: 'Clinic Owner / Doctor', phone: '+919876500002', role: 'CLINIC_ADMIN', clinic: 'ABC Health Clinic' },
+    { label: 'Receptionist Desk', phone: '+919876500001', role: 'RECEPTIONIST', clinic: 'ABC Health Clinic' },
     { label: 'Patient (Rahul)', phone: '+919876511111', role: 'PATIENT', clinic: 'Patient Account' },
-    { label: 'Super Admin', phone: '+919999999999', role: 'SUPER_ADMIN', clinic: 'System Root' },
+    { label: 'Platform Super Admin', phone: '+919999999999', role: 'SUPER_ADMIN', clinic: 'System Root' },
   ];
 
-  // Present relevant profile accounts at top, followed by all demo accounts
+  // Present relevant profile accounts at top
   const quickAccounts = [
-    ...(profileType === 'RECEPTIONIST'
-      ? allQuickAccounts.filter((a) => a.role === 'RECEPTIONIST' || a.role === 'CLINIC_ADMIN')
+    ...(profileType === 'CLINIC_ADMIN'
+      ? allQuickAccounts.filter((a) => a.role === 'CLINIC_ADMIN')
+      : profileType === 'RECEPTIONIST'
+      ? allQuickAccounts.filter((a) => a.role === 'RECEPTIONIST')
       : profileType === 'PATIENT'
       ? allQuickAccounts.filter((a) => a.role === 'PATIENT')
+      : profileType === 'SUPER_ADMIN'
+      ? allQuickAccounts.filter((a) => a.role === 'SUPER_ADMIN')
       : []),
-    ...allQuickAccounts.filter((a) => 
-      profileType === 'RECEPTIONIST'
-        ? a.role !== 'RECEPTIONIST' && a.role !== 'CLINIC_ADMIN'
-        : profileType === 'PATIENT'
-        ? a.role !== 'PATIENT'
-        : true
-    ),
+    ...allQuickAccounts.filter((a) => {
+      if (profileType === 'CLINIC_ADMIN') return a.role !== 'CLINIC_ADMIN';
+      if (profileType === 'RECEPTIONIST') return a.role !== 'RECEPTIONIST';
+      if (profileType === 'PATIENT') return a.role !== 'PATIENT';
+      if (profileType === 'SUPER_ADMIN') return a.role !== 'SUPER_ADMIN';
+      return true;
+    }),
   ];
 
   const headerInfo = getHeaderInfo();

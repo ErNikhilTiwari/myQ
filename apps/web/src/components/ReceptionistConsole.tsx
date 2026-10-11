@@ -21,7 +21,8 @@ import {
   Stethoscope,
   Layers,
   LayoutDashboard,
-  DollarSign
+  DollarSign,
+  Monitor
 } from 'lucide-react';
 import { ClinicAnalytics } from './ClinicAnalytics';
 import { DoctorManagement } from './DoctorManagement';
@@ -71,6 +72,8 @@ interface ReceptionistConsoleProps {
   onOpenLogin: () => void;
   selectedClinicId: string;
   clinics: ClinicOption[];
+  isClinicAdminMode?: boolean;
+  onOpenTVView?: () => void;
 }
 
 export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
@@ -79,7 +82,13 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
   onOpenLogin,
   selectedClinicId,
   clinics,
+  isClinicAdminMode,
+  onOpenTVView,
 }) => {
+  const isOwnerOrAdmin = isClinicAdminMode !== undefined
+    ? isClinicAdminMode
+    : (currentUser?.role === 'CLINIC_ADMIN' || currentUser?.role === 'SUPER_ADMIN');
+
   const [queues, setQueues] = useState<QueueSummary[]>([]);
   const [selectedQueueId, setSelectedQueueId] = useState<string>('');
   
@@ -379,69 +388,87 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
         <div>
           <div className="flex items-center space-x-3">
             <h1 className="text-xl sm:text-2xl font-black text-[#1E293B] tracking-tight">
-              {activeClinicObj?.name || currentUser?.clinicName || 'Clinic Desk'}
+              {activeClinicObj?.name || currentUser?.clinicName || (isOwnerOrAdmin ? 'Clinic Management' : 'Receptionist Desk')}
             </h1>
-            <span className="bg-[#E0F2FE] text-[#0284C7] text-xs px-2.5 py-0.5 rounded-full font-bold border border-[#0284C7]/20">
-              Clinic Desk &bull; {currentUser?.name || 'Clinic Staff'}
+            <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold border ${
+              isOwnerOrAdmin 
+                ? 'bg-[#E0F2FE] text-[#0284C7] border-[#0284C7]/20'
+                : 'bg-teal-50 text-teal-700 border-teal-200'
+            }`}>
+              {isOwnerOrAdmin ? 'Clinic Owner & Admin' : 'Receptionist Desk'} &bull; {currentUser?.name || 'Staff'}
             </span>
           </div>
           <p className="text-xs text-[#64748B] mt-0.5 font-medium">
-            Live Queue Management &bull; Facility Auto-Mapped to Staff Profile
+            {isOwnerOrAdmin 
+              ? 'Complete Facility Management Suite • Queue, Doctors, Services, Pricing & Analytics'
+              : 'Front Desk Operational Queue Counter • Call Next, Hold, Recall & Walk-in Registration'}
           </p>
         </div>
 
         {/* Action Controls & Navigation Tabs */}
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-          {/* Subview Navigation Pills */}
-          <div className="flex bg-[#F1F5F9] p-1 rounded-xl text-xs font-bold">
-            <button
-              onClick={() => setActiveConsoleTab('QUEUE')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition ${
-                activeConsoleTab === 'QUEUE' ? 'bg-white text-[#1E293B] shadow-sm' : 'text-[#64748B] hover:text-[#1E293B]'
-              }`}
-            >
-              <LayoutDashboard className="w-3.5 h-3.5 text-[#0284C7]" />
-              <span>Live Queue</span>
-            </button>
-            <button
-              onClick={() => setActiveConsoleTab('DOCTORS')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition ${
-                activeConsoleTab === 'DOCTORS' ? 'bg-white text-[#1E293B] shadow-sm' : 'text-[#64748B] hover:text-[#1E293B]'
-              }`}
-            >
-              <Stethoscope className="w-3.5 h-3.5 text-[#0284C7]" />
-              <span>Doctors & Chambers</span>
-            </button>
-            <button
-              onClick={() => setActiveConsoleTab('SERVICES')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition ${
-                activeConsoleTab === 'SERVICES' ? 'bg-white text-[#1E293B] shadow-sm' : 'text-[#64748B] hover:text-[#1E293B]'
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5 text-[#0284C7]" />
-              <span>Services & Queues</span>
-            </button>
-            <button
-              onClick={() => setActiveConsoleTab('ANALYTICS')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition ${
-                activeConsoleTab === 'ANALYTICS' ? 'bg-white text-[#1E293B] shadow-sm' : 'text-[#64748B] hover:text-[#1E293B]'
-              }`}
-            >
-              <BarChart3 className="w-3.5 h-3.5 text-[#0284C7]" />
-              <span>Reports & Analytics</span>
-            </button>
-            <button
-              onClick={() => setActiveConsoleTab('PRICING')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition ${
-                activeConsoleTab === 'PRICING' ? 'bg-white text-[#1E293B] shadow-sm' : 'text-[#64748B] hover:text-[#1E293B]'
-              }`}
-            >
-              <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Pricing & TV QR</span>
-            </button>
-          </div>
+          {/* Subview Navigation Pills (Only in Clinic Admin / Owner mode!) */}
+          {isOwnerOrAdmin ? (
+            <div className="flex bg-[#F1F5F9] p-1 rounded-xl text-xs font-bold">
+              <button
+                onClick={() => setActiveConsoleTab('QUEUE')}
+                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition ${
+                  activeConsoleTab === 'QUEUE' ? 'bg-white text-[#1E293B] shadow-sm' : 'text-[#64748B] hover:text-[#1E293B]'
+                }`}
+              >
+                <LayoutDashboard className="w-3.5 h-3.5 text-[#0284C7]" />
+                <span>Live Queue</span>
+              </button>
+              <button
+                onClick={() => setActiveConsoleTab('DOCTORS')}
+                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition ${
+                  activeConsoleTab === 'DOCTORS' ? 'bg-white text-[#1E293B] shadow-sm' : 'text-[#64748B] hover:text-[#1E293B]'
+                }`}
+              >
+                <Stethoscope className="w-3.5 h-3.5 text-[#0284C7]" />
+                <span>Doctors & Chambers</span>
+              </button>
+              <button
+                onClick={() => setActiveConsoleTab('SERVICES')}
+                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition ${
+                  activeConsoleTab === 'SERVICES' ? 'bg-white text-[#1E293B] shadow-sm' : 'text-[#64748B] hover:text-[#1E293B]'
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5 text-[#0284C7]" />
+                <span>Services & Queues</span>
+              </button>
+              <button
+                onClick={() => setActiveConsoleTab('ANALYTICS')}
+                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition ${
+                  activeConsoleTab === 'ANALYTICS' ? 'bg-white text-[#1E293B] shadow-sm' : 'text-[#64748B] hover:text-[#1E293B]'
+                }`}
+              >
+                <BarChart3 className="w-3.5 h-3.5 text-[#0284C7]" />
+                <span>Reports & Analytics</span>
+              </button>
+              <button
+                onClick={() => setActiveConsoleTab('PRICING')}
+                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition ${
+                  activeConsoleTab === 'PRICING' ? 'bg-white text-[#1E293B] shadow-sm' : 'text-[#64748B] hover:text-[#1E293B]'
+                }`}
+              >
+                <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Pricing & TV QR</span>
+              </button>
+            </div>
+          ) : (
+            onOpenTVView && (
+              <button
+                onClick={onOpenTVView}
+                className="flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 text-white px-3.5 py-2 rounded-xl font-bold text-xs shadow-sm transition active:scale-95"
+              >
+                <Monitor className="w-3.5 h-3.5 text-sky-400" />
+                <span>Open Waiting Room TV</span>
+              </button>
+            )
+          )}
 
-          {activeConsoleTab === 'QUEUE' && (
+          {(activeConsoleTab === 'QUEUE' || !isOwnerOrAdmin) && (
             <button
               onClick={() => setShowWalkinModal(true)}
               className="flex items-center justify-center space-x-2 bg-[#0284C7] hover:bg-[#0369A1] text-white px-4 py-2 rounded-xl font-bold text-xs shadow-sm transition active:scale-95"
@@ -454,7 +481,7 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
       </div>
 
       {/* Conditional Content by Active Tab */}
-      {activeConsoleTab === 'PRICING' && (
+      {isOwnerOrAdmin && activeConsoleTab === 'PRICING' && (
         <ClinicPricingConfig 
           clinicId={clinicId} 
           token={token} 
@@ -467,7 +494,7 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
         />
       )}
 
-      {activeConsoleTab === 'DOCTORS' && (
+      {isOwnerOrAdmin && activeConsoleTab === 'DOCTORS' && (
         <DoctorManagement 
           clinicId={clinicId} 
           token={token} 
@@ -482,7 +509,7 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
         />
       )}
 
-      {activeConsoleTab === 'SERVICES' && (
+      {isOwnerOrAdmin && activeConsoleTab === 'SERVICES' && (
         <ServiceQueueManagement 
           clinicId={clinicId} 
           token={token} 
@@ -497,7 +524,7 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
         />
       )}
 
-      {activeConsoleTab === 'ANALYTICS' && (
+      {isOwnerOrAdmin && activeConsoleTab === 'ANALYTICS' && (
         <ClinicAnalytics 
           clinicId={clinicId} 
           token={token} 
@@ -505,7 +532,7 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
         />
       )}
 
-      {activeConsoleTab === 'QUEUE' && (
+      {(!isOwnerOrAdmin || activeConsoleTab === 'QUEUE') && (
         <>
           {/* Queue Selector Tabs */}
           <div className="flex items-center space-x-2 overflow-x-auto pb-3 mb-6 scrollbar-none">

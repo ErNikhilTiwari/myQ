@@ -20,14 +20,20 @@ import {
   Building2,
   ChevronLeft,
   Crown,
-  Calendar
+  Calendar,
+  Menu,
+  X,
+  UserCheck,
+  Shield,
+  Layers,
+  ChevronRight
 } from 'lucide-react';
 
-export type AppView = 'LANDING' | 'PATIENT' | 'RECEPTIONIST' | 'TV_VIEWER' | 'SUPER_ADMIN';
+export type AppView = 'LANDING' | 'PATIENT' | 'RECEPTIONIST' | 'CLINIC_ADMIN' | 'TV_VIEWER' | 'SUPER_ADMIN';
 
 export default function App() {
   // Check if someone is already logged in and determine initial view:
-  // If patient -> 'PATIENT', if super admin -> 'SUPER_ADMIN', if clinic staff -> 'RECEPTIONIST', else -> 'LANDING'
+  // If patient -> 'PATIENT', if super admin -> 'SUPER_ADMIN', if clinic owner/admin -> 'CLINIC_ADMIN', if receptionist -> 'RECEPTIONIST', else -> 'LANDING'
   const getInitialView = (): AppView => {
     try {
       const savedUser = localStorage.getItem('user');
@@ -35,10 +41,9 @@ export default function App() {
       if (savedUser && savedToken) {
         const user = JSON.parse(savedUser);
         if (user.role === 'SUPER_ADMIN') return 'SUPER_ADMIN';
+        if (user.role === 'CLINIC_ADMIN') return 'CLINIC_ADMIN';
+        if (user.role === 'RECEPTIONIST') return 'RECEPTIONIST';
         if (user.role === 'PATIENT') return 'PATIENT';
-        if (user.role === 'RECEPTIONIST' || user.role === 'CLINIC_ADMIN') {
-          return 'RECEPTIONIST';
-        }
       }
     } catch {}
     return 'LANDING';
@@ -119,6 +124,35 @@ export default function App() {
     } catch {}
   }, []);
 
+  // Hamburger Navigation Drawer State
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // Profile-specific login openers
+  const openGeneralLogin = () => {
+    setLoginProfile('GENERAL');
+    setIsLoginOpen(true);
+  };
+
+  const openClinicAdminLogin = () => {
+    setLoginProfile('CLINIC_ADMIN');
+    setIsLoginOpen(true);
+  };
+
+  const openReceptionistLogin = () => {
+    setLoginProfile('RECEPTIONIST');
+    setIsLoginOpen(true);
+  };
+
+  const openSuperAdminLogin = () => {
+    setLoginProfile('SUPER_ADMIN');
+    setIsLoginOpen(true);
+  };
+
+  const openPatientLogin = () => {
+    setLoginProfile('PATIENT');
+    setIsLoginOpen(true);
+  };
+
   // When user logs in, auto-bind to their mapped clinic and route directly to their profile
   const handleLoginSuccess = (user: any, newToken: string) => {
     setCurrentUser(user);
@@ -133,8 +167,12 @@ export default function App() {
         setIsBookingOpen(true);
         setPendingBookingAfterLogin(false);
       }
-    } else if (user.role === 'RECEPTIONIST' || user.role === 'CLINIC_ADMIN' || user.role === 'SUPER_ADMIN') {
+    } else if (user.role === 'CLINIC_ADMIN') {
+      setActiveTab('CLINIC_ADMIN');
+    } else if (user.role === 'RECEPTIONIST') {
       setActiveTab('RECEPTIONIST');
+    } else if (user.role === 'SUPER_ADMIN') {
+      setActiveTab('SUPER_ADMIN');
     }
   };
 
@@ -146,23 +184,8 @@ export default function App() {
     setToken(null);
     setCurrentUser(null);
     setSelectedClinicId('');
+    setIsMenuOpen(false);
     setActiveTab('LANDING');
-  };
-
-  // Profile-specific login openers
-  const openGeneralLogin = () => {
-    setLoginProfile('GENERAL');
-    setIsLoginOpen(true);
-  };
-
-  const openReceptionistLogin = () => {
-    setLoginProfile('RECEPTIONIST');
-    setIsLoginOpen(true);
-  };
-
-  const openPatientLogin = () => {
-    setLoginProfile('PATIENT');
-    setIsLoginOpen(true);
   };
 
   const currentClinic = clinics.find((c: ClinicItem) => c.id === selectedClinicId);
@@ -171,120 +194,368 @@ export default function App() {
     <div className="min-h-screen bg-[#F8FAFC] text-[#334155] flex flex-col font-sans antialiased">
       {/* 
         Top Application Navigation Bar:
-        Contains ONLY:
+        Clean, sleek navigation bar containing:
         1. App Brand Name
-        2. 3 Profile Switcher Tabs (Patient, Receptionist, TV View) + Home button if in view
-        3. Simple Login / Logout Button
+        2. Status badge / Current user indicator
+        3. Hamburger Menu button (Toggles the role-based profile & action drawer)
       */}
-      <nav className="bg-[#1E293B] text-white px-3 sm:px-6 py-2.5 flex flex-wrap items-center justify-between text-xs sticky top-0 z-40 shadow-sm gap-2">
-        {/* 1. App Brand Name */}
-        <button
-          onClick={() => {
-            if (currentUser?.role === 'PATIENT') {
-              setActiveTab('PATIENT');
-            } else if (currentUser?.role === 'RECEPTIONIST' || currentUser?.role === 'CLINIC_ADMIN' || currentUser?.role === 'SUPER_ADMIN') {
-              setActiveTab('RECEPTIONIST');
-            } else {
-              setActiveTab('LANDING');
-            }
-          }}
-          className="flex items-center space-x-2 text-left hover:opacity-90 transition focus:outline-none"
-        >
-          <span className="text-xl">🏥</span>
-          <span className="font-extrabold tracking-tight text-white text-base">QueueApp</span>
-          <span className="bg-[#0284C7]/20 text-[#38BDF8] font-bold px-2 py-0.5 rounded text-[10px] border border-[#0284C7]/40">
-            Healthcare OS
-          </span>
-        </button>
-
-        {/* 2. Profile Switcher Tabs in Navbar (Visible across all screens) */}
-        <div className="flex space-x-1 bg-[#0F172A] p-1 rounded-xl border border-slate-700/80">
-          {/* Profile 1: Patient (Mobile QR Tracker) */}
+      <nav className="bg-[#1E293B] text-white px-4 sm:px-6 py-2.5 flex items-center justify-between text-xs sticky top-0 z-40 shadow-md">
+        {/* Brand & Home link */}
+        <div className="flex items-center space-x-3">
           <button
-            onClick={() => setActiveTab('PATIENT')}
-            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg font-bold text-xs transition ${
-              activeTab === 'PATIENT'
-                ? 'bg-[#0284C7] text-white shadow-sm'
-                : 'text-slate-300 hover:text-white'
-            }`}
+            onClick={() => {
+              if (currentUser?.role === 'PATIENT') {
+                setActiveTab('PATIENT');
+              } else if (currentUser?.role === 'CLINIC_ADMIN') {
+                setActiveTab('CLINIC_ADMIN');
+              } else if (currentUser?.role === 'RECEPTIONIST') {
+                setActiveTab('RECEPTIONIST');
+              } else if (currentUser?.role === 'SUPER_ADMIN') {
+                setActiveTab('SUPER_ADMIN');
+              } else {
+                setActiveTab('LANDING');
+              }
+            }}
+            className="flex items-center space-x-2 text-left hover:opacity-90 transition focus:outline-none"
           >
-            <Smartphone className="w-3.5 h-3.5" />
-            <span>Patient</span>
+            <span className="text-xl">🏥</span>
+            <span className="font-extrabold tracking-tight text-white text-base">QueueApp</span>
+            <span className="bg-[#0284C7]/20 text-[#38BDF8] font-bold px-2 py-0.5 rounded text-[10px] border border-[#0284C7]/40 hidden xs:inline-block">
+              Healthcare OS
+            </span>
           </button>
-
-          {/* Profile 2: Clinic Login (Chamber Console & Staff Desk) */}
-          <button
-            onClick={() => setActiveTab('RECEPTIONIST')}
-            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg font-bold text-xs transition ${
-              activeTab === 'RECEPTIONIST'
-                ? 'bg-[#0284C7] text-white shadow-sm'
-                : 'text-slate-300 hover:text-white'
-            }`}
-          >
-            <LayoutDashboard className="w-3.5 h-3.5" />
-            <span>Clinic Login</span>
-          </button>
-
-          {/* Profile 3: TV View (Waiting Room Kiosk) */}
-          <button
-            onClick={() => setActiveTab('TV_VIEWER')}
-            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg font-bold text-xs transition ${
-              activeTab === 'TV_VIEWER'
-                ? 'bg-[#0284C7] text-white shadow-sm'
-                : 'text-slate-300 hover:text-white'
-            }`}
-          >
-            <Monitor className="w-3.5 h-3.5" />
-            <span>TV View</span>
-          </button>
-
-          {/* Profile 4: Super Admin Portal (Active when logged in as Super Admin) */}
-          {currentUser?.role === 'SUPER_ADMIN' && (
-            <button
-              onClick={() => setActiveTab('SUPER_ADMIN')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg font-bold text-xs transition ${
-                activeTab === 'SUPER_ADMIN'
-                  ? 'bg-amber-500 text-slate-950 shadow-sm'
-                  : 'text-amber-400 hover:text-amber-300'
-              }`}
-            >
-              <Crown className="w-3.5 h-3.5" />
-              <span>Super Admin</span>
-            </button>
-          )}
         </div>
 
-        {/* 3. Global Action & Login Controls */}
-        <div className="flex items-center space-x-2">
+        {/* Right side: User pill (if logged in) + Hamburger Menu Toggle */}
+        <div className="flex items-center space-x-3">
           {currentUser ? (
             <div className="flex items-center space-x-2">
               <div className="hidden sm:flex items-center space-x-1.5 bg-[#0F172A] border border-slate-700 px-2.5 py-1 rounded-xl">
                 <span className="w-2 h-2 rounded-full bg-[#16A34A] animate-pulse" />
                 <span className="font-bold text-slate-100">{currentUser.name || currentUser.phoneNumber}</span>
-                <span className="text-[10px] bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded font-mono font-medium">
-                  {currentUser.role}
+                <span className="text-[10px] bg-slate-800 text-sky-300 px-1.5 py-0.5 rounded font-mono font-medium">
+                  {currentUser.role === 'CLINIC_ADMIN' ? 'CLINIC OWNER' : currentUser.role}
                 </span>
               </div>
               <button
                 onClick={handleLogout}
-                className="flex items-center space-x-1 bg-slate-800 hover:bg-[#DC2626] hover:text-white text-slate-200 px-2.5 py-1.5 rounded-xl text-xs font-semibold border border-slate-700 transition"
+                className="hidden sm:flex items-center space-x-1 bg-slate-800 hover:bg-[#DC2626] hover:text-white text-slate-200 px-2.5 py-1.5 rounded-xl text-xs font-semibold border border-slate-700 transition"
                 title="Log out"
               >
                 <LogOut className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Logout</span>
+                <span>Logout</span>
               </button>
             </div>
           ) : (
             <button
               onClick={openGeneralLogin}
-              className="flex items-center space-x-1.5 bg-[#0284C7] hover:bg-[#0369A1] text-white px-3.5 py-1.5 rounded-xl font-bold text-xs shadow-sm transition"
+              className="hidden sm:flex items-center space-x-1.5 bg-[#0284C7] hover:bg-[#0369A1] text-white px-3.5 py-1.5 rounded-xl font-bold text-xs shadow-sm transition"
             >
               <LogIn className="w-3.5 h-3.5" />
               <span>Login</span>
             </button>
           )}
+
+          {/* Hamburger Menu Toggle Button */}
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="flex items-center space-x-2 bg-[#0F172A] hover:bg-slate-800 text-slate-200 hover:text-white px-3 py-1.5 rounded-xl border border-slate-700/80 transition shadow-sm active:scale-95"
+            aria-label="Toggle navigation menu"
+          >
+            {isMenuOpen ? (
+              <X className="w-4 h-4 text-sky-400" />
+            ) : (
+              <Menu className="w-4 h-4 text-sky-400" />
+            )}
+            <span className="font-bold text-xs hidden md:inline">Profiles &amp; Views</span>
+          </button>
         </div>
       </nav>
+
+      {/* Hamburger Navigation Drawer / Backdrop */}
+      {isMenuOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
+            onClick={() => setIsMenuOpen(false)}
+          />
+
+          {/* Slide-over Drawer Panel */}
+          <div className="relative w-full max-w-sm bg-[#0F172A] text-slate-100 h-full shadow-2xl flex flex-col z-10 border-l border-slate-800 animate-in slide-in-from-right duration-200">
+            {/* Drawer Header */}
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-[#1E293B]">
+              <div className="flex items-center space-x-2">
+                <span className="text-lg">🏥</span>
+                <div>
+                  <h3 className="font-extrabold text-sm text-white">Navigation &amp; Profiles</h3>
+                  <p className="text-[11px] text-slate-400">
+                    {currentUser 
+                      ? `Logged in as: ${currentUser.role === 'CLINIC_ADMIN' ? 'Clinic Owner & Admin' : currentUser.role}`
+                      : 'Select a portal or sign in'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsMenuOpen(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Drawer Content */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-5">
+              {/* Profile Links filtered strictly by logged-in role */}
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-2.5 px-1">
+                  Available Views for You
+                </p>
+                <div className="space-y-1.5">
+
+                  {/* 1. PATIENT PROFILE:
+                      - Shown if currentUser.role === 'PATIENT', or if SUPER_ADMIN, or if not logged in */}
+                  {(!currentUser || currentUser.role === 'PATIENT' || currentUser.role === 'SUPER_ADMIN') && (
+                    <button
+                      onClick={() => {
+                        setActiveTab('PATIENT');
+                        setIsMenuOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between p-3 rounded-xl text-left transition ${
+                        activeTab === 'PATIENT'
+                          ? 'bg-[#0284C7] text-white shadow-md'
+                          : 'bg-slate-800/80 hover:bg-slate-800 text-slate-200 hover:text-white border border-slate-700/50'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className={`p-2 rounded-lg ${activeTab === 'PATIENT' ? 'bg-white/20' : 'bg-sky-500/10 text-sky-400'}`}>
+                          <Smartphone className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="font-bold text-xs flex items-center space-x-1.5">
+                            <span>Patient Portal</span>
+                            <span className="text-[10px] font-medium bg-emerald-500/20 text-emerald-300 px-1.5 py-0.2 rounded">Live</span>
+                          </div>
+                          <p className={`text-[11px] mt-0.5 ${activeTab === 'PATIENT' ? 'text-sky-100' : 'text-slate-400'}`}>
+                            Live token tracker &amp; doctor appointment booking
+                          </p>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 opacity-60" />
+                    </button>
+                  )}
+
+                  {/* 2. RECEPTIONIST DESK:
+                      - Shown if currentUser.role === 'RECEPTIONIST' or SUPER_ADMIN
+                      (Notice: NOT shown when currentUser is a normal PATIENT or non-admin) */}
+                  {(currentUser?.role === 'RECEPTIONIST' || currentUser?.role === 'SUPER_ADMIN') && (
+                    <button
+                      onClick={() => {
+                        setActiveTab('RECEPTIONIST');
+                        setIsMenuOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between p-3 rounded-xl text-left transition ${
+                        activeTab === 'RECEPTIONIST'
+                          ? 'bg-teal-600 text-white shadow-md'
+                          : 'bg-slate-800/80 hover:bg-slate-800 text-slate-200 hover:text-white border border-slate-700/50'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className={`p-2 rounded-lg ${activeTab === 'RECEPTIONIST' ? 'bg-white/20' : 'bg-teal-500/10 text-teal-400'}`}>
+                          <UserCheck className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="font-bold text-xs flex items-center space-x-1.5">
+                            <span>Receptionist Desk</span>
+                            <span className="text-[10px] font-medium bg-teal-500/20 text-teal-300 px-1.5 py-0.2 rounded">Front Desk</span>
+                          </div>
+                          <p className={`text-[11px] mt-0.5 ${activeTab === 'RECEPTIONIST' ? 'text-teal-100' : 'text-slate-400'}`}>
+                            Live queue operations, call next &amp; walk-in tokens
+                          </p>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 opacity-60" />
+                    </button>
+                  )}
+
+                  {/* 3. CLINIC OWNER & ADMIN:
+                      - Shown if currentUser.role === 'CLINIC_ADMIN' or SUPER_ADMIN
+                      (Full clinic suite: Live Queue, Doctors, Services, Pricing, Analytics) */}
+                  {(currentUser?.role === 'CLINIC_ADMIN' || currentUser?.role === 'SUPER_ADMIN') && (
+                    <button
+                      onClick={() => {
+                        setActiveTab('CLINIC_ADMIN');
+                        setIsMenuOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between p-3 rounded-xl text-left transition ${
+                        activeTab === 'CLINIC_ADMIN'
+                          ? 'bg-[#0284C7] text-white shadow-md'
+                          : 'bg-slate-800/80 hover:bg-slate-800 text-slate-200 hover:text-white border border-slate-700/50'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className={`p-2 rounded-lg ${activeTab === 'CLINIC_ADMIN' ? 'bg-white/20' : 'bg-sky-500/10 text-sky-400'}`}>
+                          <Shield className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="font-bold text-xs flex items-center space-x-1.5">
+                            <span>Clinic Admin &amp; Owner</span>
+                            <span className="text-[10px] font-medium bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded">All Features</span>
+                          </div>
+                          <p className={`text-[11px] mt-0.5 ${activeTab === 'CLINIC_ADMIN' ? 'text-sky-100' : 'text-slate-400'}`}>
+                            Doctors, Services, Pricing rules &amp; Analytics suite
+                          </p>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 opacity-60" />
+                    </button>
+                  )}
+
+                  {/* 4. WAITING ROOM TV VIEW:
+                      - Shown if currentUser.role === 'RECEPTIONIST', 'CLINIC_ADMIN', 'SUPER_ADMIN', or guest (not patient) */}
+                  {(!currentUser || currentUser.role === 'RECEPTIONIST' || currentUser.role === 'CLINIC_ADMIN' || currentUser.role === 'SUPER_ADMIN') && (
+                    <button
+                      onClick={() => {
+                        setActiveTab('TV_VIEWER');
+                        setIsMenuOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between p-3 rounded-xl text-left transition ${
+                        activeTab === 'TV_VIEWER'
+                          ? 'bg-emerald-600 text-white shadow-md'
+                          : 'bg-slate-800/80 hover:bg-slate-800 text-slate-200 hover:text-white border border-slate-700/50'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className={`p-2 rounded-lg ${activeTab === 'TV_VIEWER' ? 'bg-white/20' : 'bg-emerald-500/10 text-emerald-400'}`}>
+                          <Monitor className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="font-bold text-xs flex items-center space-x-1.5">
+                            <span>Waiting Room TV Display</span>
+                            <span className="text-[10px] font-medium bg-emerald-500/20 text-emerald-300 px-1.5 py-0.2 rounded">Kiosk</span>
+                          </div>
+                          <p className={`text-[11px] mt-0.5 ${activeTab === 'TV_VIEWER' ? 'text-emerald-100' : 'text-slate-400'}`}>
+                            Full-screen token display with audio chime &amp; QR
+                          </p>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 opacity-60" />
+                    </button>
+                  )}
+
+                  {/* 5. SUPER ADMIN PORTAL:
+                      - Shown ONLY if currentUser.role === 'SUPER_ADMIN' */}
+                  {currentUser?.role === 'SUPER_ADMIN' && (
+                    <button
+                      onClick={() => {
+                        setActiveTab('SUPER_ADMIN');
+                        setIsMenuOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between p-3 rounded-xl text-left transition ${
+                        activeTab === 'SUPER_ADMIN'
+                          ? 'bg-amber-500 text-slate-950 shadow-md font-bold'
+                          : 'bg-slate-800/80 hover:bg-slate-800 text-amber-300 border border-amber-500/30'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className={`p-2 rounded-lg ${activeTab === 'SUPER_ADMIN' ? 'bg-slate-950/20 text-slate-950' : 'bg-amber-500/10 text-amber-400'}`}>
+                          <Crown className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="font-bold text-xs flex items-center space-x-1.5">
+                            <span>Super Admin Portal</span>
+                            <span className="text-[10px] font-medium bg-amber-400/20 text-amber-300 px-1.5 py-0.2 rounded">Root</span>
+                          </div>
+                          <p className={`text-[11px] mt-0.5 ${activeTab === 'SUPER_ADMIN' ? 'text-slate-900' : 'text-slate-400'}`}>
+                            Multi-tenant facility provisioning &amp; subscriptions
+                          </p>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 opacity-60" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Login Shortcuts for Guests (When not logged in) */}
+              {!currentUser && (
+                <div className="pt-2 border-t border-slate-800">
+                  <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-2.5 px-1">
+                    Sign In Profiles
+                  </p>
+                  <div className="grid grid-cols-1 gap-2">
+                    <button
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        openPatientLogin();
+                      }}
+                      className="flex items-center justify-between p-2.5 bg-slate-800 hover:bg-slate-700/80 rounded-xl text-slate-200 text-xs font-semibold border border-slate-700 transition"
+                    >
+                      <div className="flex items-center space-x-2.5">
+                        <Smartphone className="w-4 h-4 text-emerald-400" />
+                        <span>Sign in as Patient</span>
+                      </div>
+                      <LogIn className="w-3.5 h-3.5 text-slate-400" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        openReceptionistLogin();
+                      }}
+                      className="flex items-center justify-between p-2.5 bg-slate-800 hover:bg-slate-700/80 rounded-xl text-slate-200 text-xs font-semibold border border-slate-700 transition"
+                    >
+                      <div className="flex items-center space-x-2.5">
+                        <UserCheck className="w-4 h-4 text-teal-400" />
+                        <span>Sign in as Receptionist</span>
+                      </div>
+                      <LogIn className="w-3.5 h-3.5 text-slate-400" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        openClinicAdminLogin();
+                      }}
+                      className="flex items-center justify-between p-2.5 bg-slate-800 hover:bg-slate-700/80 rounded-xl text-slate-200 text-xs font-semibold border border-slate-700 transition"
+                    >
+                      <div className="flex items-center space-x-2.5">
+                        <Shield className="w-4 h-4 text-sky-400" />
+                        <span>Sign in as Clinic Owner</span>
+                      </div>
+                      <LogIn className="w-3.5 h-3.5 text-slate-400" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        openSuperAdminLogin();
+                      }}
+                      className="flex items-center justify-between p-2.5 bg-slate-800 hover:bg-slate-700/80 rounded-xl text-amber-300 text-xs font-semibold border border-amber-500/30 transition"
+                    >
+                      <div className="flex items-center space-x-2.5">
+                        <Crown className="w-4 h-4 text-amber-400" />
+                        <span>Sign in as Super Admin</span>
+                      </div>
+                      <LogIn className="w-3.5 h-3.5 text-amber-400" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Drawer Footer */}
+            {currentUser && (
+              <div className="p-4 border-t border-slate-800 bg-[#1E293B]">
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center justify-center space-x-2 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 py-2.5 rounded-xl font-bold text-xs transition"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Log Out ({currentUser.name || currentUser.phoneNumber})</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Main Render Views */}
       <main className="flex-1 flex flex-col bg-[#F8FAFC]">
@@ -343,47 +614,82 @@ export default function App() {
                 </div>
               </div>
 
-              {/* TILE 2: Clinic Login (Chamber Console & Counter Registrations) */}
+              {/* TILE 2: Receptionist Desk (Front Desk Live Counter) */}
               <div
                 onClick={() => setActiveTab('RECEPTIONIST')}
-                className="group w-full bg-white border-2 border-slate-200/90 hover:border-[#0284C7] rounded-3xl p-6 sm:p-8 shadow-sm hover:shadow-xl transition-all duration-200 cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6"
+                className="group w-full bg-white border-2 border-slate-200/90 hover:border-teal-500 rounded-3xl p-6 sm:p-8 shadow-sm hover:shadow-xl transition-all duration-200 cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6"
               >
                 <div className="flex items-start sm:items-center space-x-5">
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#FEF3C7] text-[#D97706] border border-[#D97706]/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform duration-200">
-                    <LayoutDashboard className="w-7 h-7 sm:w-8 sm:h-8" />
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-teal-50 text-teal-600 border border-teal-200 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform duration-200">
+                    <UserCheck className="w-7 h-7 sm:w-8 sm:h-8" />
                   </div>
                   <div>
                     <div className="flex items-center space-x-2 mb-1">
-                      <span className="text-xs font-black uppercase tracking-wider text-[#D97706] bg-[#FEF3C7] px-2.5 py-0.5 rounded-full">
+                      <span className="text-xs font-black uppercase tracking-wider text-teal-700 bg-teal-100/80 px-2.5 py-0.5 rounded-full">
                         Profile 2
                       </span>
-                      <span className="text-xs font-bold text-[#DC2626] bg-[#FEF2F2] px-2 py-0.5 rounded-full">
-                        Clinic Auth Required
+                      <span className="text-xs font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full">
+                        Front Desk Staff
+                      </span>
+                    </div>
+                    <h2 className="text-lg sm:text-xl font-black text-[#1E293B] tracking-tight group-hover:text-teal-600 transition-colors">
+                      Receptionist &bull; Front Desk Queue Desk
+                    </h2>
+                    <p className="text-xs text-[#64748B] mt-1 leading-relaxed max-w-lg">
+                      Call next patients into chambers, put tokens on hold, recall waiting patients, issue walk-in tokens, and view the waiting hall TV screen.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2 text-teal-700 font-black text-xs shrink-0 self-end sm:self-center bg-teal-50 group-hover:bg-teal-600 group-hover:text-white px-4 py-2.5 rounded-xl transition-colors">
+                  <span>
+                    {currentUser?.role === 'RECEPTIONIST' ? 'Open Receptionist Desk' : 'Enter Receptionist Desk'}
+                  </span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+
+              {/* TILE 3: Clinic Owner & Admin (Full Management Suite) */}
+              <div
+                onClick={() => setActiveTab('CLINIC_ADMIN')}
+                className="group w-full bg-white border-2 border-slate-200/90 hover:border-[#0284C7] rounded-3xl p-6 sm:p-8 shadow-sm hover:shadow-xl transition-all duration-200 cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6"
+              >
+                <div className="flex items-start sm:items-center space-x-5">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#E0F2FE] text-[#0284C7] border border-[#0284C7]/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform duration-200">
+                    <Shield className="w-7 h-7 sm:w-8 sm:h-8" />
+                  </div>
+                  <div>
+                    <div className="flex items-center space-x-2 mb-1">
+                      <span className="text-xs font-black uppercase tracking-wider text-[#0284C7] bg-[#E0F2FE] px-2.5 py-0.5 rounded-full">
+                        Profile 3
+                      </span>
+                      <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
+                        Clinic Owner / Doctor
                       </span>
                     </div>
                     <h2 className="text-lg sm:text-xl font-black text-[#1E293B] tracking-tight group-hover:text-[#0284C7] transition-colors">
-                      Clinic Login &bull; Operations &amp; Counter Console
+                      Clinic Admin &bull; Owner &amp; Doctor Suite
                     </h2>
                     <p className="text-xs text-[#64748B] mt-1 leading-relaxed max-w-lg">
-                      Call next patients into doctor chambers, put tokens on hold, mark completed consultations, and issue instant walk-in registration tokens.
+                      Full facility control: Manage doctor chambers, services &amp; queues, walk-in &amp; TV pricing rules, and real-time revenue analytics.
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center space-x-2 text-[#0284C7] font-black text-xs shrink-0 self-end sm:self-center bg-[#E0F2FE] group-hover:bg-[#0284C7] group-hover:text-white px-4 py-2.5 rounded-xl transition-colors">
                   <span>
-                    {(currentUser?.role === 'RECEPTIONIST' || currentUser?.role === 'CLINIC_ADMIN' || currentUser?.role === 'SUPER_ADMIN')
-                      ? 'Open Your Clinic Console'
-                      : 'Enter Clinic Login'}
+                    {(currentUser?.role === 'CLINIC_ADMIN' || currentUser?.role === 'SUPER_ADMIN')
+                      ? 'Open Clinic Suite'
+                      : 'Enter Clinic Owner'}
                   </span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </div>
               </div>
 
-              {/* TILE 3: TV View (Waiting Hall Live Token Kiosk) */}
+              {/* TILE 4: TV View (Waiting Hall Live Token Kiosk) */}
               <div
                 onClick={() => setActiveTab('TV_VIEWER')}
-                className="group w-full bg-white border-2 border-slate-200/90 hover:border-[#0284C7] rounded-3xl p-6 sm:p-8 shadow-sm hover:shadow-xl transition-all duration-200 cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6"
+                className="group w-full bg-white border-2 border-slate-200/90 hover:border-emerald-500 rounded-3xl p-6 sm:p-8 shadow-sm hover:shadow-xl transition-all duration-200 cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6"
               >
                 <div className="flex items-start sm:items-center space-x-5">
                   <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#DCFCE7] text-[#16A34A] border border-[#16A34A]/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform duration-200">
@@ -392,13 +698,13 @@ export default function App() {
                   <div>
                     <div className="flex items-center space-x-2 mb-1">
                       <span className="text-xs font-black uppercase tracking-wider text-[#16A34A] bg-[#DCFCE7] px-2.5 py-0.5 rounded-full">
-                        Profile 3
+                        Profile 4
                       </span>
                       <span className="text-xs font-bold text-[#0284C7] bg-[#E0F2FE] px-2 py-0.5 rounded-full">
                         Smart TV &amp; Wall Display
                       </span>
                     </div>
-                    <h2 className="text-lg sm:text-xl font-black text-[#1E293B] tracking-tight group-hover:text-[#0284C7] transition-colors">
+                    <h2 className="text-lg sm:text-xl font-black text-[#1E293B] tracking-tight group-hover:text-[#16A34A] transition-colors">
                       TV View &bull; Waiting Room Kiosk
                     </h2>
                     <p className="text-xs text-[#64748B] mt-1 leading-relaxed max-w-lg">
@@ -407,7 +713,7 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-2 text-[#0284C7] font-black text-xs shrink-0 self-end sm:self-center bg-[#E0F2FE] group-hover:bg-[#0284C7] group-hover:text-white px-4 py-2.5 rounded-xl transition-colors">
+                <div className="flex items-center space-x-2 text-[#16A34A] font-black text-xs shrink-0 self-end sm:self-center bg-[#DCFCE7] group-hover:bg-[#16A34A] group-hover:text-white px-4 py-2.5 rounded-xl transition-colors">
                   <span>Launch TV Kiosk</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </div>
@@ -422,7 +728,7 @@ export default function App() {
                 <span>Multi-tenant facility isolation</span>
               </span>
               <span>&bull;</span>
-              <span>Click any tile or navbar tab to switch anytime</span>
+              <span>Open Hamburger Menu (top right) to switch views anytime</span>
             </div>
           </div>
         )}
@@ -458,7 +764,7 @@ export default function App() {
         )}
 
         {/* ========================================================================= */}
-        {/* 2. Receptionist Profile: STRICT AUTH REQUIRED - no dashboard before login */}
+        {/* 2. Receptionist Profile: STRICT AUTH REQUIRED - Counter Desk Only        */}
         {/* ========================================================================= */}
         {activeTab === 'RECEPTIONIST' && (
           <ReceptionistConsole
@@ -467,11 +773,28 @@ export default function App() {
             onOpenLogin={openReceptionistLogin}
             selectedClinicId={selectedClinicId}
             clinics={clinics}
+            isClinicAdminMode={false}
+            onOpenTVView={() => setActiveTab('TV_VIEWER')}
           />
         )}
 
         {/* ========================================================================= */}
-        {/* 3. TV View: Auto-mapped for Receptionist or Search & Select for Guest      */}
+        {/* 3. Clinic Admin / Owner Profile: Full Facility Suite                     */}
+        {/* ========================================================================= */}
+        {activeTab === 'CLINIC_ADMIN' && (
+          <ReceptionistConsole
+            token={token}
+            currentUser={currentUser}
+            onOpenLogin={openClinicAdminLogin}
+            selectedClinicId={selectedClinicId}
+            clinics={clinics}
+            isClinicAdminMode={true}
+            onOpenTVView={() => setActiveTab('TV_VIEWER')}
+          />
+        )}
+
+        {/* ========================================================================= */}
+        {/* 4. TV View: Auto-mapped for Clinic Staff or Search & Select for Guest    */}
         {/* ========================================================================= */}
         {activeTab === 'TV_VIEWER' && (
           <TVViewerKiosk
@@ -485,7 +808,7 @@ export default function App() {
         )}
 
         {/* ========================================================================= */}
-        {/* 4. Super Admin Profile: Root Multi-Tenant System Portal                   */}
+        {/* 5. Super Admin Profile: Root Multi-Tenant System Portal                   */}
         {/* ========================================================================= */}
         {activeTab === 'SUPER_ADMIN' && (
           <SuperAdminDashboard
@@ -493,7 +816,7 @@ export default function App() {
             currentUser={currentUser}
             onSelectClinicAsStaff={(clinicId) => {
               setSelectedClinicId(clinicId);
-              setActiveTab('RECEPTIONIST');
+              setActiveTab('CLINIC_ADMIN');
             }}
           />
         )}

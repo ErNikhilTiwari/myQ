@@ -57,6 +57,22 @@ async function main() {
     },
   });
 
+  const clinicOwner1 = await prisma.user.create({
+    data: {
+      phoneNumber: '+919876500002',
+      name: 'Dr. Ramesh Sharma (Clinic Owner)',
+      role: UserRole.CLINIC_ADMIN,
+    },
+  });
+
+  await prisma.clinicStaff.create({
+    data: {
+      clinicId: clinic1.id,
+      userId: clinicOwner1.id,
+      role: UserRole.CLINIC_ADMIN,
+    },
+  });
+
   const drSharma = await prisma.doctor.create({
     data: {
       clinicId: clinic1.id,
