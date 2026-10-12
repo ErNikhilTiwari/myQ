@@ -21,6 +21,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     if (profileType === 'CLINIC_ADMIN') return '9876500002';
     if (profileType === 'RECEPTIONIST') return '9876500001';
     if (profileType === 'PATIENT') return '9876511111';
+    if (profileType === 'SUPER_ADMIN') return '9999999999';
     return '9876511111';
   };
 
@@ -59,6 +60,14 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           accentColor: '#16A34A',
           bgColor: '#DCFCE7',
         };
+      case 'SUPER_ADMIN':
+        return {
+          title: 'Super Admin Login',
+          subtitle: 'Global Platform Control & Multi-Tenant Infrastructure',
+          icon: <Shield className="w-5 h-5" />,
+          accentColor: '#D97706',
+          bgColor: '#FEF3C7',
+        };
       default:
         return {
           title: 'Account Login',
@@ -70,11 +79,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     }
   };
 
-  // Preset quick-test accounts (Only regular roles: Clinic Owner, Receptionist, Patient)
+  // Preset quick-test accounts (including Super Admin for demo purposes)
   const allQuickAccounts = [
     { label: 'Clinic Owner / Doctor', phone: '+919876500002', role: 'CLINIC_ADMIN', clinic: 'ABC Health Clinic' },
     { label: 'Receptionist Desk', phone: '+919876500001', role: 'RECEPTIONIST', clinic: 'ABC Health Clinic' },
     { label: 'Patient (Rahul)', phone: '+919876511111', role: 'PATIENT', clinic: 'Patient Account' },
+    { label: 'Platform Super Admin', phone: '+919999999999', role: 'SUPER_ADMIN', clinic: 'System Root' },
   ];
 
   // Present relevant profile accounts at top
@@ -85,11 +95,14 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       ? allQuickAccounts.filter((a) => a.role === 'RECEPTIONIST')
       : profileType === 'PATIENT'
       ? allQuickAccounts.filter((a) => a.role === 'PATIENT')
+      : profileType === 'SUPER_ADMIN'
+      ? allQuickAccounts.filter((a) => a.role === 'SUPER_ADMIN')
       : []),
     ...allQuickAccounts.filter((a) => {
       if (profileType === 'CLINIC_ADMIN') return a.role !== 'CLINIC_ADMIN';
       if (profileType === 'RECEPTIONIST') return a.role !== 'RECEPTIONIST';
       if (profileType === 'PATIENT') return a.role !== 'PATIENT';
+      if (profileType === 'SUPER_ADMIN') return a.role !== 'SUPER_ADMIN';
       return true;
     }),
   ];

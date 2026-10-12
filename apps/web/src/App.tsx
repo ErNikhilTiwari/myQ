@@ -489,6 +489,40 @@ export default function App() {
                     </div>
                   )}
 
+                  {currentUser?.role === 'SUPER_ADMIN' && (
+                    <div>
+                      <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-2 px-1">
+                        Super Admin Active Session
+                      </p>
+                      <button
+                        onClick={() => {
+                          setActiveTab('SUPER_ADMIN');
+                          setIsMenuOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between p-3 rounded-xl text-left transition ${
+                          activeTab === 'SUPER_ADMIN'
+                            ? 'bg-amber-600 text-white shadow-md'
+                            : 'bg-slate-800/80 hover:bg-slate-800 text-slate-200 hover:text-white border border-slate-700/50'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className={`p-2 rounded-lg ${activeTab === 'SUPER_ADMIN' ? 'bg-white/20' : 'bg-amber-500/10 text-amber-400'}`}>
+                            <Shield className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <div className="font-bold text-xs flex items-center space-x-1.5">
+                              <span>Super Admin Portal</span>
+                            </div>
+                            <p className={`text-[11px] mt-0.5 ${activeTab === 'SUPER_ADMIN' ? 'text-amber-100' : 'text-slate-400'}`}>
+                              Global multi-tenant system control
+                            </p>
+                          </div>
+                        </div>
+                        <ChevronRight className="w-4 h-4 opacity-60" />
+                      </button>
+                    </div>
+                  )}
+
                   {/* Clinic Sign In Options (Login Receptionist, Login Clinic Admin) */}
                   <div className="pt-2 border-t border-slate-800">
                     <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-2 px-1">
