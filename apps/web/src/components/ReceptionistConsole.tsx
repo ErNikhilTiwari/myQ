@@ -22,12 +22,15 @@ import {
   Layers,
   LayoutDashboard,
   DollarSign,
-  Monitor
+  Monitor,
+  Volume2
 } from 'lucide-react';
 import { ClinicAnalytics } from './ClinicAnalytics';
 import { DoctorManagement } from './DoctorManagement';
 import { ServiceQueueManagement } from './ServiceQueueManagement';
 import { ClinicPricingConfig } from './ClinicPricingConfig';
+import { VoiceAnnouncementConfig } from './VoiceAnnouncementConfig';
+import { VoiceAnnouncementMode } from '@queueapp/shared';
 
 interface QueueItem {
   id: string;
@@ -93,7 +96,7 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
   const [selectedQueueId, setSelectedQueueId] = useState<string>('');
   
   // Navigation tabs within Clinic Console
-  const [activeConsoleTab, setActiveConsoleTab] = useState<'QUEUE' | 'DOCTORS' | 'SERVICES' | 'ANALYTICS' | 'PRICING'>('QUEUE');
+  const [activeConsoleTab, setActiveConsoleTab] = useState<'QUEUE' | 'DOCTORS' | 'SERVICES' | 'ANALYTICS' | 'PRICING' | 'VOICE'>('QUEUE');
   
   // Active queue state
   const [currentServing, setCurrentServing] = useState<QueueItem | null>(null);
@@ -455,6 +458,15 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
                 <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
                 <span>Pricing & TV QR</span>
               </button>
+              <button
+                onClick={() => setActiveConsoleTab('VOICE')}
+                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition ${
+                  activeConsoleTab === 'VOICE' ? 'bg-white text-[#1E293B] shadow-sm' : 'text-[#64748B] hover:text-[#1E293B]'
+                }`}
+              >
+                <Volume2 className="w-3.5 h-3.5 text-sky-500" />
+                <span>Voice Announcements</span>
+              </button>
             </div>
           ) : (
             onOpenTVView && (
@@ -481,6 +493,21 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
       </div>
 
       {/* Conditional Content by Active Tab */}
+      {isOwnerOrAdmin && activeConsoleTab === 'VOICE' && (
+        <VoiceAnnouncementConfig
+          clinicId={clinicId}
+          token={token}
+          initialMode={((activeClinicObj as any)?.voiceAnnouncementMode as VoiceAnnouncementMode) || 'TOKEN_PATIENT_DOCTOR_ROOM'}
+          onUpdated={(newMode) => {
+            if (activeClinicObj) {
+              (activeClinicObj as any).voiceAnnouncementMode = newMode;
+            }
+            setFeedbackMsg({ type: 'success', text: `Voice announcement mode updated to ${newMode}!` });
+            setTimeout(() => setFeedbackMsg(null), 3000);
+          }}
+        />
+      )}
+
       {isOwnerOrAdmin && activeConsoleTab === 'PRICING' && (
         <ClinicPricingConfig 
           clinicId={clinicId} 

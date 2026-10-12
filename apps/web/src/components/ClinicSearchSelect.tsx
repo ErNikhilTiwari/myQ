@@ -7,6 +7,7 @@ export interface ClinicItem {
   slug: string;
   phone?: string;
   address?: string;
+  voiceAnnouncementMode?: string;
 }
 
 interface ClinicSearchSelectProps {

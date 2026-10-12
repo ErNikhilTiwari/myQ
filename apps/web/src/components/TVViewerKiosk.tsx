@@ -50,6 +50,7 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
 
   const prevTokenRef = useRef<string>('');
   const [voiceLanguage, setVoiceLanguage] = useState<'en' | 'hi'>('en');
+  const [voiceMode, setVoiceMode] = useState<string>('TOKEN_PATIENT_DOCTOR_ROOM');
   const [isTestingVoice, setIsTestingVoice] = useState(false);
 
   const audioEnabledRef = useRef(audioEnabled);
@@ -57,6 +58,9 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
 
   const voiceLanguageRef = useRef(voiceLanguage);
   voiceLanguageRef.current = voiceLanguage;
+
+  const voiceModeRef = useRef(voiceMode);
+  voiceModeRef.current = voiceMode;
 
   // Auto-bind clinic for logged-in staff/receptionist profile
   const isReceptionistProfile = currentUser && (currentUser.role === 'RECEPTIONIST' || currentUser.role === 'CLINIC_ADMIN');
@@ -133,21 +137,90 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
         window.speechSynthesis.cancel(); // Stop any pending utterance
 
         const lang = voiceLanguageRef.current;
+        const currentMode = voiceModeRef.current || 'TOKEN_PATIENT_DOCTOR_ROOM';
         const rawName = serving.patientName?.trim();
         const isGenericName = !rawName || rawName === 'Walk-in Patient' || rawName === 'Patient';
         const patientName = isGenericName ? '' : rawName;
+        const doctorName = serving.doctorName?.trim() || '';
+        const roomNumber = serving.roomNumber?.trim() || '';
 
         let text = '';
         if (lang === 'hi') {
-          // Natural Hindi announcement
-          text = patientName
-            ? `टोकन नंबर ${serving.tokenNumber}। ${patientName}। कृपया ${serving.roomNumber}, ${serving.doctorName} के पास जाएँ।`
-            : `टोकन नंबर ${serving.tokenNumber}। कृपया ${serving.roomNumber}, ${serving.doctorName} के पास जाएँ।`;
+          // Natural Hindi Announcements for the 4 modes:
+          switch (currentMode) {
+            case 'TOKEN_ONLY':
+              text = `टोकन नंबर ${serving.tokenNumber}।`;
+              break;
+
+            case 'TOKEN_PATIENT':
+              text = patientName
+                ? `टोकन नंबर ${serving.tokenNumber}। ${patientName}।`
+                : `टोकन नंबर ${serving.tokenNumber}।`;
+              break;
+
+            case 'TOKEN_PATIENT_DOCTOR':
+              if (patientName && doctorName) {
+                text = `टोकन नंबर ${serving.tokenNumber}। ${patientName}। कृपया ${doctorName} के पास जाएँ।`;
+              } else if (doctorName) {
+                text = `टोकन नंबर ${serving.tokenNumber}। कृपया ${doctorName} के पास जाएँ।`;
+              } else if (patientName) {
+                text = `टोकन नंबर ${serving.tokenNumber}। ${patientName}।`;
+              } else {
+                text = `टोकन नंबर ${serving.tokenNumber}।`;
+              }
+              break;
+
+            case 'TOKEN_PATIENT_DOCTOR_ROOM':
+            default:
+              if (patientName && doctorName && roomNumber) {
+                text = `टोकन नंबर ${serving.tokenNumber}। ${patientName}। कृपया कमरा ${roomNumber}, ${doctorName} के पास जाएँ।`;
+              } else if (patientName && doctorName) {
+                text = `टोकन नंबर ${serving.tokenNumber}। ${patientName}। कृपया ${doctorName} के पास जाएँ।`;
+              } else if (doctorName && roomNumber) {
+                text = `टोकन नंबर ${serving.tokenNumber}। कृपया कमरा ${roomNumber}, ${doctorName} के पास जाएँ।`;
+              } else {
+                text = `टोकन नंबर ${serving.tokenNumber}। कृपया परामर्श कक्ष में जाएँ।`;
+              }
+              break;
+          }
         } else {
-          // Clear English announcement (Default)
-          text = patientName
-            ? `Token number ${serving.tokenNumber}. ${patientName}. Please proceed to ${serving.roomNumber}, ${serving.doctorName}.`
-            : `Token number ${serving.tokenNumber}. Please proceed to ${serving.roomNumber}, ${serving.doctorName}.`;
+          // Clear English Announcements for the 4 modes:
+          switch (currentMode) {
+            case 'TOKEN_ONLY':
+              text = `Token number ${serving.tokenNumber}.`;
+              break;
+
+            case 'TOKEN_PATIENT':
+              text = patientName
+                ? `Token number ${serving.tokenNumber}. ${patientName}.`
+                : `Token number ${serving.tokenNumber}.`;
+              break;
+
+            case 'TOKEN_PATIENT_DOCTOR':
+              if (patientName && doctorName) {
+                text = `Token number ${serving.tokenNumber}. ${patientName}. Please proceed to ${doctorName}.`;
+              } else if (doctorName) {
+                text = `Token number ${serving.tokenNumber}. Please proceed to ${doctorName}.`;
+              } else if (patientName) {
+                text = `Token number ${serving.tokenNumber}. ${patientName}.`;
+              } else {
+                text = `Token number ${serving.tokenNumber}.`;
+              }
+              break;
+
+            case 'TOKEN_PATIENT_DOCTOR_ROOM':
+            default:
+              if (patientName && doctorName && roomNumber) {
+                text = `Token number ${serving.tokenNumber}. ${patientName}. Please proceed to ${roomNumber}, ${doctorName}.`;
+              } else if (patientName && doctorName) {
+                text = `Token number ${serving.tokenNumber}. ${patientName}. Please proceed to ${doctorName}.`;
+              } else if (doctorName && roomNumber) {
+                text = `Token number ${serving.tokenNumber}. Please proceed to ${roomNumber}, ${doctorName}.`;
+              } else {
+                text = `Token number ${serving.tokenNumber}. Please proceed to consultation room.`;
+              }
+              break;
+          }
         }
 
         const utterance = new SpeechSynthesisUtterance(text);
@@ -272,13 +345,31 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
         .catch(() => {});
     };
 
-    // Update clinic name
+    // Update clinic name and voice mode from clinics list or live clinic endpoint
     const foundClinic = clinics.find((c) => c.id === effectiveClinicId);
     if (foundClinic) {
       setClinicName(foundClinic.name);
+      if (foundClinic.voiceAnnouncementMode) {
+        setVoiceMode(foundClinic.voiceAnnouncementMode);
+        voiceModeRef.current = foundClinic.voiceAnnouncementMode;
+      }
     } else if (currentUser?.clinicName) {
       setClinicName(currentUser.clinicName);
     }
+
+    // Also fetch fresh clinic metadata to ensure realtime voiceMode sync
+    fetch(`/api/clinics/${effectiveClinicId}`)
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.success && res.data) {
+          if (res.data.name) setClinicName(res.data.name);
+          if (res.data.voiceAnnouncementMode) {
+            setVoiceMode(res.data.voiceAnnouncementMode);
+            voiceModeRef.current = res.data.voiceAnnouncementMode;
+          }
+        }
+      })
+      .catch(() => {});
 
     pollTV();
     const interval = setInterval(pollTV, 3000);
@@ -401,6 +492,17 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
             >
               हिंदी
             </button>
+          </div>
+
+          {/* Mode Indicator Pill */}
+          <div className="hidden lg:flex items-center space-x-1.5 bg-slate-100 border border-slate-200 px-2.5 py-1.5 rounded-xl text-[11px] font-bold text-slate-600" title="Configured in Clinic Admin > Voice Announcements">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#0284C7]" />
+            <span>
+              {voiceMode === 'TOKEN_ONLY' && 'Mode: Token Only'}
+              {voiceMode === 'TOKEN_PATIENT' && 'Mode: Token + Patient'}
+              {voiceMode === 'TOKEN_PATIENT_DOCTOR' && 'Mode: Token + Patient + Doctor'}
+              {voiceMode === 'TOKEN_PATIENT_DOCTOR_ROOM' && 'Mode: Token + Patient + Doctor + Room'}
+            </span>
           </div>
 
           {/* Test Voice Button */}

@@ -1,3 +1,9 @@
+export type VoiceAnnouncementMode = 
+  | 'TOKEN_ONLY' 
+  | 'TOKEN_PATIENT' 
+  | 'TOKEN_PATIENT_DOCTOR' 
+  | 'TOKEN_PATIENT_DOCTOR_ROOM';
+
 export interface ClinicDto {
   id: string;
   chainId?: string | null;
@@ -10,6 +16,7 @@ export interface ClinicDto {
   city?: string | null;
   inClinicPrice: number;
   remotePrice: number;
+  voiceAnnouncementMode?: VoiceAnnouncementMode;
   isActive: boolean;
   createdAt: string;
   doctorsCount?: number;
@@ -26,6 +33,7 @@ export interface CreateClinicDto {
   city?: string;
   inClinicPrice?: number;
   remotePrice?: number;
+  voiceAnnouncementMode?: VoiceAnnouncementMode;
 }
 
 export interface UpdateClinicDto {
@@ -37,6 +45,7 @@ export interface UpdateClinicDto {
   city?: string;
   inClinicPrice?: number;
   remotePrice?: number;
+  voiceAnnouncementMode?: VoiceAnnouncementMode;
   isActive?: boolean;
 }
 

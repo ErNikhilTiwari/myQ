@@ -42,6 +42,7 @@ export class ClinicsService {
       address: c.address,
       inClinicPrice: c.inClinicPrice ?? 200,
       remotePrice: c.remotePrice ?? 250,
+      voiceAnnouncementMode: (c as any).voiceAnnouncementMode ?? 'TOKEN_PATIENT_DOCTOR_ROOM',
       isActive: c.isActive,
       createdAt: c.createdAt.toISOString(),
       doctorsCount: c._count.doctors,
@@ -92,6 +93,7 @@ export class ClinicsService {
         chainId: dto.chainId || null,
         inClinicPrice: dto.inClinicPrice !== undefined ? Number(dto.inClinicPrice) : 200,
         remotePrice: dto.remotePrice !== undefined ? Number(dto.remotePrice) : 250,
+        voiceAnnouncementMode: dto.voiceAnnouncementMode || 'TOKEN_PATIENT_DOCTOR_ROOM',
       },
     });
   }
