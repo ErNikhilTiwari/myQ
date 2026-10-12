@@ -74,7 +74,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       default:
         return {
           title: 'Account Login',
-          subtitle: 'Sign in to your Healthcare OS profile',
+          subtitle: 'Sign in as Patient, Clinic Admin, Receptionist, or Super Admin',
           icon: <Shield className="w-5 h-5" />,
           accentColor: '#0284C7',
           bgColor: '#E0F2FE',

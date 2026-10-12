@@ -252,13 +252,13 @@ export default function App() {
                 if (activeTab === 'PATIENT') {
                   openPatientLogin();
                 } else {
-                  openReceptionistLogin();
+                  openGeneralLogin();
                 }
               }}
-              className="hidden sm:flex items-center space-x-1.5 bg-[#0284C7] hover:bg-[#0369A1] text-white px-3.5 py-1.5 rounded-xl font-bold text-xs shadow-sm transition"
+              className="flex items-center space-x-1.5 bg-[#0284C7] hover:bg-[#0369A1] text-white px-3.5 py-1.5 rounded-xl font-bold text-xs shadow-sm transition"
             >
               <LogIn className="w-3.5 h-3.5" />
-              <span>{activeTab === 'PATIENT' ? 'Patient Login' : 'Staff Login'}</span>
+              <span>{activeTab === 'PATIENT' ? 'Patient Login' : 'Login'}</span>
             </button>
           )}
 
