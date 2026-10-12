@@ -1,10 +1,13 @@
 import { PrismaClient } from '@prisma/client';
 import { UserRole } from '@queueapp/shared';
+import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('🌱 Starting database seed...');
+
+  const defaultPasswordHash = await bcrypt.hash('Password@123', 10);
 
   // 1. Clean existing seed data
   await prisma.auditLog.deleteMany();
@@ -25,6 +28,7 @@ async function main() {
       phoneNumber: '+919999999999',
       name: 'Platform Super Admin',
       email: 'admin@queueapp.com',
+      passwordHash: defaultPasswordHash,
       role: UserRole.SUPER_ADMIN,
     },
   });
@@ -45,6 +49,7 @@ async function main() {
     data: {
       phoneNumber: '+919876500001',
       name: 'Priya Sharma (Receptionist)',
+      passwordHash: defaultPasswordHash,
       role: UserRole.RECEPTIONIST,
     },
   });
@@ -61,6 +66,7 @@ async function main() {
     data: {
       phoneNumber: '+919876500002',
       name: 'Dr. Ramesh Sharma (Clinic Owner)',
+      passwordHash: defaultPasswordHash,
       role: UserRole.CLINIC_ADMIN,
     },
   });
@@ -143,6 +149,7 @@ async function main() {
     data: {
       phoneNumber: '+919876511111',
       name: 'Rahul Verma',
+      passwordHash: defaultPasswordHash,
       role: UserRole.PATIENT,
       patientProfile: {
         create: {

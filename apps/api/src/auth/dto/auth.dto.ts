@@ -26,3 +26,15 @@ export class RefreshTokenDto {
   @IsNotEmpty()
   refreshToken: string;
 }
+
+export class LoginPasswordDto {
+  @IsString()
+  @IsNotEmpty()
+  phoneNumber: string;
+
+  @IsString()
+  @IsNotEmpty()
+  password: string;
+
+  name?: string;
+}

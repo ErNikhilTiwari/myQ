@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LogIn, KeyRound, Phone, CheckCircle, AlertCircle, X, Sparkles, UserCheck, Shield } from 'lucide-react';
+import { LogIn, KeyRound, Phone, CheckCircle, AlertCircle, X, Sparkles, UserCheck, Shield, Lock, Eye, EyeOff } from 'lucide-react';
 
 export type LoginProfile = 'PATIENT' | 'RECEPTIONIST' | 'CLINIC_ADMIN' | 'SUPER_ADMIN' | 'GENERAL';
 
@@ -26,8 +26,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   };
 
   const [phone10, setPhone10] = useState(getDefaultPhone10());
+  const [authMethod, setAuthMethod] = useState<'OTP' | 'PASSWORD'>('OTP');
+  const [password, setPassword] = useState('Password@123');
+  const [showPassword, setShowPassword] = useState(false);
   const [otp, setOtp] = useState('123456');
-  const [step, setStep] = useState<'PHONE' | 'OTP'>('PHONE');
+  const [step, setStep] = useState<'INPUT' | 'OTP'>('INPUT');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -217,6 +220,76 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     }
   };
 
+  const handleLoginWithPassword = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setErrorMsg(null);
+
+    const clean10 = phone10.replace(/\D/g, '').slice(0, 10);
+    if (clean10.length !== 10) {
+      setErrorMsg('Please enter a valid 10-digit Indian phone number.');
+      return;
+    }
+
+    if (!password.trim()) {
+      setErrorMsg('Please enter your account password.');
+      return;
+    }
+
+    setLoading(true);
+    const validPhone = `+91${clean10}`;
+
+    try {
+      const res = await fetch('/api/auth/login-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Bypass-Tunnel-Reminder': 'true',
+        },
+        body: JSON.stringify({
+          phoneNumber: validPhone,
+          password: password.trim(),
+        }),
+      });
+
+      const rawText = await res.text();
+      let data: any;
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        throw new Error(`Server returned non-JSON response (${res.status}). Ensure API backend is active.`);
+      }
+
+      const accessToken = data.data?.tokens?.accessToken || data.data?.token;
+
+      if (data.success && accessToken) {
+        const user = data.data.user;
+        const isClinicStaff = user.role === 'RECEPTIONIST' || user.role === 'CLINIC_ADMIN' || user.role === 'SUPER_ADMIN';
+
+        if (profileType === 'RECEPTIONIST' && !isClinicStaff) {
+          setErrorMsg(
+            'This phone number is registered as a Patient, not a Clinic account. Clinics can log in only with credentials provisioned by Super Admin. Please switch to Patient Login.'
+          );
+          setLoading(false);
+          return;
+        }
+
+        localStorage.setItem('token', accessToken);
+        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('queueapp_token', accessToken);
+        localStorage.setItem('queueapp_user', JSON.stringify(user));
+        onLoginSuccess(user, accessToken);
+        onClose();
+      } else {
+        const msg = data.error?.message || data.message || (typeof data.error === 'string' ? data.error : 'Invalid phone number or password.');
+        setErrorMsg(msg);
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Error communicating with auth server.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleInstantDemoLogin = async (phone: string) => {
     setErrorMsg(null);
     setLoading(true);
@@ -320,10 +393,10 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           </div>
         )}
 
-        {/* STEP 1: Enter Phone Number */}
-        {step === 'PHONE' ? (
-          <form onSubmit={handleSendOtp} className="space-y-4">
-            <div>
+        {step === 'INPUT' ? (
+          <div>
+            {/* Step 1: Phone Number Input */}
+            <div className="mb-3.5">
               <label className="block text-xs font-semibold text-[#334155] mb-1.5">
                 Mobile Phone Number
               </label>
@@ -347,29 +420,135 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                   className="flex-1 bg-[#F8FAFC] border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-[#1E293B] font-mono font-semibold focus:outline-none focus:border-[#0284C7] focus:bg-white"
                 />
               </div>
-              <p className="text-[10px] text-[#64748B] mt-1">10 digits only, no spaces or special characters.</p>
+              <p className="text-[10px] text-[#64748B] mt-1">10 digits Indian mobile number</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="submit"
-                disabled={loading}
-                className="bg-[#0284C7] hover:bg-[#0369A1] text-white py-2.5 rounded-xl font-bold text-xs transition shadow-sm flex items-center justify-center space-x-1"
-              >
-                <span>{loading ? 'Sending...' : 'Send OTP Code'}</span>
-              </button>
-              <button
-                type="button"
-                disabled={loading}
-                onClick={() => handleInstantDemoLogin(phone10)}
-                className="bg-[#16A34A] hover:bg-[#15803D] text-white py-2.5 rounded-xl font-bold text-xs transition shadow-sm flex items-center justify-center space-x-1"
-              >
-                <span>⚡ Instant Sign In</span>
-              </button>
+            {/* Choose Login Method: OTP (Passwordless) or Password */}
+            <div className="mb-4">
+              <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                Choose Sign-In Method
+              </label>
+              <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMethod('OTP');
+                    setErrorMsg(null);
+                  }}
+                  className={`py-2 px-3 text-xs font-bold rounded-lg flex items-center justify-center space-x-1.5 transition ${
+                    authMethod === 'OTP'
+                      ? 'bg-white text-[#0284C7] shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <KeyRound className="w-3.5 h-3.5" />
+                  <span>Login with OTP</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMethod('PASSWORD');
+                    setErrorMsg(null);
+                  }}
+                  className={`py-2 px-3 text-xs font-bold rounded-lg flex items-center justify-center space-x-1.5 transition ${
+                    authMethod === 'PASSWORD'
+                      ? 'bg-white text-[#0284C7] shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Login with Password</span>
+                </button>
+              </div>
             </div>
+
+            {/* METHOD 1: Password-based Login Form */}
+            {authMethod === 'PASSWORD' && (
+              <form onSubmit={handleLoginWithPassword} className="space-y-4">
+                <div>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <label className="text-xs font-semibold text-[#334155]">
+                      Account Password
+                    </label>
+                    <span className="text-[10px] text-[#0284C7] font-semibold">
+                      Demo: Password@123
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Enter account password"
+                      className="w-full bg-[#F8FAFC] border border-slate-300 rounded-xl pl-4 pr-10 py-2.5 text-xs text-[#1E293B] font-semibold focus:outline-none focus:border-[#0284C7] focus:bg-white"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 focus:outline-none"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-[#64748B] mt-1">
+                    Demo accounts use default password: <span className="font-mono font-bold text-slate-700">Password@123</span> (or 123456)
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="bg-[#0284C7] hover:bg-[#0369A1] text-white py-2.5 rounded-xl font-bold text-xs transition shadow-sm flex items-center justify-center space-x-1"
+                  >
+                    <Lock className="w-3.5 h-3.5" />
+                    <span>{loading ? 'Logging in...' : 'Login with Password'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={() => handleInstantDemoLogin(phone10)}
+                    className="bg-[#16A34A] hover:bg-[#15803D] text-white py-2.5 rounded-xl font-bold text-xs transition shadow-sm flex items-center justify-center space-x-1"
+                  >
+                    <span>⚡ Instant Sign In</span>
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* METHOD 2: Passwordless OTP Login Form */}
+            {authMethod === 'OTP' && (
+              <form onSubmit={handleSendOtp} className="space-y-4">
+                <div className="p-3 bg-sky-50 border border-sky-100 rounded-xl text-sky-900 text-[11px] flex items-center space-x-2">
+                  <KeyRound className="w-4 h-4 text-sky-600 shrink-0" />
+                  <span>
+                    Passwordless sign in: We will generate a one-time 6-digit verification code for your phone number.
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="bg-[#0284C7] hover:bg-[#0369A1] text-white py-2.5 rounded-xl font-bold text-xs transition shadow-sm flex items-center justify-center space-x-1"
+                  >
+                    <span>{loading ? 'Sending...' : 'Send OTP & Login'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={() => handleInstantDemoLogin(phone10)}
+                    className="bg-[#16A34A] hover:bg-[#15803D] text-white py-2.5 rounded-xl font-bold text-xs transition shadow-sm flex items-center justify-center space-x-1"
+                  >
+                    <span>⚡ Instant Sign In</span>
+                  </button>
+                </div>
+              </form>
+            )}
 
             {/* Quick-test Presets for Solo Dev / Reviewer */}
-            <div className="pt-3 border-t border-slate-100">
+            <div className="pt-3 mt-4 border-t border-slate-100">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider flex items-center space-x-1">
                   <Sparkles className="w-3 h-3 text-[#D97706]" />
@@ -388,6 +567,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                       onClick={() => {
                         const cleanDigits = acc.phone.replace('+91', '').replace(/\D/g, '').slice(0, 10);
                         setPhone10(cleanDigits);
+                        setPassword('Password@123');
                       }}
                       className="text-left flex-1"
                     >
@@ -410,9 +590,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 ))}
               </div>
             </div>
-          </form>
+          </div>
         ) : (
-          /* STEP 2: Enter OTP Code */
+          /* STEP 2: Enter OTP Code Screen */
           <form onSubmit={handleVerifyOtp} className="space-y-4">
             <div>
               <div className="flex justify-between items-center mb-1.5">
@@ -421,7 +601,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 </label>
                 <button
                   type="button"
-                  onClick={() => setStep('PHONE')}
+                  onClick={() => setStep('INPUT')}
                   className="text-[11px] text-[#0284C7] hover:underline"
                 >
                   Change phone
@@ -450,8 +630,21 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               className="w-full bg-[#16A34A] hover:bg-[#15803D] text-white py-3 rounded-xl font-bold text-xs transition shadow-sm flex items-center justify-center space-x-2"
             >
               <CheckCircle className="w-4 h-4" />
-              <span>{loading ? 'Verifying...' : 'Verify & Enter Dashboard'}</span>
+              <span>{loading ? 'Verifying...' : 'Verify OTP & Login'}</span>
             </button>
+
+            <div className="text-center pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setStep('INPUT');
+                  setAuthMethod('PASSWORD');
+                }}
+                className="text-xs text-slate-500 hover:text-[#0284C7] transition"
+              >
+                Prefer password? <span className="font-semibold underline">Login with Password instead</span>
+              </button>
+            </div>
           </form>
         )}
       </div>

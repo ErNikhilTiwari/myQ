@@ -4,7 +4,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import {
   ApiResponse,
 } from '@queueapp/shared';
-import { SendOtpDto, VerifyOtpDto, RefreshTokenDto } from './dto/auth.dto';
+import { SendOtpDto, VerifyOtpDto, RefreshTokenDto, LoginPasswordDto } from './dto/auth.dto';
 
 @Controller('api/auth')
 export class AuthController {
@@ -25,6 +25,17 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async verifyOtp(@Body() dto: VerifyOtpDto): Promise<ApiResponse> {
     const data = await this.authService.verifyOtp(dto);
+    return {
+      success: true,
+      data,
+      meta: { timestamp: new Date().toISOString() },
+    };
+  }
+
+  @Post('login-password')
+  @HttpCode(HttpStatus.OK)
+  async loginWithPassword(@Body() dto: LoginPasswordDto): Promise<ApiResponse> {
+    const data = await this.authService.loginWithPassword(dto);
     return {
       success: true,
       data,

@@ -13,6 +13,7 @@ model User {
   phoneNumber  String          @unique
   name         String
   email        String?
+  passwordHash String?
   role         String          @default("PATIENT") // UserRole enum: SUPER_ADMIN, CLINIC_ADMIN, RECEPTIONIST, DOCTOR, PATIENT
   isActive     Boolean         @default(true)
   createdAt    DateTime        @default(now())

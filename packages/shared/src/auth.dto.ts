@@ -39,3 +39,15 @@ export interface VerifyOtpResponseDto {
 export interface RefreshTokenRequestDto {
   refreshToken: string;
 }
+
+export interface LoginPasswordRequestDto {
+  phoneNumber: string;
+  password: string;
+  name?: string;
+}
+
+export interface LoginPasswordResponseDto {
+  user: AuthUserDto;
+  tokens: AuthTokensDto;
+  isNewUser: boolean;
+}
