@@ -192,7 +192,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       const accessToken = data.data?.tokens?.accessToken || data.data?.token;
 
       if (data.success && accessToken) {
-        const user = data.data.user;
+        const user = { ...data.data.user, isNewUser: Boolean(data.data.isNewUser) };
         const isClinicStaff = user.role === 'RECEPTIONIST' || user.role === 'CLINIC_ADMIN' || user.role === 'SUPER_ADMIN';
 
         if (profileType === 'RECEPTIONIST' && !isClinicStaff) {
@@ -262,7 +262,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       const accessToken = data.data?.tokens?.accessToken || data.data?.token;
 
       if (data.success && accessToken) {
-        const user = data.data.user;
+        const user = { ...data.data.user, isNewUser: Boolean(data.data.isNewUser) };
         const isClinicStaff = user.role === 'RECEPTIONIST' || user.role === 'CLINIC_ADMIN' || user.role === 'SUPER_ADMIN';
 
         if (profileType === 'RECEPTIONIST' && !isClinicStaff) {
@@ -322,7 +322,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       const accessToken = data.data?.tokens?.accessToken || data.data?.token;
 
       if (data.success && accessToken) {
-        const user = data.data.user;
+        const user = { ...data.data.user, isNewUser: Boolean(data.data.isNewUser) };
         const isClinicStaff = user.role === 'RECEPTIONIST' || user.role === 'CLINIC_ADMIN' || user.role === 'SUPER_ADMIN';
 
         if (profileType === 'RECEPTIONIST' && !isClinicStaff) {

@@ -37,6 +37,7 @@ model User {
 model PatientProfile {
   id          String    @id @default(uuid())
   userId      String    @unique
+  age         Int?
   dateOfBirth DateTime?
   gender      String?
   address     String?

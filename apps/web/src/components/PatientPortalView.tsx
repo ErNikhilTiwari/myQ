@@ -19,7 +19,8 @@ import {
   ChevronRight,
   RefreshCw,
   QrCode,
-  Globe
+  Globe,
+  AlertTriangle
 } from 'lucide-react';
 import { ClinicSearchSelect, ClinicItem } from './ClinicSearchSelect';
 
@@ -62,6 +63,7 @@ interface PatientPortalViewProps {
   token?: string | null;
   onOpenPatientLogin?: () => void;
   onOpenBooking?: (type?: 'REMOTE' | 'IN_CLINIC', qrToken?: string) => void;
+  onOpenProfileModal?: (warningMsg?: string | null, onProceed?: () => void) => void;
   onLogout?: () => void;
   activeTrackingToken?: string;
 }
@@ -75,6 +77,7 @@ export const PatientPortalView: React.FC<PatientPortalViewProps> = ({
   token,
   onOpenPatientLogin,
   onOpenBooking,
+  onOpenProfileModal,
   onLogout,
   activeTrackingToken,
 }) => {
@@ -101,6 +104,31 @@ export const PatientPortalView: React.FC<PatientPortalViewProps> = ({
   const clinicSlug = selectedClinic?.slug || defaultClinicSlug;
 
   const isPatientLoggedIn = Boolean(token && currentUser && currentUser.role === 'PATIENT');
+
+  const isProfileComplete = (user: any) => {
+    if (!user) return false;
+    if (user.role !== 'PATIENT') return true;
+    if (user.isProfileComplete === true) return true;
+    const hasValidName = user.name && !user.name.startsWith('Patient ') && user.name.trim().length > 0;
+    const hasAge = user.age !== null && user.age !== undefined && Number(user.age) > 0;
+    const hasGender = user.gender && user.gender.trim().length > 0;
+    return Boolean(hasValidName && hasAge && hasGender);
+  };
+
+  const handleBookingClick = (type: 'REMOTE' | 'IN_CLINIC' = 'REMOTE') => {
+    if (isPatientLoggedIn && !isProfileComplete(currentUser)) {
+      if (onOpenProfileModal) {
+        onOpenProfileModal(
+          'Please complete your profile details (Name, Age & Sex) before booking an appointment.',
+          () => onOpenBooking && onOpenBooking(type)
+        );
+      }
+      return;
+    }
+    if (onOpenBooking) {
+      onOpenBooking(type);
+    }
+  };
 
   // 1. Register Service Worker on mount for Interactive Push
   useEffect(() => {
@@ -367,7 +395,7 @@ export const PatientPortalView: React.FC<PatientPortalViewProps> = ({
           <div className="flex items-center space-x-2 w-full sm:w-auto justify-end">
             {isPatientLoggedIn ? (
               <button
-                onClick={() => onOpenBooking && onOpenBooking('REMOTE')}
+                onClick={() => handleBookingClick('REMOTE')}
                 className="flex items-center space-x-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-md transition active:scale-95"
               >
                 <Calendar className="w-4 h-4" />
@@ -384,6 +412,32 @@ export const PatientPortalView: React.FC<PatientPortalViewProps> = ({
             )}
           </div>
         </div>
+
+        {/* Incomplete Profile Warning Banner */}
+        {isPatientLoggedIn && !isProfileComplete(currentUser) && (
+          <div className="bg-amber-50 border-2 border-amber-300 rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm animate-in fade-in">
+            <div className="flex items-start space-x-3.5">
+              <div className="w-10 h-10 rounded-2xl bg-amber-100 border border-amber-200 text-amber-700 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-xs sm:text-sm font-black text-amber-900">
+                  ⚠️ Action Required: Complete Your Patient Profile
+                </h3>
+                <p className="text-[11px] sm:text-xs text-amber-800 mt-0.5">
+                  Your profile is incomplete. Please add your <strong>Full Name, Age, and Sex</strong> to book doctor consultations and appointments.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => onOpenProfileModal && onOpenProfileModal()}
+              className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm transition shrink-0 active:scale-95 flex items-center space-x-1.5"
+            >
+              <User className="w-3.5 h-3.5" />
+              <span>Complete Profile Now</span>
+            </button>
+          </div>
+        )}
 
         {/* ========================================================================= */}
         {/* 2. SUB-NAVIGATION FOR LOGGED IN PATIENTS                                 */}
@@ -627,7 +681,7 @@ export const PatientPortalView: React.FC<PatientPortalViewProps> = ({
               </div>
 
               <button
-                onClick={() => onOpenBooking && onOpenBooking('REMOTE')}
+                onClick={() => handleBookingClick('REMOTE')}
                 className="bg-[#0284C7] hover:bg-[#0369A1] text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-sm active:scale-95"
               >
                 <Calendar className="w-3.5 h-3.5" />
@@ -650,7 +704,7 @@ export const PatientPortalView: React.FC<PatientPortalViewProps> = ({
                   You have not scheduled any doctor consultations yet. Book an appointment from home or scan an in-clinic TV QR code to get started.
                 </p>
                 <button
-                  onClick={() => onOpenBooking && onOpenBooking('REMOTE')}
+                  onClick={() => handleBookingClick('REMOTE')}
                   className="bg-[#0284C7] hover:bg-[#0369A1] text-white px-5 py-2.5 rounded-xl text-xs font-bold transition shadow-sm"
                 >
                   Book Now

@@ -28,6 +28,9 @@ export interface AuthUserDto {
   name: string;
   role: UserRole;
   clinicId?: string;
+  age?: number | null;
+  gender?: string | null;
+  isProfileComplete?: boolean;
 }
 
 export interface VerifyOtpResponseDto {

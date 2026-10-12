@@ -161,6 +161,7 @@ export class AuthService {
       where: { phoneNumber: phone },
       include: {
         staffProfiles: true,
+        patientProfile: true,
       },
     });
 
@@ -179,9 +180,17 @@ export class AuthService {
         },
         include: {
           staffProfiles: true,
+          patientProfile: true,
         },
       });
     }
+
+    const isProfileComplete = Boolean(
+      user.name &&
+      !user.name.startsWith('Patient ') &&
+      user.patientProfile?.age &&
+      user.patientProfile?.gender
+    );
 
     // Audit log
     await this.prisma.auditLog.create({
@@ -203,6 +212,9 @@ export class AuthService {
         name: user.name,
         role: user.role as UserRole,
         clinicId,
+        age: user.patientProfile?.age ?? null,
+        gender: user.patientProfile?.gender ?? null,
+        isProfileComplete,
       },
       tokens,
       isNewUser,
@@ -224,6 +236,7 @@ export class AuthService {
       where: { phoneNumber: phone },
       include: {
         staffProfiles: true,
+        patientProfile: true,
       },
     });
 
@@ -250,6 +263,7 @@ export class AuthService {
         },
         include: {
           staffProfiles: true,
+          patientProfile: true,
         },
       });
     } else {
@@ -283,6 +297,13 @@ export class AuthService {
       throw new UnauthorizedException('This account has been deactivated. Please contact support.');
     }
 
+    const isProfileComplete = Boolean(
+      user.name &&
+      !user.name.startsWith('Patient ') &&
+      user.patientProfile?.age &&
+      user.patientProfile?.gender
+    );
+
     // Audit log
     await this.prisma.auditLog.create({
       data: {
@@ -303,9 +324,70 @@ export class AuthService {
         name: user.name,
         role: user.role as UserRole,
         clinicId,
+        age: user.patientProfile?.age ?? null,
+        gender: user.patientProfile?.gender ?? null,
+        isProfileComplete,
       },
       tokens,
       isNewUser,
+    };
+  }
+
+  /**
+   * Update Patient Profile details (name, age, sex/gender)
+   */
+  async updateProfile(userId: string, dto: { name?: string; age?: number; gender?: string }) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { staffProfiles: true, patientProfile: true },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found.');
+    }
+
+    let updatedUser = user;
+    if (dto.name && dto.name.trim().length > 0) {
+      updatedUser = await this.prisma.user.update({
+        where: { id: userId },
+        data: { name: dto.name.trim() },
+        include: { staffProfiles: true, patientProfile: true },
+      });
+    }
+
+    const parsedAge = dto.age ? Number(dto.age) : undefined;
+
+    const patientProfile = await this.prisma.patientProfile.upsert({
+      where: { userId },
+      create: {
+        userId,
+        age: parsedAge,
+        gender: dto.gender?.trim(),
+      },
+      update: {
+        ...(parsedAge !== undefined ? { age: parsedAge } : {}),
+        ...(dto.gender ? { gender: dto.gender.trim() } : {}),
+      },
+    });
+
+    const isProfileComplete = Boolean(
+      updatedUser.name &&
+      !updatedUser.name.startsWith('Patient ') &&
+      patientProfile.age &&
+      patientProfile.gender
+    );
+
+    const clinicId = user.staffProfiles?.[0]?.clinicId;
+
+    return {
+      id: updatedUser.id,
+      phoneNumber: updatedUser.phoneNumber,
+      name: updatedUser.name,
+      role: updatedUser.role as UserRole,
+      clinicId,
+      age: patientProfile.age ?? null,
+      gender: patientProfile.gender ?? null,
+      isProfileComplete,
     };
   }
 

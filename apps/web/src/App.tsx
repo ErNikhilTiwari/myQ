@@ -6,6 +6,7 @@ import { PatientPortalView } from './components/PatientPortalView';
 import { LoginModal, LoginProfile } from './components/LoginModal';
 import { SuperAdminDashboard } from './components/SuperAdminDashboard';
 import { AppointmentBookingModal } from './components/AppointmentBookingModal';
+import { PatientProfileModal } from './components/PatientProfileModal';
 import { ClinicItem } from './components/ClinicSearchSelect';
 import { 
   Monitor, 
@@ -81,6 +82,9 @@ export default function App() {
   const [bookingQrToken, setBookingQrToken] = useState<string>('');
   const [activeTrackingToken, setActiveTrackingToken] = useState<string>('');
   const [pendingBookingAfterLogin, setPendingBookingAfterLogin] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [profileModalWarning, setProfileModalWarning] = useState<string | null>(null);
+  const [pendingActionAfterProfile, setPendingActionAfterProfile] = useState<(() => void) | null>(null);
 
   // Fetch available clinics from backend & inspect URL for In-Clinic TV QR scan
   useEffect(() => {
@@ -153,6 +157,26 @@ export default function App() {
     setIsLoginOpen(true);
   };
 
+  const isPatientProfileComplete = (user: any) => {
+    if (!user) return false;
+    if (user.role !== 'PATIENT') return true;
+    if (user.isProfileComplete === true) return true;
+    const hasValidName = user.name && !user.name.startsWith('Patient ') && user.name.trim().length > 0;
+    const hasAge = user.age !== null && user.age !== undefined && Number(user.age) > 0;
+    const hasGender = user.gender && user.gender.trim().length > 0;
+    return Boolean(hasValidName && hasAge && hasGender);
+  };
+
+  const openProfileModal = (warningMsg?: string | null, onProceed?: () => void) => {
+    setProfileModalWarning(warningMsg || null);
+    if (onProceed) {
+      setPendingActionAfterProfile(() => onProceed);
+    } else {
+      setPendingActionAfterProfile(null);
+    }
+    setIsProfileModalOpen(true);
+  };
+
   // When user logs in, auto-bind to their mapped clinic and route directly to their profile
   const handleLoginSuccess = (user: any, newToken: string) => {
     setCurrentUser(user);
@@ -163,7 +187,10 @@ export default function App() {
     // Automatically route to their designated profile view
     if (user.role === 'PATIENT') {
       setActiveTab('PATIENT');
-      if (pendingBookingAfterLogin) {
+      // Prompt user to complete profile if new user or incomplete details
+      if (!isPatientProfileComplete(user) || user.isNewUser) {
+        setIsProfileModalOpen(true);
+      } else if (pendingBookingAfterLogin) {
         setIsBookingOpen(true);
         setPendingBookingAfterLogin(false);
       }
@@ -765,6 +792,7 @@ export default function App() {
             currentUser={currentUser}
             token={token}
             onOpenPatientLogin={openPatientLogin}
+            onOpenProfileModal={openProfileModal}
             onOpenBooking={(type = 'REMOTE', qrToken = '') => {
               if (!token || !currentUser || currentUser.role !== 'PATIENT') {
                 setLoginProfile('PATIENT');
@@ -772,6 +800,15 @@ export default function App() {
                 setPendingBookingAfterLogin(true);
                 setBookingModalType(type);
                 setBookingQrToken(qrToken);
+              } else if (!isPatientProfileComplete(currentUser)) {
+                openProfileModal(
+                  'Please complete your profile details (Name, Age & Sex) before booking an appointment.',
+                  () => {
+                    setBookingModalType(type);
+                    setBookingQrToken(qrToken);
+                    setIsBookingOpen(true);
+                  }
+                );
               } else {
                 setBookingModalType(type);
                 setBookingQrToken(qrToken);
@@ -866,6 +903,32 @@ export default function App() {
           if (clinicId) setSelectedClinicId(clinicId);
           setActiveTrackingToken(tokenNum);
           setActiveTab('PATIENT');
+        }}
+      />
+
+      {/* Patient Profile Details Onboarding & Completion Modal */}
+      <PatientProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => {
+          setIsProfileModalOpen(false);
+          setProfileModalWarning(null);
+          setPendingActionAfterProfile(null);
+        }}
+        currentUser={currentUser}
+        token={token}
+        warningMessage={profileModalWarning}
+        canSkip={true}
+        onProfileUpdated={(updatedUser) => {
+          setCurrentUser(updatedUser);
+        }}
+        onProceedAfterComplete={() => {
+          if (pendingBookingAfterLogin) {
+            setIsBookingOpen(true);
+            setPendingBookingAfterLogin(false);
+          } else if (pendingActionAfterProfile) {
+            pendingActionAfterProfile();
+            setPendingActionAfterProfile(null);
+          }
         }}
       />
     </div>

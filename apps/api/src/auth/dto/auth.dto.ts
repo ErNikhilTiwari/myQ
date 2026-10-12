@@ -1,4 +1,4 @@
-import { IsString, Matches, IsNotEmpty } from 'class-validator';
+import { IsString, Matches, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class SendOtpDto {
   @IsString()
@@ -37,4 +37,17 @@ export class LoginPasswordDto {
   password: string;
 
   name?: string;
+}
+
+export class UpdateProfileDto {
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsOptional()
+  age?: number;
+
+  @IsOptional()
+  @IsString()
+  gender?: string;
 }

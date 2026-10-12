@@ -18,6 +18,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       where: { id: payload.sub },
       include: {
         staffProfiles: true,
+        patientProfile: true,
       },
     });
 
@@ -25,12 +26,22 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('User account inactive or not found.');
     }
 
+    const isProfileComplete = Boolean(
+      user.name &&
+      !user.name.startsWith('Patient ') &&
+      user.patientProfile?.age &&
+      user.patientProfile?.gender
+    );
+
     return {
       id: user.id,
       phoneNumber: user.phoneNumber,
       name: user.name,
       role: user.role,
       clinicId: payload.clinicId || user.staffProfiles?.[0]?.clinicId,
+      age: user.patientProfile?.age ?? null,
+      gender: user.patientProfile?.gender ?? null,
+      isProfileComplete,
     };
   }
 }
