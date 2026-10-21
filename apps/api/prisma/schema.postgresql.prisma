@@ -70,6 +70,9 @@ model Clinic {
   email       String?
   address     String?
   city        String?
+  inClinicPrice Float    @default(200.0)
+  remotePrice   Float    @default(250.0)
+  voiceAnnouncementMode String @default("TOKEN_PATIENT_DOCTOR_ROOM")
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
