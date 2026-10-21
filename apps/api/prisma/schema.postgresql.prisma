@@ -196,7 +196,9 @@ model Appointment {
   doctorId       String?
   serviceId      String?
   slotTime       DateTime
-  status         String    @default("CONFIRMED") // PENDING, CONFIRMED, CANCELLED, COMPLETED
+  bookingType    String    @default("REMOTE")
+  qrCodeToken    String?
+  status         String    @default("CONFIRMED")
   bookingFee     Float     @default(0.0)
   paymentStatus  String    @default("PENDING") // PENDING, SUCCESS, FAILED
   queueEntryId   String?
