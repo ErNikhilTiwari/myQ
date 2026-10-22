@@ -73,7 +73,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
   // Patient Info State (if not logged in)
   const [patientName, setPatientName] = useState('');
   const [patientPhone10, setPatientPhone10] = useState('');
-  const [otpCode, setOtpCode] = useState('123456');
+  const [otpCode, setOtpCode] = useState('');
   const [isVerifyingPhone, setIsVerifyingPhone] = useState(false);
   const [phoneStep, setPhoneStep] = useState<'PHONE' | 'OTP'>('PHONE');
 

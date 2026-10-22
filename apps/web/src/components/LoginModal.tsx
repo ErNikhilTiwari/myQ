@@ -29,7 +29,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const [authMethod, setAuthMethod] = useState<'OTP' | 'PASSWORD'>('OTP');
   const [password, setPassword] = useState('Password@123');
   const [showPassword, setShowPassword] = useState(false);
-  const [otp, setOtp] = useState('123456');
+  const [otp, setOtp] = useState('');
   const [step, setStep] = useState<'INPUT' | 'OTP'>('INPUT');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -158,6 +158,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       }
 
       if (data.success) {
+        setOtp('');
         if (data.data?.telegramBotUsername || data.telegramBotUsername) {
           setTelegramBotUsername(data.data?.telegramBotUsername || data.telegramBotUsername);
         }
@@ -618,7 +619,10 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 </label>
                 <button
                   type="button"
-                  onClick={() => setStep('INPUT')}
+                  onClick={() => {
+                    setOtp('');
+                    setStep('INPUT');
+                  }}
                   className="text-[11px] text-[#0284C7] hover:underline"
                 >
                   Change phone
@@ -629,9 +633,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 required
                 maxLength={6}
                 value={otp}
-                onChange={(e) => setOtp(e.target.value)}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                 placeholder="123456"
-                className="w-full bg-[#F8FAFC] border border-slate-300 rounded-xl px-4 py-2.5 text-center text-lg tracking-widest text-[#0284C7] font-mono font-bold focus:outline-none focus:border-[#0284C7] focus:bg-white"
+                className="w-full bg-[#F8FAFC] border border-slate-300 rounded-xl px-4 py-2.5 text-center text-lg tracking-widest text-[#0284C7] font-mono font-bold focus:outline-none focus:border-[#0284C7] focus:bg-white placeholder:text-slate-400 placeholder:font-normal placeholder:opacity-50"
               />
               <div className="bg-[#E0F2FE] border border-[#0284C7]/20 rounded-xl p-2.5 mt-2 text-center text-[11px] text-[#0284C7]">
                 <p className="font-semibold">Local Dev Testing:</p>
