@@ -2,15 +2,15 @@
   "rewrites": [
     {
       "source": "/api/:match*",
-      "destination": "https://YOUR_BACKEND_URL.onrender.com/api/:match*"
+      "destination": "https://myq-2m7n.onrender.com/api/:match*"
     },
     {
       "source": "/health",
-      "destination": "https://YOUR_BACKEND_URL.onrender.com/health"
+      "destination": "https://myq-2m7n.onrender.com/health"
     },
     {
       "source": "/socket.io/:match*",
-      "destination": "https://YOUR_BACKEND_URL.onrender.com/socket.io/:match*"
+      "destination": "https://myq-2m7n.onrender.com/socket.io/:match*"
     },
     {
       "source": "/(.*)",
