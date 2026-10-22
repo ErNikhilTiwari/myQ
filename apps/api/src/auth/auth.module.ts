@@ -26,18 +26,23 @@ import { SmsOtpProvider } from './otp/sms-otp.provider';
     SmsOtpProvider,
     {
       provide: OTP_PROVIDER_TOKEN,
-      useFactory: () => {
+      useFactory: (
+        telegramProvider: TelegramOtpProvider,
+        smsProvider: SmsOtpProvider,
+        mockProvider: MockOtpProvider,
+      ) => {
         const provider = (process.env.OTP_PROVIDER || 'mock').trim().toLowerCase();
         if (provider === 'telegram') {
-          return new TelegramOtpProvider();
+          return telegramProvider;
         }
         if (provider === 'sms' || provider === 'msg91') {
-          return new SmsOtpProvider();
+          return smsProvider;
         }
-        return new MockOtpProvider();
+        return mockProvider;
       },
+      inject: [TelegramOtpProvider, SmsOtpProvider, MockOtpProvider],
     },
   ],
-  exports: [AuthService, JwtModule, PassportModule],
+  exports: [AuthService, JwtModule, PassportModule, TelegramOtpProvider],
 })
 export class AuthModule {}

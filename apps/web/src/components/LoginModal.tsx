@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { LogIn, KeyRound, Phone, CheckCircle, AlertCircle, X, Sparkles, UserCheck, Shield, Lock, Eye, EyeOff } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { LogIn, KeyRound, Phone, CheckCircle, AlertCircle, X, Sparkles, UserCheck, Shield, Lock, Eye, EyeOff, Send } from 'lucide-react';
 
 export type LoginProfile = 'PATIENT' | 'RECEPTIONIST' | 'CLINIC_ADMIN' | 'SUPER_ADMIN' | 'GENERAL';
 
@@ -33,6 +33,20 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const [step, setStep] = useState<'INPUT' | 'OTP'>('INPUT');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [telegramBotUsername, setTelegramBotUsername] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/api/auth/telegram/info', {
+      headers: { 'Bypass-Tunnel-Reminder': 'true' },
+    })
+      .then((res) => res.json())
+      .then((res) => {
+        if (res?.data?.username) {
+          setTelegramBotUsername(res.data.username);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   if (!isOpen) return null;
 
@@ -144,6 +158,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       }
 
       if (data.success) {
+        if (data.data?.telegramBotUsername || data.telegramBotUsername) {
+          setTelegramBotUsername(data.data?.telegramBotUsername || data.telegramBotUsername);
+        }
         setStep('OTP');
       } else {
         setErrorMsg(data.error?.message || data.message || 'Failed to send OTP.');
@@ -622,6 +639,27 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                   Enter the code from your backend terminal (or use mock bypass <span className="font-mono font-bold text-[#0284C7]">123456</span>).
                 </p>
               </div>
+
+              {telegramBotUsername && (
+                <div className="bg-sky-50 border border-sky-200 rounded-xl p-2.5 mt-2.5 text-xs text-sky-900 flex items-center justify-between shadow-xs">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-base shrink-0">🤖</span>
+                    <div className="text-left">
+                      <p className="font-bold text-[11px] text-sky-950">Receive OTP on Your Telegram</p>
+                      <p className="text-[10px] text-sky-700">Link your phone once to get OTP directly:</p>
+                    </div>
+                  </div>
+                  <a
+                    href={`https://t.me/${telegramBotUsername}?start=${phone10}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-2 px-2.5 py-1.5 bg-[#0088cc] hover:bg-[#0077b5] text-white text-[11px] font-bold rounded-lg shadow-xs shrink-0 transition flex items-center space-x-1"
+                  >
+                    <span>Open Bot</span>
+                    <span>↗</span>
+                  </a>
+                </div>
+              )}
             </div>
 
             <button

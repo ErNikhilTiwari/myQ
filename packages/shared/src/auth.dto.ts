@@ -8,6 +8,7 @@ export interface SendOtpResponseDto {
   success: boolean;
   message: string;
   expiresInSeconds: number;
+  telegramBotUsername?: string;
 }
 
 export interface VerifyOtpRequestDto {
