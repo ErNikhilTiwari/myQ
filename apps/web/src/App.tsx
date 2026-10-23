@@ -462,111 +462,63 @@ export default function App() {
                 </div>
               </div>
 
-              {/* SECTION 2: Navigation Views */}
+              {/* SECTION 2: Patient Portal */}
               <div className="pt-2 border-t border-slate-800">
                 <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2.5 px-1">
-                  Portals &amp; Views
+                  Patient Portal
                 </p>
-                <div className="space-y-2">
-                  {/* Patient Portal Link */}
+                <div>
+                  {/* Login as Patient */}
                   <button
                     onClick={() => {
-                      setActiveTab('PATIENT');
                       setIsMenuOpen(false);
+                      if (currentUser?.role === 'PATIENT') {
+                        setActiveTab('PATIENT');
+                      } else {
+                        openPatientLogin();
+                      }
                     }}
-                    className={`w-full flex items-center justify-between p-3 rounded-xl text-left transition ${
-                      activeTab === 'PATIENT'
-                        ? 'bg-[#0284C7] text-white shadow-md'
-                        : 'bg-slate-800/60 hover:bg-slate-800 text-slate-200 hover:text-white border border-slate-700/50'
+                    className={`w-full flex items-center justify-between p-3.5 rounded-2xl text-left border transition group shadow-sm ${
+                      activeTab === 'PATIENT' && currentUser?.role === 'PATIENT'
+                        ? 'bg-emerald-600 text-white border-emerald-400/50 shadow-md'
+                        : 'bg-slate-800/90 hover:bg-slate-800 text-slate-100 border-slate-700/80 hover:border-emerald-500/50'
                     }`}
                   >
                     <div className="flex items-center space-x-3">
-                      <div className={`p-1.5 rounded-lg ${activeTab === 'PATIENT' ? 'bg-white/20' : 'bg-sky-500/10 text-sky-400'}`}>
-                        <Smartphone className="w-4 h-4" />
+                      <div className={`p-2 rounded-xl transition ${
+                        activeTab === 'PATIENT' && currentUser?.role === 'PATIENT'
+                          ? 'bg-white/20 text-white'
+                          : 'bg-emerald-500/10 text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white'
+                      }`}>
+                        <Smartphone className="w-5 h-5" />
                       </div>
-                      <div>
-                        <div className="font-bold text-xs flex items-center space-x-1.5">
-                          <span>Patient Portal</span>
-                          <span className="text-[9px] font-semibold bg-emerald-500/20 text-emerald-300 px-1.5 py-0.2 rounded">Home</span>
+                      <div className="text-left">
+                        <div className="flex items-center space-x-2">
+                          <span className="font-bold text-xs text-white">Login as Patient</span>
+                          {currentUser?.role === 'PATIENT' && (
+                            <span className="text-[9px] bg-emerald-500/20 text-emerald-300 font-bold px-1.5 py-0.5 rounded-full border border-emerald-400/30">
+                              Active
+                            </span>
+                          )}
                         </div>
-                        <p className={`text-[10px] ${activeTab === 'PATIENT' ? 'text-sky-100' : 'text-slate-400'}`}>
+                        <p className={`text-[11px] font-normal mt-0.5 ${
+                          activeTab === 'PATIENT' && currentUser?.role === 'PATIENT'
+                            ? 'text-emerald-100'
+                            : 'text-slate-400'
+                        }`}>
                           Search clinic, book appointment &amp; track tokens
                         </p>
                       </div>
                     </div>
-                    <ChevronRight className="w-4 h-4 opacity-60" />
+                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-white group-hover:translate-x-1 transition-transform" />
                   </button>
-
-                  {/* Direct TV View Display Link */}
-                  <button
-                    onClick={() => {
-                      setActiveTab('TV_VIEWER');
-                      setIsMenuOpen(false);
-                    }}
-                    className={`w-full flex items-center justify-between p-3 rounded-xl text-left transition ${
-                      activeTab === 'TV_VIEWER'
-                        ? 'bg-emerald-600 text-white shadow-md'
-                        : 'bg-slate-800/60 hover:bg-slate-800 text-slate-200 hover:text-white border border-slate-700/50'
-                    }`}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className={`p-1.5 rounded-lg ${activeTab === 'TV_VIEWER' ? 'bg-white/20' : 'bg-emerald-500/10 text-emerald-400'}`}>
-                        <Monitor className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <div className="font-bold text-xs flex items-center space-x-1.5">
-                          <span>Open TV View Screen</span>
-                          <span className="text-[9px] font-semibold bg-emerald-500/20 text-emerald-300 px-1.5 py-0.2 rounded">Display</span>
-                        </div>
-                        <p className={`text-[10px] ${activeTab === 'TV_VIEWER' ? 'text-emerald-100' : 'text-slate-400'}`}>
-                          Waiting hall broadcast screen with voice calling
-                        </p>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-4 h-4 opacity-60" />
-                  </button>
-
-                  {/* Super Admin option (for demo / administration) */}
-                  {(currentUser?.role === 'SUPER_ADMIN' || !currentUser) && (
-                    <button
-                      onClick={() => {
-                        setIsMenuOpen(false);
-                        if (currentUser?.role === 'SUPER_ADMIN') {
-                          setActiveTab('SUPER_ADMIN');
-                        } else {
-                          openSuperAdminLogin();
-                        }
-                      }}
-                      className={`w-full flex items-center justify-between p-3 rounded-xl text-left transition ${
-                        activeTab === 'SUPER_ADMIN'
-                          ? 'bg-amber-600 text-white shadow-md'
-                          : 'bg-slate-800/60 hover:bg-slate-800 text-slate-200 hover:text-white border border-slate-700/50'
-                      }`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className={`p-1.5 rounded-lg ${activeTab === 'SUPER_ADMIN' ? 'bg-white/20' : 'bg-amber-500/10 text-amber-400'}`}>
-                          <Shield className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <div className="font-bold text-xs flex items-center space-x-1.5">
-                            <span>Super Admin Portal</span>
-                            <span className="text-[9px] font-semibold bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded">Root</span>
-                          </div>
-                          <p className={`text-[10px] ${activeTab === 'SUPER_ADMIN' ? 'text-amber-100' : 'text-slate-400'}`}>
-                            Global platform multi-tenant control
-                          </p>
-                        </div>
-                      </div>
-                      <ChevronRight className="w-4 h-4 opacity-60" />
-                    </button>
-                  )}
                 </div>
               </div>
             </div>
 
-            {/* Drawer Footer: User status / Logout */}
-            <div className="p-4 border-t border-slate-800 bg-[#1E293B]">
-              {currentUser ? (
+            {/* Drawer Footer: User status & Logout (Shown only when logged in) */}
+            {currentUser && (
+              <div className="p-4 border-t border-slate-800 bg-[#1E293B]">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-xs px-1">
                     <span className="text-slate-400 text-[11px]">Logged in as:</span>
@@ -580,19 +532,8 @@ export default function App() {
                     <span>Log Out</span>
                   </button>
                 </div>
-              ) : (
-                <button
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    openGeneralLogin();
-                  }}
-                  className="w-full flex items-center justify-center space-x-2 bg-[#0284C7] hover:bg-[#0369A1] text-white py-2.5 rounded-xl font-bold text-xs transition shadow-sm"
-                >
-                  <LogIn className="w-4 h-4" />
-                  <span>Login (Multi-Role)</span>
-                </button>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       )}
