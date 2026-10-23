@@ -178,8 +178,13 @@ export class AuthService {
     }
 
     // Find or create user
-    let user = await this.prisma.user.findUnique({
-      where: { phoneNumber: phone },
+    let user = await this.prisma.user.findFirst({
+      where: {
+        OR: [
+          { phoneNumber: phone },
+          { phoneNumber: phone.replace(/^\+91/, '') },
+        ],
+      },
       include: {
         staffProfiles: true,
         patientProfile: true,
@@ -258,9 +263,20 @@ export class AuthService {
           patientProfile: true,
         },
       });
+    } else if (user.role === UserRole.PATIENT && user.staffProfiles.length > 0) {
+      // Auto-sync staff role if user has a clinic staff role (e.g. RECEPTIONIST or CLINIC_ADMIN)
+      const staffRole = user.staffProfiles.find(s => s.role === UserRole.CLINIC_ADMIN)?.role || user.staffProfiles[0].role;
+      user = await this.prisma.user.update({
+        where: { id: user.id },
+        data: { role: staffRole },
+        include: {
+          staffProfiles: true,
+          patientProfile: true,
+        },
+      });
     }
 
-    const isProfileComplete = Boolean(
+    const isProfileComplete = user.role !== UserRole.PATIENT || Boolean(
       user.name &&
       !user.name.startsWith('Patient ') &&
       user.patientProfile?.age &&
@@ -307,8 +323,13 @@ export class AuthService {
     }
 
     // Find user by phone number
-    let user = await this.prisma.user.findUnique({
-      where: { phoneNumber: phone },
+    let user = await this.prisma.user.findFirst({
+      where: {
+        OR: [
+          { phoneNumber: phone },
+          { phoneNumber: phone.replace(/^\+91/, '') },
+        ],
+      },
       include: {
         staffProfiles: true,
         patientProfile: true,
@@ -393,6 +414,17 @@ export class AuthService {
             patientProfile: true,
           },
         });
+      } else if (user.role === UserRole.PATIENT && user.staffProfiles.length > 0) {
+        // Auto-sync staff role if user has a clinic staff role (e.g. RECEPTIONIST or CLINIC_ADMIN)
+        const staffRole = user.staffProfiles.find(s => s.role === UserRole.CLINIC_ADMIN)?.role || user.staffProfiles[0].role;
+        user = await this.prisma.user.update({
+          where: { id: user.id },
+          data: { role: staffRole },
+          include: {
+            staffProfiles: true,
+            patientProfile: true,
+          },
+        });
       }
 
       // Existing user: check password match
@@ -425,7 +457,7 @@ export class AuthService {
       throw new UnauthorizedException('This account has been deactivated. Please contact support.');
     }
 
-    const isProfileComplete = Boolean(
+    const isProfileComplete = user.role !== UserRole.PATIENT || Boolean(
       user.name &&
       !user.name.startsWith('Patient ') &&
       user.patientProfile?.age &&

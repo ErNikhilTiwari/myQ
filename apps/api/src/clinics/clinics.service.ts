@@ -1,6 +1,12 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateClinicDto, UpdateClinicDto, UserRole } from '@queueapp/shared';
+import { 
+  CreateClinicDto, 
+  UpdateClinicDto, 
+  UserRole,
+  RegisterReceptionistDto,
+  UpdateReceptionistDto,
+} from '@queueapp/shared';
 import * as bcrypt from 'bcryptjs';
 
 @Injectable()
@@ -153,6 +159,19 @@ export class ClinicsService {
       });
     }
 
+    // Auto-provision Clinic Receptionist User account and link ClinicStaff if phone provided
+    if (dto.receptionistPhoneNumber) {
+      try {
+        await this.registerReceptionist(clinic.id, {
+          name: dto.receptionistName?.trim() || `${dto.name} Receptionist`,
+          phoneNumber: dto.receptionistPhoneNumber,
+          password: dto.receptionistPassword || 'Password@123',
+        });
+      } catch (err) {
+        console.warn(`Could not auto-provision receptionist during clinic creation:`, err);
+      }
+    }
+
     return clinic;
   }
 
@@ -279,6 +298,317 @@ export class ClinicsService {
       },
       update: { role },
       create: { clinicId, userId, role },
+    });
+  }
+
+  /**
+   * Receptionist Management (1 Receptionist Per Clinic Enforcement)
+   */
+
+  /**
+   * Get the single receptionist assigned to a clinic
+   */
+  async getReceptionist(clinicId: string) {
+    const staff = await this.prisma.clinicStaff.findFirst({
+      where: {
+        clinicId,
+        role: UserRole.RECEPTIONIST,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            phoneNumber: true,
+            email: true,
+            role: true,
+            isActive: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+
+    if (!staff) return null;
+
+    return {
+      id: staff.id,
+      clinicId: staff.clinicId,
+      role: staff.role,
+      createdAt: staff.createdAt.toISOString(),
+      user: {
+        id: staff.user.id,
+        name: staff.user.name,
+        phoneNumber: staff.user.phoneNumber,
+        email: staff.user.email,
+        role: staff.user.role,
+        isActive: staff.user.isActive,
+        createdAt: staff.user.createdAt.toISOString(),
+      },
+    };
+  }
+
+  /**
+   * Register or assign the single receptionist for a clinic
+   * Strictly enforces 1 receptionist per clinic.
+   */
+  async registerReceptionist(clinicId: string, dto: RegisterReceptionistDto) {
+    const clinic = await this.prisma.clinic.findUnique({
+      where: { id: clinicId },
+    });
+    if (!clinic) {
+      throw new NotFoundException(`Clinic with ID "${clinicId}" not found.`);
+    }
+
+    // Enforce 1 receptionist per clinic limit
+    const existingStaff = await this.prisma.clinicStaff.findFirst({
+      where: {
+        clinicId,
+        role: UserRole.RECEPTIONIST,
+      },
+      include: { user: true },
+    });
+
+    if (existingStaff) {
+      throw new ConflictException(
+        `This clinic already has a receptionist assigned (${existingStaff.user.name} - ${existingStaff.user.phoneNumber}). Each clinic is strictly limited to 1 receptionist. Please edit or remove the current receptionist first.`,
+      );
+    }
+
+    const rawPhone = dto.phoneNumber.trim();
+    const cleanPhone = rawPhone.startsWith('+91')
+      ? rawPhone
+      : `+91${rawPhone.replace(/\D/g, '').slice(-10)}`;
+
+    const passwordHash = await bcrypt.hash(dto.password || 'Password@123', 10);
+
+    let user = await this.prisma.user.findFirst({
+      where: {
+        OR: [
+          { phoneNumber: rawPhone },
+          { phoneNumber: cleanPhone },
+        ],
+      },
+    });
+
+    if (!user) {
+      user = await this.prisma.user.create({
+        data: {
+          phoneNumber: cleanPhone,
+          name: dto.name.trim(),
+          role: UserRole.RECEPTIONIST,
+          passwordHash,
+        },
+      });
+    } else {
+      // If user already existed as PATIENT, promote to RECEPTIONIST
+      if (user.role === UserRole.PATIENT) {
+        user = await this.prisma.user.update({
+          where: { id: user.id },
+          data: {
+            role: UserRole.RECEPTIONIST,
+            name: dto.name.trim() || user.name,
+            passwordHash: dto.password ? passwordHash : (user.passwordHash || passwordHash),
+          },
+        });
+      } else if (dto.password) {
+        user = await this.prisma.user.update({
+          where: { id: user.id },
+          data: {
+            name: dto.name.trim() || user.name,
+            passwordHash,
+          },
+        });
+      }
+    }
+
+    const staff = await this.prisma.clinicStaff.create({
+      data: {
+        clinicId,
+        userId: user.id,
+        role: UserRole.RECEPTIONIST,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            phoneNumber: true,
+            email: true,
+            role: true,
+            isActive: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+
+    return {
+      id: staff.id,
+      clinicId: staff.clinicId,
+      role: staff.role,
+      createdAt: staff.createdAt.toISOString(),
+      user: {
+        id: staff.user.id,
+        name: staff.user.name,
+        phoneNumber: staff.user.phoneNumber,
+        email: staff.user.email,
+        role: staff.user.role,
+        isActive: staff.user.isActive,
+        createdAt: staff.user.createdAt.toISOString(),
+      },
+    };
+  }
+
+  /**
+   * Update existing receptionist for a clinic
+   */
+  async updateReceptionist(clinicId: string, dto: UpdateReceptionistDto) {
+    const staff = await this.prisma.clinicStaff.findFirst({
+      where: {
+        clinicId,
+        role: UserRole.RECEPTIONIST,
+      },
+      include: { user: true },
+    });
+
+    if (!staff) {
+      throw new NotFoundException('No receptionist found for this clinic to update.');
+    }
+
+    const updateData: any = {};
+    if (dto.name) updateData.name = dto.name.trim();
+    if (dto.password) updateData.passwordHash = await bcrypt.hash(dto.password, 10);
+    if (typeof dto.isActive === 'boolean') updateData.isActive = dto.isActive;
+
+    if (dto.phoneNumber) {
+      const cleanPhone = dto.phoneNumber.startsWith('+91')
+        ? dto.phoneNumber
+        : `+91${dto.phoneNumber.replace(/\D/g, '').slice(-10)}`;
+
+      const phoneConflict = await this.prisma.user.findFirst({
+        where: {
+          phoneNumber: cleanPhone,
+          id: { not: staff.userId },
+        },
+      });
+
+      if (phoneConflict) {
+        throw new ConflictException(`Phone number ${cleanPhone} is already in use by another user.`);
+      }
+
+      updateData.phoneNumber = cleanPhone;
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: staff.userId },
+      data: updateData,
+      select: {
+        id: true,
+        name: true,
+        phoneNumber: true,
+        email: true,
+        role: true,
+        isActive: true,
+        createdAt: true,
+      },
+    });
+
+    return {
+      id: staff.id,
+      clinicId: staff.clinicId,
+      role: staff.role,
+      createdAt: staff.createdAt.toISOString(),
+      user: {
+        id: updatedUser.id,
+        name: updatedUser.name,
+        phoneNumber: updatedUser.phoneNumber,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        isActive: updatedUser.isActive,
+        createdAt: updatedUser.createdAt.toISOString(),
+      },
+    };
+  }
+
+  /**
+   * Remove receptionist from a clinic
+   */
+  async removeReceptionist(clinicId: string) {
+    const staff = await this.prisma.clinicStaff.findFirst({
+      where: {
+        clinicId,
+        role: UserRole.RECEPTIONIST,
+      },
+    });
+
+    if (!staff) {
+      throw new NotFoundException('No receptionist assigned to this clinic.');
+    }
+
+    await this.prisma.clinicStaff.delete({
+      where: { id: staff.id },
+    });
+
+    // Check if user has any other active staff profiles
+    const remainingStaff = await this.prisma.clinicStaff.findFirst({
+      where: { userId: staff.userId },
+    });
+
+    if (!remainingStaff) {
+      await this.prisma.user.update({
+        where: { id: staff.userId },
+        data: { role: UserRole.PATIENT },
+      });
+    }
+
+    return { success: true, message: 'Receptionist removed successfully from clinic.' };
+  }
+
+  /**
+   * Super Admin Overview: All clinics with their single receptionist
+   */
+  async getAllReceptionistsSummary() {
+    const clinics = await this.prisma.clinic.findMany({
+      include: {
+        staff: {
+          where: { role: UserRole.RECEPTIONIST },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                phoneNumber: true,
+                email: true,
+                isActive: true,
+                createdAt: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { name: 'asc' },
+    });
+
+    return clinics.map((c) => {
+      const recStaff = c.staff[0];
+      return {
+        clinicId: c.id,
+        clinicName: c.name,
+        clinicSlug: c.slug,
+        clinicPhone: c.phoneNumber,
+        receptionist: recStaff
+          ? {
+              id: recStaff.id,
+              userId: recStaff.user.id,
+              name: recStaff.user.name,
+              phoneNumber: recStaff.user.phoneNumber,
+              email: recStaff.user.email,
+              isActive: recStaff.user.isActive,
+              createdAt: recStaff.createdAt.toISOString(),
+            }
+          : null,
+      };
     });
   }
 }

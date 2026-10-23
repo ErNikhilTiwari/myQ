@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Param,
   Query,
   Body,
@@ -16,6 +17,8 @@ import { Roles } from '../common/decorators/roles.decorator';
 import {
   CreateClinicDto,
   UpdateClinicDto,
+  RegisterReceptionistDto,
+  UpdateReceptionistDto,
   UserRole,
   ApiResponse,
 } from '@queueapp/shared';
@@ -52,6 +55,57 @@ export class ClinicsController {
   @Roles(UserRole.SUPER_ADMIN, UserRole.CLINIC_ADMIN, UserRole.RECEPTIONIST)
   async getStaff(@Param('clinicId') clinicId: string): Promise<ApiResponse> {
     const data = await this.clinicsService.getStaff(clinicId);
+    return { success: true, data };
+  }
+
+  /**
+   * Receptionist Management (1 Receptionist Per Clinic Limit)
+   */
+  @Get('clinics/:clinicId/receptionist')
+  @UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.CLINIC_ADMIN, UserRole.RECEPTIONIST)
+  async getReceptionist(@Param('clinicId') clinicId: string): Promise<ApiResponse> {
+    const data = await this.clinicsService.getReceptionist(clinicId);
+    return { success: true, data };
+  }
+
+  @Post('clinics/:clinicId/receptionist')
+  @UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.CLINIC_ADMIN)
+  async registerReceptionist(
+    @Param('clinicId') clinicId: string,
+    @Body() dto: RegisterReceptionistDto,
+  ): Promise<ApiResponse> {
+    const data = await this.clinicsService.registerReceptionist(clinicId, dto);
+    return { success: true, data };
+  }
+
+  @Patch('clinics/:clinicId/receptionist')
+  @UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.CLINIC_ADMIN)
+  async updateReceptionist(
+    @Param('clinicId') clinicId: string,
+    @Body() dto: UpdateReceptionistDto,
+  ): Promise<ApiResponse> {
+    const data = await this.clinicsService.updateReceptionist(clinicId, dto);
+    return { success: true, data };
+  }
+
+  @Delete('clinics/:clinicId/receptionist')
+  @UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.CLINIC_ADMIN)
+  async removeReceptionist(
+    @Param('clinicId') clinicId: string,
+  ): Promise<ApiResponse> {
+    const data = await this.clinicsService.removeReceptionist(clinicId);
+    return { success: true, data };
+  }
+
+  @Get('super/receptionists')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  async getSuperReceptionists(): Promise<ApiResponse> {
+    const data = await this.clinicsService.getAllReceptionistsSummary();
     return { success: true, data };
   }
 

@@ -34,6 +34,54 @@ export interface CreateClinicDto {
   inClinicPrice?: number;
   remotePrice?: number;
   voiceAnnouncementMode?: VoiceAnnouncementMode;
+  receptionistName?: string;
+  receptionistPhoneNumber?: string;
+  receptionistPassword?: string;
+}
+
+export interface ReceptionistDto {
+  id: string;
+  clinicId: string;
+  role: string;
+  createdAt: string;
+  user: {
+    id: string;
+    name: string;
+    phoneNumber: string;
+    email?: string | null;
+    role: string;
+    isActive: boolean;
+    createdAt?: string;
+  };
+}
+
+export interface RegisterReceptionistDto {
+  name: string;
+  phoneNumber: string;
+  password?: string;
+}
+
+export interface UpdateReceptionistDto {
+  name?: string;
+  phoneNumber?: string;
+  password?: string;
+  isActive?: boolean;
+}
+
+export interface ClinicReceptionistSummaryDto {
+  clinicId: string;
+  clinicName: string;
+  clinicSlug: string;
+  clinicPhone: string;
+  receptionist: {
+    id: string;
+    userId: string;
+    name: string;
+    phoneNumber: string;
+    email?: string | null;
+    isActive: boolean;
+    createdAt: string;
+  } | null;
 }
 
 export interface UpdateClinicDto {

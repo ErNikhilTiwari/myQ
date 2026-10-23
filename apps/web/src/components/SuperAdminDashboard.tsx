@@ -19,8 +19,28 @@ import {
   FileSpreadsheet,
   RefreshCw,
   Sliders,
-  DollarSign
+  DollarSign,
+  UserCheck,
+  UserPlus,
+  Edit3,
+  Trash2
 } from 'lucide-react';
+
+export interface ClinicReceptionistSummaryData {
+  clinicId: string;
+  clinicName: string;
+  clinicSlug: string;
+  clinicPhone: string;
+  receptionist: {
+    id: string;
+    userId: string;
+    name: string;
+    phoneNumber: string;
+    email?: string | null;
+    isActive: boolean;
+    createdAt: string;
+  } | null;
+}
 
 interface ClinicData {
   id: string;
@@ -65,13 +85,15 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
   currentUser,
   onSelectClinicAsStaff,
 }) => {
-  const [activeTab, setActiveTab] = useState<'CLINICS' | 'CHAINS' | 'SUBSCRIPTIONS'>('CLINICS');
+  const [activeTab, setActiveTab] = useState<'CLINICS' | 'CHAINS' | 'SUBSCRIPTIONS' | 'RECEPTIONISTS'>('CLINICS');
   
   // Data states
   const [clinics, setClinics] = useState<ClinicData[]>([]);
   const [chains, setChains] = useState<HospitalChainData[]>([]);
   const [subscriptions, setSubscriptions] = useState<SubscriptionData[]>([]);
+  const [receptionists, setReceptionists] = useState<ClinicReceptionistSummaryData[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [recSearchQuery, setRecSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
 
   // New Clinic Modal
@@ -83,8 +105,21 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
   const [newClinicAddress, setNewClinicAddress] = useState('');
   const [newClinicCity, setNewClinicCity] = useState('');
   const [newClinicChainId, setNewClinicChainId] = useState('');
+  const [newClinicReceptionistName, setNewClinicReceptionistName] = useState('');
+  const [newClinicReceptionistPhone, setNewClinicReceptionistPhone] = useState('');
+  const [newClinicReceptionistPassword, setNewClinicReceptionistPassword] = useState('');
   const [clinicFormError, setClinicFormError] = useState('');
   const [submittingClinic, setSubmittingClinic] = useState(false);
+
+  // Super Admin Receptionist Management Modals
+  const [assignClinic, setAssignClinic] = useState<{ id: string; name: string } | null>(null);
+  const [editReceptionistTarget, setEditReceptionistTarget] = useState<{ clinicId: string; clinicName: string; name: string; phone: string } | null>(null);
+  const [deleteReceptionistTarget, setDeleteReceptionistTarget] = useState<{ clinicId: string; clinicName: string; name: string } | null>(null);
+  const [recFormName, setRecFormName] = useState('');
+  const [recFormPhone, setRecFormPhone] = useState('');
+  const [recFormPassword, setRecFormPassword] = useState('');
+  const [recFormError, setRecFormError] = useState('');
+  const [recSubmitting, setRecSubmitting] = useState(false);
 
   // New Chain Modal
   const [showChainModal, setShowChainModal] = useState(false);
@@ -113,15 +148,17 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     const headers = { 'Authorization': `Bearer ${token}` };
 
     try {
-      const [cRes, chainRes, subRes] = await Promise.all([
+      const [cRes, chainRes, subRes, recRes] = await Promise.all([
         fetch('/api/clinics').then(r => r.json()),
         fetch('/api/hospital-chains').then(r => r.json()).catch(() => ({ success: false })),
         fetch('/api/super/subscriptions', { headers }).then(r => r.json()).catch(() => ({ success: false })),
+        fetch('/api/super/receptionists', { headers }).then(r => r.json()).catch(() => ({ success: false })),
       ]);
 
       if (cRes?.success && Array.isArray(cRes.data)) setClinics(cRes.data);
       if (chainRes?.success && Array.isArray(chainRes.data)) setChains(chainRes.data);
       if (subRes?.success && Array.isArray(subRes.data)) setSubscriptions(subRes.data);
+      if (recRes?.success && Array.isArray(recRes.data)) setReceptionists(recRes.data);
     } catch (err: any) {
       console.error('Failed to load super admin data:', err);
       showToast('error', 'Error loading administrative platform data');
@@ -159,6 +196,9 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
           address: newClinicAddress.trim() || undefined,
           city: newClinicCity.trim() || undefined,
           chainId: newClinicChainId || undefined,
+          receptionistName: newClinicReceptionistName.trim() || undefined,
+          receptionistPhoneNumber: newClinicReceptionistPhone.trim() || undefined,
+          receptionistPassword: newClinicReceptionistPassword.trim() || undefined,
         }),
       });
 
@@ -174,6 +214,9 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
         setNewClinicAddress('');
         setNewClinicCity('');
         setNewClinicChainId('');
+        setNewClinicReceptionistName('');
+        setNewClinicReceptionistPhone('');
+        setNewClinicReceptionistPassword('');
         loadData();
       } else {
         setClinicFormError(json.error?.message || json.message || 'Failed to create clinic facility');
@@ -182,6 +225,134 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
       setClinicFormError(err.message || 'Network request failed');
     } finally {
       setSubmittingClinic(false);
+    }
+  };
+
+  const handleSuperAssignReceptionist = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!assignClinic) return;
+    if (!recFormName.trim() || !recFormPhone.trim()) {
+      setRecFormError('Receptionist name and mobile number are required.');
+      return;
+    }
+
+    const cleanDigits = recFormPhone.replace(/\D/g, '').slice(-10);
+    if (cleanDigits.length !== 10) {
+      setRecFormError('Please enter a valid 10-digit mobile number.');
+      return;
+    }
+
+    setRecSubmitting(true);
+    setRecFormError('');
+
+    try {
+      const res = await fetch(`/api/clinics/${assignClinic.id}/receptionist`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: recFormName.trim(),
+          phoneNumber: cleanDigits,
+          password: recFormPassword.trim() || 'Password@123',
+        }),
+      });
+
+      const json = await res.json();
+      if (json.success) {
+        showToast('success', `Receptionist assigned to "${assignClinic.name}" successfully!`);
+        setAssignClinic(null);
+        setRecFormName('');
+        setRecFormPhone('');
+        setRecFormPassword('');
+        loadData();
+      } else {
+        setRecFormError(json.error?.message || json.message || 'Failed to assign receptionist');
+      }
+    } catch (err: any) {
+      setRecFormError(err.message || 'Network error while assigning receptionist');
+    } finally {
+      setRecSubmitting(false);
+    }
+  };
+
+  const handleSuperEditReceptionist = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editReceptionistTarget) return;
+    if (!recFormName.trim() || !recFormPhone.trim()) {
+      setRecFormError('Receptionist name and mobile number are required.');
+      return;
+    }
+
+    const cleanDigits = recFormPhone.replace(/\D/g, '').slice(-10);
+    if (cleanDigits.length !== 10) {
+      setRecFormError('Please enter a valid 10-digit mobile number.');
+      return;
+    }
+
+    setRecSubmitting(true);
+    setRecFormError('');
+
+    try {
+      const payload: any = {
+        name: recFormName.trim(),
+        phoneNumber: cleanDigits,
+      };
+      if (recFormPassword.trim()) {
+        payload.password = recFormPassword.trim();
+      }
+
+      const res = await fetch(`/api/clinics/${editReceptionistTarget.clinicId}/receptionist`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const json = await res.json();
+      if (json.success) {
+        showToast('success', `Receptionist updated for "${editReceptionistTarget.clinicName}"!`);
+        setEditReceptionistTarget(null);
+        setRecFormName('');
+        setRecFormPhone('');
+        setRecFormPassword('');
+        loadData();
+      } else {
+        setRecFormError(json.error?.message || json.message || 'Failed to update receptionist');
+      }
+    } catch (err: any) {
+      setRecFormError(err.message || 'Network error while updating receptionist');
+    } finally {
+      setRecSubmitting(false);
+    }
+  };
+
+  const handleSuperDeleteReceptionist = async () => {
+    if (!deleteReceptionistTarget) return;
+    setRecSubmitting(true);
+    try {
+      const res = await fetch(`/api/clinics/${deleteReceptionistTarget.clinicId}/receptionist`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const json = await res.json();
+      if (json.success) {
+        showToast('success', `Receptionist removed from "${deleteReceptionistTarget.clinicName}".`);
+        setDeleteReceptionistTarget(null);
+        loadData();
+      } else {
+        showToast('error', json.error?.message || json.message || 'Failed to remove receptionist');
+      }
+    } catch (err: any) {
+      showToast('error', err.message || 'Network error while removing receptionist');
+    } finally {
+      setRecSubmitting(false);
     }
   };
 
@@ -260,6 +431,15 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     c.slug.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (c.address && c.address.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
+  const filteredReceptionists = receptionists.filter(r => 
+    r.clinicName.toLowerCase().includes(recSearchQuery.toLowerCase()) ||
+    r.clinicSlug.toLowerCase().includes(recSearchQuery.toLowerCase()) ||
+    (r.receptionist && (
+      r.receptionist.name.toLowerCase().includes(recSearchQuery.toLowerCase()) ||
+      r.receptionist.phoneNumber.includes(recSearchQuery)
+    ))
   );
 
   return (
@@ -356,19 +536,19 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
 
         <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider">Total Clinicians</span>
-            <Users className="w-4 h-4 text-[#16A34A]" />
+            <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider">Receptionists</span>
+            <UserCheck className="w-4 h-4 text-teal-600" />
           </div>
           <div className="text-2xl font-black text-[#1E293B] mt-1">
-            {clinics.reduce((sum, c) => sum + (c.doctorsCount || 0), 0)}
+            {receptionists.filter(r => r.receptionist !== null).length} / {clinics.length}
           </div>
-          <span className="text-[10px] text-slate-400 font-semibold mt-0.5 block">Across Facilities</span>
+          <span className="text-[10px] text-teal-600 font-semibold mt-0.5 block">1 Per Clinic Max</span>
         </div>
       </div>
 
       {/* Tabs Switcher & Search Bar */}
       <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-sm mb-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        <div className="flex bg-[#F1F5F9] p-1 rounded-xl text-xs font-bold shrink-0">
+        <div className="flex flex-wrap bg-[#F1F5F9] p-1 rounded-xl text-xs font-bold shrink-0 gap-1">
           <button
             onClick={() => setActiveTab('CLINICS')}
             className={`px-3.5 py-1.5 rounded-lg transition ${
@@ -393,16 +573,28 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
           >
             SaaS Subscriptions ({subscriptions.length})
           </button>
+          <button
+            onClick={() => setActiveTab('RECEPTIONISTS')}
+            className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg transition ${
+              activeTab === 'RECEPTIONISTS' ? 'bg-white text-[#1E293B] shadow-sm' : 'text-[#64748B] hover:text-[#1E293B]'
+            }`}
+          >
+            <UserCheck className="w-3.5 h-3.5 text-teal-600" />
+            <span>Manage Receptionists ({receptionists.filter(r => r.receptionist !== null).length}/{receptionists.length || clinics.length})</span>
+          </button>
         </div>
 
-        {activeTab === 'CLINICS' && (
+        {(activeTab === 'CLINICS' || activeTab === 'RECEPTIONISTS') && (
           <div className="relative flex-1 sm:max-w-xs">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
             <input
               type="text"
-              placeholder="Search clinic or slug..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={activeTab === 'RECEPTIONISTS' ? "Search clinic or receptionist..." : "Search clinic or slug..."}
+              value={activeTab === 'RECEPTIONISTS' ? recSearchQuery : searchQuery}
+              onChange={(e) => {
+                if (activeTab === 'RECEPTIONISTS') setRecSearchQuery(e.target.value);
+                else setSearchQuery(e.target.value);
+              }}
               className="w-full bg-[#F8FAFC] border border-slate-200 rounded-xl pl-9 pr-3 py-1.5 text-xs font-semibold text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none"
             />
           </div>
@@ -588,6 +780,171 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
         </div>
       )}
 
+      {/* TAB 4: MANAGE RECEPTIONISTS */}
+      {activeTab === 'RECEPTIONISTS' && (
+        <div className="space-y-4">
+          {/* Header Banner */}
+          <div className="bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-200/80 rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center space-x-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-teal-600 text-white flex items-center justify-center font-bold text-xl shadow-md">
+                <UserCheck className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center space-x-2">
+                  <h2 className="text-lg font-black text-slate-800 tracking-tight">Facility Receptionists Directory</h2>
+                  <span className="bg-teal-100 text-teal-800 text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase border border-teal-300">
+                    Strict 1 Per Clinic Limit
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 mt-0.5 font-medium">
+                  Super Admin platform portal to assign, configure, or reassign front desk receptionists across all clinics.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-4 bg-white/80 border border-teal-200/60 rounded-xl px-4 py-2 shrink-0">
+              <div>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">Assigned Desks</span>
+                <span className="text-base font-black text-teal-700">
+                  {receptionists.filter(r => r.receptionist !== null).length} / {receptionists.length || clinics.length}
+                </span>
+              </div>
+              <div className="w-px h-8 bg-teal-200/60" />
+              <div>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">Unassigned</span>
+                <span className="text-base font-black text-amber-600">
+                  {receptionists.filter(r => r.receptionist === null).length}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Clinics & Receptionists Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredReceptionists.length === 0 ? (
+              <div className="col-span-full py-16 text-center text-xs text-[#64748B] bg-white rounded-2xl border border-slate-200">
+                No clinics or receptionists match "{recSearchQuery}".
+              </div>
+            ) : (
+              filteredReceptionists.map((item) => (
+                <div
+                  key={item.clinicId}
+                  className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm flex flex-col justify-between"
+                >
+                  <div>
+                    {/* Clinic Header */}
+                    <div className="flex items-start justify-between pb-3 border-b border-slate-100">
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <h3 className="font-black text-sm text-[#1E293B]">{item.clinicName}</h3>
+                        </div>
+                        <p className="text-[11px] text-slate-400 font-mono mt-0.5">
+                          slug: {item.clinicSlug} • phone: {item.clinicPhone}
+                        </p>
+                      </div>
+
+                      {item.receptionist ? (
+                        <span className="bg-emerald-50 text-emerald-700 text-[10px] px-2.5 py-0.5 rounded-full font-bold border border-emerald-200 shrink-0">
+                          1/1 Assigned
+                        </span>
+                      ) : (
+                        <span className="bg-amber-50 text-amber-700 text-[10px] px-2.5 py-0.5 rounded-full font-bold border border-amber-200 shrink-0">
+                          Unassigned
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Receptionist Body */}
+                    <div className="mt-4">
+                      {item.receptionist ? (
+                        <div className="bg-slate-50 border border-slate-200/70 rounded-xl p-3.5 space-y-2">
+                          <div className="flex items-center space-x-2.5">
+                            <div className="w-9 h-9 rounded-xl bg-teal-600 text-white flex items-center justify-center font-bold text-xs shadow-sm">
+                              {item.receptionist.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <div className="text-xs font-bold text-slate-800">{item.receptionist.name}</div>
+                              <div className="text-[11px] text-slate-500 font-mono flex items-center space-x-1">
+                                <Phone className="w-3 h-3 text-teal-600" />
+                                <span>{item.receptionist.phoneNumber}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-[10px] text-slate-400 flex items-center justify-between pt-1 border-t border-slate-200/60">
+                            <span>Role: RECEPTIONIST</span>
+                            <span>Assigned: {new Date(item.receptionist.createdAt).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="bg-amber-50/50 border border-amber-200/60 rounded-xl p-3.5 text-center">
+                          <p className="text-xs text-amber-900 font-semibold">No Front Desk Receptionist</p>
+                          <p className="text-[11px] text-amber-700/80 mt-0.5">
+                            Patients cannot be processed at counter until a receptionist is assigned.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-end space-x-2">
+                    {item.receptionist ? (
+                      <>
+                        <button
+                          onClick={() => {
+                            setEditReceptionistTarget({
+                              clinicId: item.clinicId,
+                              clinicName: item.clinicName,
+                              name: item.receptionist!.name,
+                              phone: item.receptionist!.phoneNumber.replace(/\D/g, '').slice(-10),
+                            });
+                            setRecFormName(item.receptionist!.name);
+                            setRecFormPhone(item.receptionist!.phoneNumber.replace(/\D/g, '').slice(-10));
+                            setRecFormPassword('');
+                            setRecFormError('');
+                          }}
+                          className="flex items-center space-x-1 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-xl transition"
+                        >
+                          <Edit3 className="w-3.5 h-3.5 text-slate-500" />
+                          <span>Edit</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setDeleteReceptionistTarget({
+                              clinicId: item.clinicId,
+                              clinicName: item.clinicName,
+                              name: item.receptionist!.name,
+                            });
+                          }}
+                          className="flex items-center space-x-1 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded-xl transition"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                          <span>Remove</span>
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setAssignClinic({ id: item.clinicId, name: item.clinicName });
+                          setRecFormName(`${item.clinicName} Receptionist`);
+                          setRecFormPhone('');
+                          setRecFormPassword('Password@123');
+                          setRecFormError('');
+                        }}
+                        className="flex items-center space-x-1.5 text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 px-3.5 py-1.5 rounded-xl shadow-sm transition active:scale-95"
+                      >
+                        <UserPlus className="w-3.5 h-3.5" />
+                        <span>Assign Receptionist</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
       {/* MODAL 1: PROVISION NEW CLINIC */}
       {showClinicModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
@@ -704,6 +1061,45 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                   onChange={(e) => setNewClinicAddress(e.target.value)}
                   className="w-full bg-[#F8FAFC] border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none"
                 />
+              </div>
+
+              {/* Optional Front Desk Receptionist Account */}
+              <div className="bg-teal-50/70 border border-teal-200/80 rounded-2xl p-3.5 space-y-2.5">
+                <div className="flex items-center space-x-2">
+                  <UserCheck className="w-4 h-4 text-teal-600" />
+                  <span className="text-xs font-bold text-teal-900">Front Desk Receptionist (Optional • 1 Limit)</span>
+                </div>
+                <p className="text-[11px] text-teal-700/90 leading-relaxed">
+                  Optionally provision the clinic's dedicated front desk receptionist now, or assign later via the Receptionists tab.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-600 block mb-1">Receptionist Name</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Pooja Sharma"
+                      value={newClinicReceptionistName}
+                      onChange={(e) => setNewClinicReceptionistName(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-600 block mb-1">Mobile Number (10 Digits)</label>
+                    <div className="flex items-center">
+                      <span className="bg-slate-100 border border-r-0 border-slate-200 text-slate-500 text-[11px] px-2.5 py-1.5 rounded-l-xl font-bold font-mono">
+                        +91
+                      </span>
+                      <input
+                        type="tel"
+                        maxLength={10}
+                        placeholder="9876543210"
+                        value={newClinicReceptionistPhone}
+                        onChange={(e) => setNewClinicReceptionistPhone(e.target.value.replace(/\D/g, ''))}
+                        className="w-full bg-white border border-slate-200 rounded-r-xl px-2.5 py-1.5 text-xs font-mono font-semibold text-slate-800 focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="pt-3 flex items-center justify-end space-x-2 border-t border-slate-100">
@@ -870,6 +1266,231 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                 className="px-5 py-2 text-xs font-bold bg-[#0284C7] hover:bg-[#0369A1] text-white rounded-xl shadow-md transition disabled:opacity-50"
               >
                 {submittingUpgrade ? 'Updating...' : 'Save Plan'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 4: SUPER ADMIN ASSIGN RECEPTIONIST */}
+      {assignClinic && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl border border-slate-100">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-8 h-8 rounded-xl bg-teal-600 text-white flex items-center justify-center font-bold shadow-sm">
+                  <UserPlus className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-black text-sm text-[#1E293B]">Assign Receptionist</h3>
+                  <p className="text-[11px] text-slate-500">{assignClinic.name}</p>
+                </div>
+              </div>
+              <button onClick={() => setAssignClinic(null)} className="p-1 hover:bg-slate-100 text-slate-400 rounded-lg">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {recFormError && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs flex items-center space-x-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{recFormError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSuperAssignReceptionist} className="mt-4 space-y-3.5">
+              <div>
+                <label className="text-xs font-bold text-[#64748B] block mb-1">
+                  Receptionist Full Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Pooja Sharma"
+                  value={recFormName}
+                  onChange={(e) => setRecFormName(e.target.value)}
+                  className="w-full bg-[#F8FAFC] border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-[#1E293B] focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-[#64748B] block mb-1">
+                  Mobile Number (10 Digits) <span className="text-red-500">*</span>
+                </label>
+                <div className="flex items-center">
+                  <span className="bg-slate-100 border border-r-0 border-slate-200 text-slate-600 text-xs px-3 py-2 rounded-l-xl font-bold font-mono">
+                    +91
+                  </span>
+                  <input
+                    type="tel"
+                    required
+                    maxLength={10}
+                    placeholder="9876543210"
+                    value={recFormPhone}
+                    onChange={(e) => setRecFormPhone(e.target.value.replace(/\D/g, ''))}
+                    className="w-full bg-[#F8FAFC] border border-slate-200 rounded-r-xl px-3.5 py-2 text-xs font-mono font-semibold text-[#1E293B] focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                  />
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Used by the receptionist to login via OTP or password at counter desk.
+                </p>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-[#64748B] block mb-1">
+                  Initial Password <span className="text-slate-400 font-normal">(Optional, default: Password@123)</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Password@123"
+                  value={recFormPassword}
+                  onChange={(e) => setRecFormPassword(e.target.value)}
+                  className="w-full bg-[#F8FAFC] border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-mono font-semibold text-[#1E293B] focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="pt-3 flex items-center justify-end space-x-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setAssignClinic(null)}
+                  className="px-4 py-2 text-xs font-bold text-[#64748B] hover:bg-slate-100 rounded-xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={recSubmitting}
+                  className="px-5 py-2 text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white rounded-xl shadow-md transition disabled:opacity-50"
+                >
+                  {recSubmitting ? 'Assigning...' : 'Assign Receptionist'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 5: SUPER ADMIN EDIT RECEPTIONIST */}
+      {editReceptionistTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl border border-slate-100">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-8 h-8 rounded-xl bg-teal-600 text-white flex items-center justify-center font-bold shadow-sm">
+                  <Edit3 className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-black text-sm text-[#1E293B]">Edit Receptionist Profile</h3>
+                  <p className="text-[11px] text-slate-500">{editReceptionistTarget.clinicName}</p>
+                </div>
+              </div>
+              <button onClick={() => setEditReceptionistTarget(null)} className="p-1 hover:bg-slate-100 text-slate-400 rounded-lg">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {recFormError && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs flex items-center space-x-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{recFormError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSuperEditReceptionist} className="mt-4 space-y-3.5">
+              <div>
+                <label className="text-xs font-bold text-[#64748B] block mb-1">
+                  Full Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={recFormName}
+                  onChange={(e) => setRecFormName(e.target.value)}
+                  className="w-full bg-[#F8FAFC] border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-[#1E293B] focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-[#64748B] block mb-1">
+                  Mobile Number (10 Digits) <span className="text-red-500">*</span>
+                </label>
+                <div className="flex items-center">
+                  <span className="bg-slate-100 border border-r-0 border-slate-200 text-slate-600 text-xs px-3 py-2 rounded-l-xl font-bold font-mono">
+                    +91
+                  </span>
+                  <input
+                    type="tel"
+                    required
+                    maxLength={10}
+                    value={recFormPhone}
+                    onChange={(e) => setRecFormPhone(e.target.value.replace(/\D/g, ''))}
+                    className="w-full bg-[#F8FAFC] border border-slate-200 rounded-r-xl px-3.5 py-2 text-xs font-mono font-semibold text-[#1E293B] focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-[#64748B] block mb-1">
+                  Reset Password <span className="text-slate-400 font-normal">(Leave blank to keep current)</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter new password"
+                  value={recFormPassword}
+                  onChange={(e) => setRecFormPassword(e.target.value)}
+                  className="w-full bg-[#F8FAFC] border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-mono font-semibold text-[#1E293B] focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="pt-3 flex items-center justify-end space-x-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setEditReceptionistTarget(null)}
+                  className="px-4 py-2 text-xs font-bold text-[#64748B] hover:bg-slate-100 rounded-xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={recSubmitting}
+                  className="px-5 py-2 text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white rounded-xl shadow-md transition disabled:opacity-50"
+                >
+                  {recSubmitting ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 6: SUPER ADMIN REMOVE RECEPTIONIST CONFIRMATION */}
+      {deleteReceptionistTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl border border-slate-100 text-center">
+            <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-600 mx-auto flex items-center justify-center mb-4">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <h3 className="text-base font-black text-slate-800">Remove Receptionist?</h3>
+            <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+              Remove <strong className="text-slate-800">{deleteReceptionistTarget.name}</strong> as front desk receptionist for <strong className="text-slate-800">{deleteReceptionistTarget.clinicName}</strong>?
+              They will immediately lose counter desk access. A new receptionist can be assigned anytime.
+            </p>
+
+            <div className="mt-6 flex items-center justify-center space-x-2.5">
+              <button
+                type="button"
+                onClick={() => setDeleteReceptionistTarget(null)}
+                className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSuperDeleteReceptionist}
+                disabled={recSubmitting}
+                className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-md transition disabled:opacity-50"
+              >
+                {recSubmitting ? 'Removing...' : 'Confirm Remove'}
               </button>
             </div>
           </div>

@@ -23,13 +23,15 @@ import {
   LayoutDashboard,
   DollarSign,
   Monitor,
-  Volume2
+  Volume2,
+  UserCheck
 } from 'lucide-react';
 import { ClinicAnalytics } from './ClinicAnalytics';
 import { DoctorManagement } from './DoctorManagement';
 import { ServiceQueueManagement } from './ServiceQueueManagement';
 import { ClinicPricingConfig } from './ClinicPricingConfig';
 import { VoiceAnnouncementConfig } from './VoiceAnnouncementConfig';
+import { ReceptionistManagement } from './ReceptionistManagement';
 import { VoiceAnnouncementMode } from '@queueapp/shared';
 
 interface QueueItem {
@@ -96,7 +98,7 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
   const [selectedQueueId, setSelectedQueueId] = useState<string>('');
   
   // Navigation tabs within Clinic Console
-  const [activeConsoleTab, setActiveConsoleTab] = useState<'QUEUE' | 'DOCTORS' | 'SERVICES' | 'ANALYTICS' | 'PRICING' | 'VOICE'>('QUEUE');
+  const [activeConsoleTab, setActiveConsoleTab] = useState<'QUEUE' | 'DOCTORS' | 'SERVICES' | 'RECEPTIONIST' | 'ANALYTICS' | 'PRICING' | 'VOICE'>('QUEUE');
   
   // Active queue state
   const [currentServing, setCurrentServing] = useState<QueueItem | null>(null);
@@ -441,6 +443,15 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
                 <span>Services & Queues</span>
               </button>
               <button
+                onClick={() => setActiveConsoleTab('RECEPTIONIST')}
+                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition ${
+                  activeConsoleTab === 'RECEPTIONIST' ? 'bg-white text-[#1E293B] shadow-sm' : 'text-[#64748B] hover:text-[#1E293B]'
+                }`}
+              >
+                <UserCheck className="w-3.5 h-3.5 text-teal-600" />
+                <span>Receptionist Desk</span>
+              </button>
+              <button
                 onClick={() => setActiveConsoleTab('ANALYTICS')}
                 className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition ${
                   activeConsoleTab === 'ANALYTICS' ? 'bg-white text-[#1E293B] shadow-sm' : 'text-[#64748B] hover:text-[#1E293B]'
@@ -548,6 +559,15 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
               .then(res => { if (res.success && res.data) setQueues(res.data); })
               .catch(console.error);
           }} 
+        />
+      )}
+
+      {isOwnerOrAdmin && activeConsoleTab === 'RECEPTIONIST' && (
+        <ReceptionistManagement 
+          clinicId={clinicId} 
+          clinicName={activeClinicObj?.name || currentUser?.clinicName || clinics.find(c => c.id === clinicId)?.name} 
+          token={token} 
+          currentUser={currentUser} 
         />
       )}
 
