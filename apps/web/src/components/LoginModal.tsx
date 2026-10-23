@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { LogIn, KeyRound, Phone, CheckCircle, AlertCircle, X, Sparkles, UserCheck, Shield, Lock, Eye, EyeOff, Send } from 'lucide-react';
+import { LogIn, KeyRound, Phone, CheckCircle, AlertCircle, X, Sparkles, UserCheck, Shield, Lock, Eye, EyeOff, Send, Monitor } from 'lucide-react';
 
-export type LoginProfile = 'PATIENT' | 'RECEPTIONIST' | 'CLINIC_ADMIN' | 'SUPER_ADMIN' | 'GENERAL';
+export type LoginProfile = 'PATIENT' | 'RECEPTIONIST' | 'CLINIC_ADMIN' | 'SUPER_ADMIN' | 'GENERAL' | 'TV_VIEWER';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -19,7 +19,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   // Set default 10-digit phone according to selected profile
   const getDefaultPhone10 = () => {
     if (profileType === 'CLINIC_ADMIN') return '9876500002';
-    if (profileType === 'RECEPTIONIST') return '9876500001';
+    if (profileType === 'RECEPTIONIST' || profileType === 'TV_VIEWER') return '9876500001';
     if (profileType === 'PATIENT') return '9876511111';
     if (profileType === 'SUPER_ADMIN') return '9999999999';
     return '9876511111';
@@ -34,6 +34,14 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [telegramBotUsername, setTelegramBotUsername] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setPhone10(getDefaultPhone10());
+      setOtp('');
+      setErrorMsg(null);
+    }
+  }, [isOpen, profileType]);
 
   useEffect(() => {
     fetch('/api/auth/telegram/info', {
@@ -66,6 +74,14 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           title: 'Receptionist Counter Login',
           subtitle: 'Front Desk Queue Operator, Call Next, Tokens & TV Display Access',
           icon: <UserCheck className="w-5 h-5" />,
+          accentColor: '#0F766E',
+          bgColor: '#CCFBF1',
+        };
+      case 'TV_VIEWER':
+        return {
+          title: 'TV View Kiosk Login',
+          subtitle: 'Waiting Hall Display Screen (Uses Receptionist Credentials)',
+          icon: <Monitor className="w-5 h-5" />,
           accentColor: '#0F766E',
           bgColor: '#CCFBF1',
         };
@@ -108,7 +124,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const quickAccounts = [
     ...(profileType === 'CLINIC_ADMIN'
       ? allQuickAccounts.filter((a) => a.role === 'CLINIC_ADMIN')
-      : profileType === 'RECEPTIONIST'
+      : profileType === 'RECEPTIONIST' || profileType === 'TV_VIEWER'
       ? allQuickAccounts.filter((a) => a.role === 'RECEPTIONIST')
       : profileType === 'PATIENT'
       ? allQuickAccounts.filter((a) => a.role === 'PATIENT')
@@ -117,7 +133,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       : []),
     ...allQuickAccounts.filter((a) => {
       if (profileType === 'CLINIC_ADMIN') return a.role !== 'CLINIC_ADMIN';
-      if (profileType === 'RECEPTIONIST') return a.role !== 'RECEPTIONIST';
+      if (profileType === 'RECEPTIONIST' || profileType === 'TV_VIEWER') return a.role !== 'RECEPTIONIST';
       if (profileType === 'PATIENT') return a.role !== 'PATIENT';
       if (profileType === 'SUPER_ADMIN') return a.role !== 'SUPER_ADMIN';
       return true;
@@ -213,7 +229,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         const user = { ...data.data.user, isNewUser: Boolean(data.data.isNewUser) };
         const isClinicStaff = user.role === 'RECEPTIONIST' || user.role === 'CLINIC_ADMIN' || user.role === 'SUPER_ADMIN';
 
-        if (profileType === 'RECEPTIONIST' && !isClinicStaff) {
+        if ((profileType === 'RECEPTIONIST' || profileType === 'TV_VIEWER') && !isClinicStaff) {
           setErrorMsg(
             'This phone number is registered as a Patient, not a Clinic account. Clinics can log in only with credentials provisioned by Super Admin. Please switch to Patient Login.'
           );
@@ -283,7 +299,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         const user = { ...data.data.user, isNewUser: Boolean(data.data.isNewUser) };
         const isClinicStaff = user.role === 'RECEPTIONIST' || user.role === 'CLINIC_ADMIN' || user.role === 'SUPER_ADMIN';
 
-        if (profileType === 'RECEPTIONIST' && !isClinicStaff) {
+        if ((profileType === 'RECEPTIONIST' || profileType === 'TV_VIEWER') && !isClinicStaff) {
           setErrorMsg(
             'This phone number is registered as a Patient, not a Clinic account. Clinics can log in only with credentials provisioned by Super Admin. Please switch to Patient Login.'
           );
@@ -343,7 +359,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         const user = { ...data.data.user, isNewUser: Boolean(data.data.isNewUser) };
         const isClinicStaff = user.role === 'RECEPTIONIST' || user.role === 'CLINIC_ADMIN' || user.role === 'SUPER_ADMIN';
 
-        if (profileType === 'RECEPTIONIST' && !isClinicStaff) {
+        if ((profileType === 'RECEPTIONIST' || profileType === 'TV_VIEWER') && !isClinicStaff) {
           setErrorMsg(
             'This phone number is registered as a Patient, not a Clinic account. Clinics can log in only with credentials provisioned by Super Admin. Please switch to Patient Login.'
           );
