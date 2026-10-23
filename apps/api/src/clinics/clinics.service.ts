@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateClinicDto, UpdateClinicDto, UserRole } from '@queueapp/shared';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class ClinicsService {
@@ -82,7 +83,7 @@ export class ClinicsService {
       throw new ConflictException(`Clinic slug "${dto.slug}" already exists. Please choose another.`);
     }
 
-    return this.prisma.clinic.create({
+    const clinic = await this.prisma.clinic.create({
       data: {
         name: dto.name,
         slug: dto.slug,
@@ -96,6 +97,63 @@ export class ClinicsService {
         voiceAnnouncementMode: dto.voiceAnnouncementMode || 'TOKEN_PATIENT_DOCTOR_ROOM',
       },
     });
+
+    // Auto-provision Clinic Admin User account and link ClinicStaff
+    if (dto.phoneNumber) {
+      const cleanPhone = dto.phoneNumber.startsWith('+91')
+        ? dto.phoneNumber
+        : `+91${dto.phoneNumber.replace(/\D/g, '').slice(-10)}`;
+
+      const defaultPasswordHash = await bcrypt.hash('Password@123', 10);
+
+      let adminUser = await this.prisma.user.findFirst({
+        where: {
+          OR: [
+            { phoneNumber: dto.phoneNumber },
+            { phoneNumber: cleanPhone },
+          ],
+        },
+      });
+
+      if (!adminUser) {
+        adminUser = await this.prisma.user.create({
+          data: {
+            phoneNumber: cleanPhone,
+            name: `${dto.name} Admin`,
+            email: dto.email || null,
+            passwordHash: defaultPasswordHash,
+            role: UserRole.CLINIC_ADMIN,
+          },
+        });
+      } else if (adminUser.role === UserRole.PATIENT) {
+        adminUser = await this.prisma.user.update({
+          where: { id: adminUser.id },
+          data: {
+            role: UserRole.CLINIC_ADMIN,
+            name: adminUser.name.startsWith('Patient ') ? `${dto.name} Admin` : adminUser.name,
+          },
+        });
+      }
+
+      await this.prisma.clinicStaff.upsert({
+        where: {
+          clinicId_userId: {
+            clinicId: clinic.id,
+            userId: adminUser.id,
+          },
+        },
+        create: {
+          clinicId: clinic.id,
+          userId: adminUser.id,
+          role: UserRole.CLINIC_ADMIN,
+        },
+        update: {
+          role: UserRole.CLINIC_ADMIN,
+        },
+      });
+    }
+
+    return clinic;
   }
 
   /**

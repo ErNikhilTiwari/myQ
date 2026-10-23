@@ -101,6 +101,22 @@ export class AuthService {
   }
 
   /**
+   * Helper to find if a phone number belongs to a clinic provisioned by Super Admin
+   */
+  private async findMatchingClinicForPhone(phone: string) {
+    const clean10 = phone.replace(/\D/g, '').slice(-10);
+    return this.prisma.clinic.findFirst({
+      where: {
+        OR: [
+          { phoneNumber: phone },
+          { phoneNumber: clean10 },
+          { phoneNumber: `+91${clean10}` },
+        ],
+      },
+    });
+  }
+
+  /**
    * Verify OTP and return authenticated user + JWT tokens
    */
   async verifyOtp(dto: VerifyOtpRequestDto): Promise<VerifyOtpResponseDto> {
@@ -170,18 +186,72 @@ export class AuthService {
       },
     });
 
+    const matchingClinic = await this.findMatchingClinicForPhone(phone);
     let isNewUser = false;
 
     if (!user) {
-      isNewUser = true;
-      user = await this.prisma.user.create({
-        data: {
-          phoneNumber: phone,
-          name: dto.name?.trim() || `Patient ${phone.slice(-4)}`,
-          role: UserRole.PATIENT,
-          patientProfile: {
-            create: {},
+      if (matchingClinic) {
+        // Phone number belongs to a clinic provisioned by Super Admin: Auto-provision as CLINIC_ADMIN
+        const defaultPasswordHash = await bcrypt.hash('Password@123', 10);
+        user = await this.prisma.user.create({
+          data: {
+            phoneNumber: phone,
+            name: `${matchingClinic.name} Admin`,
+            role: UserRole.CLINIC_ADMIN,
+            passwordHash: defaultPasswordHash,
+            staffProfiles: {
+              create: {
+                clinicId: matchingClinic.id,
+                role: UserRole.CLINIC_ADMIN,
+              },
+            },
           },
+          include: {
+            staffProfiles: true,
+            patientProfile: true,
+          },
+        });
+      } else {
+        isNewUser = true;
+        user = await this.prisma.user.create({
+          data: {
+            phoneNumber: phone,
+            name: dto.name?.trim() || `Patient ${phone.slice(-4)}`,
+            role: UserRole.PATIENT,
+            patientProfile: {
+              create: {},
+            },
+          },
+          include: {
+            staffProfiles: true,
+            patientProfile: true,
+          },
+        });
+      }
+    } else if (matchingClinic && (user.role === UserRole.PATIENT || user.staffProfiles.length === 0)) {
+      // Existing user was registered as PATIENT but number belongs to a clinic: Upgrade to CLINIC_ADMIN
+      await this.prisma.clinicStaff.upsert({
+        where: {
+          clinicId_userId: {
+            clinicId: matchingClinic.id,
+            userId: user.id,
+          },
+        },
+        create: {
+          clinicId: matchingClinic.id,
+          userId: user.id,
+          role: UserRole.CLINIC_ADMIN,
+        },
+        update: {
+          role: UserRole.CLINIC_ADMIN,
+        },
+      });
+
+      user = await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          role: UserRole.CLINIC_ADMIN,
+          name: user.name.startsWith('Patient ') ? `${matchingClinic.name} Admin` : user.name,
         },
         include: {
           staffProfiles: true,
@@ -250,28 +320,81 @@ export class AuthService {
       dto.password === 'Password@123' ||
       dto.password === 'admin123';
 
+    const matchingClinic = await this.findMatchingClinicForPhone(phone);
     let isNewUser = false;
 
     if (!user) {
-      // Auto-register new user as PATIENT with this password
-      isNewUser = true;
       const hashedPassword = await bcrypt.hash(dto.password, 10);
-      user = await this.prisma.user.create({
-        data: {
-          phoneNumber: phone,
-          name: dto.name?.trim() || `Patient ${phone.slice(-4)}`,
-          passwordHash: hashedPassword,
-          role: UserRole.PATIENT,
-          patientProfile: {
-            create: {},
+      if (matchingClinic) {
+        user = await this.prisma.user.create({
+          data: {
+            phoneNumber: phone,
+            name: `${matchingClinic.name} Admin`,
+            passwordHash: hashedPassword,
+            role: UserRole.CLINIC_ADMIN,
+            staffProfiles: {
+              create: {
+                clinicId: matchingClinic.id,
+                role: UserRole.CLINIC_ADMIN,
+              },
+            },
           },
-        },
-        include: {
-          staffProfiles: true,
-          patientProfile: true,
-        },
-      });
+          include: {
+            staffProfiles: true,
+            patientProfile: true,
+          },
+        });
+      } else {
+        // Auto-register new user as PATIENT with this password
+        isNewUser = true;
+        user = await this.prisma.user.create({
+          data: {
+            phoneNumber: phone,
+            name: dto.name?.trim() || `Patient ${phone.slice(-4)}`,
+            passwordHash: hashedPassword,
+            role: UserRole.PATIENT,
+            patientProfile: {
+              create: {},
+            },
+          },
+          include: {
+            staffProfiles: true,
+            patientProfile: true,
+          },
+        });
+      }
     } else {
+      if (matchingClinic && (user.role === UserRole.PATIENT || user.staffProfiles.length === 0)) {
+        await this.prisma.clinicStaff.upsert({
+          where: {
+            clinicId_userId: {
+              clinicId: matchingClinic.id,
+              userId: user.id,
+            },
+          },
+          create: {
+            clinicId: matchingClinic.id,
+            userId: user.id,
+            role: UserRole.CLINIC_ADMIN,
+          },
+          update: {
+            role: UserRole.CLINIC_ADMIN,
+          },
+        });
+
+        user = await this.prisma.user.update({
+          where: { id: user.id },
+          data: {
+            role: UserRole.CLINIC_ADMIN,
+            name: user.name.startsWith('Patient ') ? `${matchingClinic.name} Admin` : user.name,
+          },
+          include: {
+            staffProfiles: true,
+            patientProfile: true,
+          },
+        });
+      }
+
       // Existing user: check password match
       let isValidPassword = false;
 
