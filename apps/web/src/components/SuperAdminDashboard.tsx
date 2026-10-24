@@ -131,6 +131,8 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
   const [receptionists, setReceptionists] = useState<ClinicReceptionistSummaryData[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [recSearchQuery, setRecSearchQuery] = useState('');
+  const [clinicChainFilter, setClinicChainFilter] = useState('ALL');
+  const [clinicCityFilter, setClinicCityFilter] = useState('ALL');
   const [loading, setLoading] = useState(false);
 
   // New Clinic Modal
@@ -505,11 +507,32 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     }
   };
 
-  const filteredClinics = clinics.filter(c => 
-    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.slug.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (c.address && c.address.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const uniqueCities = Array.from(
+    new Set(clinics.map((c) => c.city).filter((city): city is string => Boolean(city && city.trim())))
+  ).sort();
+
+  const filteredClinics = clinics.filter((c) => {
+    const q = searchQuery.trim().toLowerCase();
+    const cleanQDigits = q.replace(/\D/g, '');
+    const cleanPhoneDigits = c.phoneNumber ? c.phoneNumber.replace(/\D/g, '') : '';
+
+    const matchesQuery = !q || Boolean(
+      c.name.toLowerCase().includes(q) ||
+      c.slug.toLowerCase().includes(q) ||
+      (c.city && c.city.toLowerCase().includes(q)) ||
+      (c.address && c.address.toLowerCase().includes(q)) ||
+      (c.email && c.email.toLowerCase().includes(q)) ||
+      (cleanQDigits.length > 0 && cleanPhoneDigits.includes(cleanQDigits)) ||
+      c.phoneNumber.includes(q)
+    );
+
+    const matchesChain = clinicChainFilter === 'ALL' ||
+      (clinicChainFilter === 'STANDALONE' ? !c.chainId : c.chainId === clinicChainFilter);
+
+    const matchesCity = clinicCityFilter === 'ALL' || c.city === clinicCityFilter;
+
+    return matchesQuery && matchesChain && matchesCity;
+  });
 
   const filteredReceptionists = receptionists.filter(r => 
     r.clinicName.toLowerCase().includes(recSearchQuery.toLowerCase()) ||
@@ -662,17 +685,14 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
           </button>
         </div>
 
-        {(activeTab === 'CLINICS' || activeTab === 'RECEPTIONISTS') && (
+        {activeTab === 'RECEPTIONISTS' && (
           <div className="relative flex-1 sm:max-w-xs">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
             <input
               type="text"
-              placeholder={activeTab === 'RECEPTIONISTS' ? "Search clinic or receptionist..." : "Search clinic or slug..."}
-              value={activeTab === 'RECEPTIONISTS' ? recSearchQuery : searchQuery}
-              onChange={(e) => {
-                if (activeTab === 'RECEPTIONISTS') setRecSearchQuery(e.target.value);
-                else setSearchQuery(e.target.value);
-              }}
+              placeholder="Search clinic or receptionist..."
+              value={recSearchQuery}
+              onChange={(e) => setRecSearchQuery(e.target.value)}
               className="w-full bg-[#F8FAFC] border border-slate-200 rounded-xl pl-9 pr-3 py-1.5 text-xs font-semibold text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none"
             />
           </div>
@@ -681,68 +701,185 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
 
       {/* TAB 1: CLINICS DIRECTORY */}
       {activeTab === 'CLINICS' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredClinics.length === 0 ? (
-            <div className="col-span-full py-16 text-center text-xs text-[#64748B] bg-white rounded-2xl border border-slate-200">
-              No clinics match your query. Click "Provision New Clinic" to add one.
+        <div className="space-y-4">
+          {/* Clinic Directory Search & Filter Controls */}
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+              <input
+                type="text"
+                placeholder="Search clinics by name, slug, phone, city, or address..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-[#F8FAFC] border border-slate-200 rounded-xl pl-10 pr-9 py-2 text-xs font-semibold text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none placeholder:text-slate-400"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 p-0.5 rounded-full hover:bg-slate-200 transition"
+                  title="Clear search"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
-          ) : (
-            filteredClinics.map((clinic) => (
-              <div 
-                key={clinic.id}
-                className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="font-extrabold text-[#1E293B] text-base">{clinic.name}</h3>
-                      <span className="text-[11px] font-mono text-[#0284C7] bg-[#E0F2FE] px-2 py-0.5 rounded-md font-semibold">
-                        /{clinic.slug}
-                      </span>
-                    </div>
 
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#DCFCE7] text-[#16A34A]">
-                      Active
-                    </span>
-                  </div>
+            <div className="flex flex-wrap items-center gap-2.5">
+              {chains.length > 0 && (
+                <select
+                  value={clinicChainFilter}
+                  onChange={(e) => setClinicChainFilter(e.target.value)}
+                  className="bg-[#F8FAFC] border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-[#0284C7] focus:outline-none"
+                >
+                  <option value="ALL">All Hospital Chains</option>
+                  <option value="STANDALONE">Standalone Clinics Only</option>
+                  {chains.map((chain) => (
+                    <option key={chain.id} value={chain.id}>
+                      {chain.name} ({chain.code})
+                    </option>
+                  ))}
+                </select>
+              )}
 
-                  <div className="mt-4 space-y-1.5 text-xs text-[#64748B]">
-                    {clinic.address && (
-                      <div className="flex items-center space-x-1.5">
-                        <MapPin className="w-3.5 h-3.5 shrink-0 text-slate-400" />
-                        <span className="truncate">{clinic.address}</span>
-                      </div>
-                    )}
-                    <div className="flex items-center space-x-1.5">
-                      <Phone className="w-3.5 h-3.5 shrink-0 text-slate-400" />
-                      <span>{clinic.phoneNumber}</span>
-                    </div>
-                  </div>
+              {uniqueCities.length > 0 && (
+                <select
+                  value={clinicCityFilter}
+                  onChange={(e) => setClinicCityFilter(e.target.value)}
+                  className="bg-[#F8FAFC] border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-[#0284C7] focus:outline-none"
+                >
+                  <option value="ALL">All Cities</option>
+                  {uniqueCities.map((city) => (
+                    <option key={city} value={city}>
+                      📍 {city}
+                    </option>
+                  ))}
+                </select>
+              )}
 
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                    <span className="text-slate-500 font-medium">Physicians: <b className="text-[#1E293B]">{clinic.doctorsCount || 0}</b></span>
-                    <span className="text-slate-500 font-medium">Services: <b className="text-[#1E293B]">{clinic.servicesCount || 0}</b></span>
-                  </div>
-                </div>
+              {(searchQuery || clinicChainFilter !== 'ALL' || clinicCityFilter !== 'ALL') && (
+                <button
+                  onClick={() => {
+                    setSearchQuery('');
+                    setClinicChainFilter('ALL');
+                    setClinicCityFilter('ALL');
+                  }}
+                  className="text-xs font-bold text-[#0284C7] hover:text-[#0369A1] px-2.5 py-1.5 rounded-xl hover:bg-sky-50 transition border border-transparent hover:border-sky-200"
+                >
+                  Reset Filters
+                </button>
+              )}
 
-                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-[10px] text-slate-400 font-mono">
-                    ID: {clinic.id.slice(0, 8)}...
-                  </span>
+              <span className="text-xs font-bold text-slate-600 bg-slate-100 px-3 py-2 rounded-xl border border-slate-200 shrink-0">
+                {filteredClinics.length} of {clinics.length} Clinics
+              </span>
+            </div>
+          </div>
 
-                  {onSelectClinicAsStaff && (
-                    <button
-                      onClick={() => onSelectClinicAsStaff(clinic.id)}
-                      className="text-xs font-bold text-[#0284C7] hover:underline flex items-center space-x-1"
-                    >
-                      <span>Open Desk</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </button>
-                  )}
-                </div>
+          {/* Clinics Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredClinics.length === 0 ? (
+              <div className="col-span-full py-16 text-center text-xs text-[#64748B] bg-white rounded-2xl border border-slate-200 p-6">
+                <Search className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                <p className="font-semibold text-slate-700 text-sm">No clinics match your query</p>
+                <p className="text-slate-400 mt-1">
+                  {(searchQuery || clinicChainFilter !== 'ALL' || clinicCityFilter !== 'ALL')
+                    ? "Try adjusting your search terms or clearing the selected filters."
+                    : "No clinics have been provisioned yet. Click \"Provision New Clinic\" above to create one."}
+                </p>
+                {(searchQuery || clinicChainFilter !== 'ALL' || clinicCityFilter !== 'ALL') && (
+                  <button
+                    onClick={() => {
+                      setSearchQuery('');
+                      setClinicChainFilter('ALL');
+                      setClinicCityFilter('ALL');
+                    }}
+                    className="mt-3 inline-flex items-center space-x-1.5 bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-bold px-3 py-1.5 rounded-xl transition"
+                  >
+                    <span>Clear Search & Filters</span>
+                  </button>
+                )}
               </div>
-            ))
-          )}
+            ) : (
+              filteredClinics.map((clinic) => {
+                const chain = clinic.chainId ? chains.find((c) => c.id === clinic.chainId) : null;
+                return (
+                  <div 
+                    key={clinic.id}
+                    className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow"
+                  >
+                    <div>
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="font-extrabold text-[#1E293B] text-base">{clinic.name}</h3>
+                          <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                            <span className="text-[11px] font-mono text-[#0284C7] bg-[#E0F2FE] px-2 py-0.5 rounded-md font-semibold">
+                              /{clinic.slug}
+                            </span>
+                            {chain && (
+                              <span className="inline-flex items-center space-x-1 text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
+                                <Layers className="w-3 h-3 text-amber-600" />
+                                <span>{chain.name}</span>
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#DCFCE7] text-[#16A34A]">
+                          Active
+                        </span>
+                      </div>
+
+                      <div className="mt-4 space-y-1.5 text-xs text-[#64748B]">
+                        {clinic.city && (
+                          <div className="flex items-center space-x-1.5 text-slate-700 font-semibold">
+                            <MapPin className="w-3.5 h-3.5 shrink-0 text-[#0284C7]" />
+                            <span>{clinic.city}</span>
+                          </div>
+                        )}
+                        {clinic.address && (
+                          <div className="flex items-center space-x-1.5">
+                            <span className="text-slate-400 text-xs shrink-0 pl-5 truncate">{clinic.address}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center space-x-1.5">
+                          <Phone className="w-3.5 h-3.5 shrink-0 text-slate-400" />
+                          <span>{clinic.phoneNumber}</span>
+                        </div>
+                        {clinic.email && (
+                          <div className="flex items-center space-x-1.5">
+                            <Mail className="w-3.5 h-3.5 shrink-0 text-slate-400" />
+                            <span className="truncate">{clinic.email}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                        <span className="text-slate-500 font-medium">Physicians: <b className="text-[#1E293B]">{clinic.doctorsCount || 0}</b></span>
+                        <span className="text-slate-500 font-medium">Services: <b className="text-[#1E293B]">{clinic.servicesCount || 0}</b></span>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                      <span className="text-[10px] text-slate-400 font-mono">
+                        ID: {clinic.id.slice(0, 8)}...
+                      </span>
+
+                      {onSelectClinicAsStaff && (
+                        <button
+                          onClick={() => onSelectClinicAsStaff(clinic.id)}
+                          className="text-xs font-bold text-[#0284C7] hover:underline flex items-center space-x-1"
+                        >
+                          <span>Open Desk</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
       )}
 
