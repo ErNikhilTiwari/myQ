@@ -21,6 +21,7 @@ export interface BookAppointmentDto {
   slotTime: string; // ISO 8601 string
   bookingType?: BookingType; // Default 'REMOTE' (₹250 default) vs 'IN_CLINIC' (₹200 default)
   qrToken?: string; // Rotating QR cryptographic token required if bookingType === 'IN_CLINIC'
+  joinQueueImmediately?: boolean; // If true, adds ₹50 priority fee and places patient in active queue immediately
 }
 
 export interface InClinicQrCodeDto {
@@ -43,6 +44,9 @@ export interface AppointmentDto {
   serviceId?: string | null;
   serviceName?: string | null;
   slotTime: string;
+  bookingType?: string;
+  isPriority?: boolean;
+  priorityFee?: number;
   status: AppointmentStatus;
   bookingFee: number;
   paymentStatus: PaymentStatus;

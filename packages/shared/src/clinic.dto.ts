@@ -17,6 +17,7 @@ export interface ClinicDto {
   inClinicPrice: number;
   remotePrice: number;
   voiceAnnouncementMode?: VoiceAnnouncementMode;
+  enableBookingTime?: boolean;
   isActive: boolean;
   createdAt: string;
   doctorsCount?: number;
@@ -35,6 +36,7 @@ export interface CreateClinicDto {
   inClinicPrice?: number;
   remotePrice?: number;
   voiceAnnouncementMode?: VoiceAnnouncementMode;
+  enableBookingTime?: boolean;
   receptionistName?: string;
   receptionistPhoneNumber?: string;
   receptionistPassword?: string;
@@ -95,6 +97,7 @@ export interface UpdateClinicDto {
   inClinicPrice?: number;
   remotePrice?: number;
   voiceAnnouncementMode?: VoiceAnnouncementMode;
+  enableBookingTime?: boolean;
   isActive?: boolean;
 }
 

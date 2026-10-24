@@ -69,6 +69,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
     return today.toISOString().split('T')[0];
   });
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('10:30 AM');
+  const [joinQueueImmediately, setJoinQueueImmediately] = useState<boolean>(false);
 
   // Patient Info State (if not logged in)
   const [patientName, setPatientName] = useState('');
@@ -86,11 +87,14 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
   const [confirmedTokenNumber, setConfirmedTokenNumber] = useState<string | null>(null);
   const [confirmedAppointment, setConfirmedAppointment] = useState<any | null>(null);
 
-  // Determine current active clinic
+  // Determine current active clinic & booking mode
   const activeClinic = clinics.find((c) => c.id === selectedClinicId);
+  const isBookingTimeEnabled = (activeClinic as any)?.enableBookingTime !== false;
   const inClinicFee = (activeClinic as any)?.inClinicPrice ?? 200;
   const remoteFee = (activeClinic as any)?.remotePrice ?? 250;
-  const currentFee = bookingType === 'IN_CLINIC' ? inClinicFee : remoteFee;
+  const baseFee = bookingType === 'IN_CLINIC' ? inClinicFee : remoteFee;
+  const priorityFee = joinQueueImmediately ? 50 : 0;
+  const currentFee = baseFee + priorityFee;
 
   // Sync props when modal opens or query params arrive
   useEffect(() => {
@@ -139,6 +143,9 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
 
   // Helper to convert date + time string into ISO 8601 string
   const getSlotIsoTime = (): string => {
+    if (!isBookingTimeEnabled) {
+      return new Date().toISOString();
+    }
     try {
       const [time, period] = selectedTimeSlot.split(' ');
       const [hoursStr, minutesStr] = time.split(':');
@@ -253,6 +260,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
           slotTime: slotIso,
           bookingType: bookingType,
           qrToken: bookingType === 'IN_CLINIC' ? qrToken : undefined,
+          joinQueueImmediately: joinQueueImmediately,
         }),
       });
 
@@ -462,37 +470,101 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                 </div>
               </div>
 
-              {/* Slot Date & Slot Time Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-[#1E293B] block mb-1.5">
-                    Appointment Date
-                  </label>
-                  <input
-                    type="date"
-                    value={selectedDate}
-                    min={new Date().toISOString().split('T')[0]}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                    className="w-full bg-[#F8FAFC] border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-bold text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none"
-                    required
-                  />
-                </div>
+              {/* Slot Date & Slot Time Grid (Visible when clinic booking time is enabled) */}
+              {isBookingTimeEnabled ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-[#1E293B] block mb-1.5">
+                      Appointment Date
+                    </label>
+                    <input
+                      type="date"
+                      value={selectedDate}
+                      min={new Date().toISOString().split('T')[0]}
+                      onChange={(e) => setSelectedDate(e.target.value)}
+                      className="w-full bg-[#F8FAFC] border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-bold text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none"
+                      required
+                    />
+                  </div>
 
-                <div>
-                  <label className="text-xs font-bold text-[#1E293B] block mb-1.5">
-                    Consultation Time Slot
-                  </label>
-                  <select
-                    value={selectedTimeSlot}
-                    onChange={(e) => setSelectedTimeSlot(e.target.value)}
-                    className="w-full bg-[#F8FAFC] border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-bold text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none"
-                  >
-                    {timeSlots.map((ts) => (
-                      <option key={ts} value={ts}>
-                        {ts}
-                      </option>
-                    ))}
-                  </select>
+                  <div>
+                    <label className="text-xs font-bold text-[#1E293B] block mb-1.5">
+                      Consultation Time Slot
+                    </label>
+                    <select
+                      value={selectedTimeSlot}
+                      onChange={(e) => setSelectedTimeSlot(e.target.value)}
+                      className="w-full bg-[#F8FAFC] border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-bold text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none"
+                    >
+                      {timeSlots.map((ts) => (
+                        <option key={ts} value={ts}>
+                          {ts}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              ) : (
+                /* When booking time is turned OFF: Book for now banner */
+                <div className="bg-sky-50 border-2 border-sky-200 rounded-2xl p-4 flex items-start space-x-3 shadow-xs">
+                  <div className="p-2 bg-sky-100 text-[#0284C7] rounded-xl shrink-0 mt-0.5">
+                    <Clock className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2">
+                      <span className="font-extrabold text-xs text-[#0284C7] uppercase tracking-wide">
+                        Book For Now (Instant Queue)
+                      </span>
+                      <span className="bg-sky-200/80 text-sky-900 text-[10px] font-black px-2 py-0.5 rounded-full">
+                        Time Slots Turned Off
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
+                      This clinic has turned off scheduled time slots. Your booking is registered immediately for <b>Today</b>.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Extra ₹50 Priority Pass Option: Join Queue Right Away */}
+              <div
+                onClick={() => setJoinQueueImmediately(!joinQueueImmediately)}
+                className={`p-4 rounded-2xl border-2 transition-all cursor-pointer shadow-xs ${
+                  joinQueueImmediately
+                    ? 'border-amber-500 bg-amber-50/90 ring-2 ring-amber-400/30'
+                    : 'border-slate-200 bg-white hover:border-slate-300'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start space-x-3">
+                    <input
+                      type="checkbox"
+                      checked={joinQueueImmediately}
+                      onChange={(e) => setJoinQueueImmediately(e.target.checked)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="mt-1 w-4 h-4 text-amber-600 rounded border-slate-300 focus:ring-amber-500 cursor-pointer"
+                    />
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-black text-xs text-[#1E293B] flex items-center space-x-1.5">
+                          <Zap className="w-3.5 h-3.5 text-amber-600 fill-amber-500" />
+                          <span>Join Queue Right Away (Priority Pass)</span>
+                        </span>
+                        <span className="bg-amber-100 border border-amber-300 text-amber-800 text-[10px] font-black px-2 py-0.5 rounded-full">
+                          +₹50 Extra
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
+                        {joinQueueImmediately
+                          ? '✅ Priority active! You will join the doctor\'s live queue immediately with a priority token.'
+                          : 'Skip the booked appointment waitlist and join the live active queue immediately.'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-sm font-black font-mono text-amber-700">+₹50</div>
+                    <div className="text-[10px] text-slate-400 font-semibold">Instant Queue</div>
+                  </div>
                 </div>
               </div>
 
@@ -578,7 +650,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                 <div className="flex items-center justify-between border-b border-slate-200 pb-2.5">
                   <span className="text-xs text-slate-500 font-medium">Slot Time</span>
                   <span className="text-xs font-bold font-mono text-[#1E293B]">
-                    {selectedDate} at {selectedTimeSlot}
+                    {isBookingTimeEnabled ? `${selectedDate} at ${selectedTimeSlot}` : 'Immediate (Book For Now)'}
                   </span>
                 </div>
 
@@ -588,6 +660,21 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                     {bookingType === 'IN_CLINIC' ? 'In-Clinic TV Screen Discount' : 'Remote Online'}
                   </span>
                 </div>
+
+                <div className="flex items-center justify-between border-b border-slate-200 pb-2.5">
+                  <span className="text-xs text-slate-500 font-medium">Consultation Fee</span>
+                  <span className="text-xs font-bold font-mono text-slate-700">₹{baseFee}</span>
+                </div>
+
+                {joinQueueImmediately && (
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-2.5 text-amber-700">
+                    <span className="text-xs font-bold flex items-center space-x-1">
+                      <Zap className="w-3.5 h-3.5 text-amber-600" />
+                      <span>Join Queue Right Away Pass</span>
+                    </span>
+                    <span className="text-xs font-bold font-mono">+₹50</span>
+                  </div>
+                )}
 
                 <div className="flex items-center justify-between pt-1">
                   <span className="text-sm font-black text-[#1E293B]">Total Booking Fee</span>
@@ -678,15 +765,23 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                 <div className="text-6xl font-black font-mono tracking-tight text-[#1E293B]">
                   {confirmedTokenNumber}
                 </div>
-                <div className="text-xs font-bold text-[#0284C7] mt-2">
-                  {bookingType === 'IN_CLINIC' ? 'In-Clinic Priority Token' : 'Remote Advance Token'}
+                <div className="text-xs font-bold text-[#0284C7] mt-2 flex items-center justify-center space-x-1">
+                  {joinQueueImmediately ? (
+                    <span className="text-amber-700 bg-amber-50 border border-amber-300 px-3 py-1 rounded-full flex items-center space-x-1">
+                      <Zap className="w-3.5 h-3.5 text-amber-600 fill-amber-500" />
+                      <span>⚡ Immediate Priority Token (Live in Queue)</span>
+                    </span>
+                  ) : (
+                    <span>{bookingType === 'IN_CLINIC' ? 'In-Clinic Discounted Token' : 'Remote Advance Token'}</span>
+                  )}
                 </div>
               </div>
 
-              <div className="p-3 bg-slate-50 rounded-2xl text-xs text-slate-600 space-y-1">
+              <div className="p-3 bg-slate-50 rounded-2xl text-xs text-slate-600 space-y-1 text-left">
                 <div><b>Clinic:</b> {activeClinic?.name}</div>
-                <div><b>Date & Time:</b> {selectedDate} at {selectedTimeSlot}</div>
-                <div><b>Consultation Fee Paid:</b> ₹{currentFee}</div>
+                <div><b>Booking Mode:</b> {isBookingTimeEnabled ? `${selectedDate} at ${selectedTimeSlot}` : 'Immediate (Booked For Today)'}</div>
+                <div><b>Queue Status:</b> <span className={joinQueueImmediately ? 'text-amber-700 font-bold' : 'text-emerald-700 font-bold'}>{joinQueueImmediately ? '⚡ In Live Queue Right Away' : 'Registered in Clinic Queue'}</span></div>
+                <div><b>Total Paid:</b> ₹{currentFee} {joinQueueImmediately ? '(Includes ₹50 Priority Pass)' : ''}</div>
               </div>
 
               <div className="pt-2 flex flex-col sm:flex-row gap-3">

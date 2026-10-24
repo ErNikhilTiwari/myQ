@@ -109,6 +109,7 @@ export class QueuesService {
       (e) => e.status === 'CALLED' || e.status === 'IN_SERVICE',
     );
     const waiting = queue.queueEntries.filter((e) => e.status === 'WAITING');
+    const booked = queue.queueEntries.filter((e) => e.status === 'BOOKED');
     const onHold = queue.queueEntries.filter((e) => e.status === 'ON_HOLD');
     const skipped = queue.queueEntries.filter((e) => e.status === 'SKIPPED');
     const completed = queue.queueEntries.filter((e) => e.status === 'COMPLETED');
@@ -131,6 +132,7 @@ export class QueuesService {
       },
       currentServing: currentServing ? mapEntry(currentServing) : null,
       waiting: waiting.map(mapEntry),
+      booked: booked.map(mapEntry),
       onHold: onHold.map(mapEntry),
       skipped: skipped.map(mapEntry),
       completed: completed.map(mapEntry),

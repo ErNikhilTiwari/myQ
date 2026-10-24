@@ -131,6 +131,11 @@ export class AppointmentsService {
       calculatedFee = clinic.remotePrice ?? 250;
     }
 
+    // Optional Priority Pass / Join Queue Right Away (+₹50 extra fee)
+    const joinQueueImmediately = Boolean(dto.joinQueueImmediately);
+    const priorityFee = joinQueueImmediately ? 50.0 : 0.0;
+    calculatedFee += priorityFee;
+
     if (dto.doctorId) {
       const doctor = await this.prisma.doctor.findFirst({
         where: { id: dto.doctorId, clinicId: dto.clinicId },
@@ -153,9 +158,8 @@ export class AppointmentsService {
       }
     }
 
-    // Fail-Closed Slot Check (ADR-005):
-    // If there is an existing CONFIRMED or PENDING appointment for the same doctor at the same slot, fail-closed
-    if (dto.doctorId) {
+    // Fail-Closed Slot Check (only enforced if booking time slots are enabled):
+    if (dto.doctorId && clinic.enableBookingTime !== false) {
       const existing = await this.prisma.appointment.findFirst({
         where: {
           clinicId: dto.clinicId,
@@ -181,6 +185,8 @@ export class AppointmentsService {
         slotTime: slotDate,
         bookingType,
         qrCodeToken: dto.qrToken || null,
+        isPriority: joinQueueImmediately,
+        priorityFee,
         status: 'PENDING',
         bookingFee: calculatedFee,
         paymentStatus: 'PENDING',
@@ -194,7 +200,7 @@ export class AppointmentsService {
     });
 
     this.logger.log(
-      `📅 Appointment ${appointment.id} initiated (${bookingType} @ ₹${calculatedFee}) for User ${userId} at Clinic ${dto.clinicId}`
+      `📅 Appointment ${appointment.id} initiated (${bookingType} @ ₹${calculatedFee}, priority: ${joinQueueImmediately}) for User ${userId} at Clinic ${dto.clinicId}`
     );
 
     return this.mapToDto(appointment);
@@ -506,6 +512,9 @@ export class AppointmentsService {
       serviceId: a.serviceId,
       serviceName: a.service?.name || null,
       slotTime: a.slotTime.toISOString(),
+      bookingType: a.bookingType,
+      isPriority: a.isPriority ?? false,
+      priorityFee: a.priorityFee ?? 0,
       status: a.status as AppointmentStatus,
       bookingFee: a.bookingFee,
       paymentStatus: a.paymentStatus as PaymentStatus,

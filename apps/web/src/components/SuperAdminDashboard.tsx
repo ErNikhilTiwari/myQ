@@ -67,6 +67,7 @@ interface ClinicData {
   isActive: boolean;
   subscriptionStatus?: string;
   plan?: string;
+  enableBookingTime?: boolean;
   createdAt: string;
   doctorsCount: number;
   servicesCount: number;
@@ -110,6 +111,7 @@ export interface ChainClinicData {
   inClinicPrice?: number;
   remotePrice?: number;
   voiceAnnouncementMode?: string;
+  enableBookingTime?: boolean;
   isActive: boolean;
   createdAt?: string;
   doctorsCount?: number;
@@ -176,8 +178,10 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
   const [newClinicReceptionistName, setNewClinicReceptionistName] = useState('');
   const [newClinicReceptionistPhone, setNewClinicReceptionistPhone] = useState('');
   const [newClinicReceptionistPassword, setNewClinicReceptionistPassword] = useState('');
+  const [newClinicEnableBookingTime, setNewClinicEnableBookingTime] = useState(true);
   const [clinicFormError, setClinicFormError] = useState('');
   const [submittingClinic, setSubmittingClinic] = useState(false);
+  const [togglingBookingTimeClinicId, setTogglingBookingTimeClinicId] = useState<string | null>(null);
 
   // Super Admin Receptionist Management Modals
   const [assignClinic, setAssignClinic] = useState<{ id: string; name: string } | null>(null);
@@ -388,6 +392,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
           receptionistName: newClinicReceptionistName.trim() || undefined,
           receptionistPhoneNumber: newClinicReceptionistPhone.trim() ? newClinicReceptionistPhone.replace(/\D/g, '').slice(-10) : undefined,
           receptionistPassword: newClinicReceptionistPassword.trim() || undefined,
+          enableBookingTime: newClinicEnableBookingTime,
         }),
       });
 
@@ -407,6 +412,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
         setNewClinicReceptionistName('');
         setNewClinicReceptionistPhone('');
         setNewClinicReceptionistPassword('');
+        setNewClinicEnableBookingTime(true);
         loadData();
       } else {
         setClinicFormError(json.error?.message || json.message || 'Failed to create clinic facility');
@@ -415,6 +421,47 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
       setClinicFormError(err.message || 'Network request failed');
     } finally {
       setSubmittingClinic(false);
+    }
+  };
+
+  const handleToggleBookingTime = async (clinicId: string, currentVal?: boolean) => {
+    if (!token) return;
+    const newVal = currentVal === false ? true : false;
+    setTogglingBookingTimeClinicId(clinicId);
+    try {
+      const res = await fetch(`/api/clinics/${clinicId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ enableBookingTime: newVal }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setClinics((prev) =>
+          prev.map((c) => (c.id === clinicId ? { ...c, enableBookingTime: newVal } : c))
+        );
+        setSelectedChain((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            clinics: (prev.clinics || []).map((c) =>
+              c.id === clinicId ? { ...c, enableBookingTime: newVal } : c
+            ),
+          };
+        });
+        showToast(
+          'success',
+          `Booking time slots turned ${newVal ? 'ON (Slot Booking)' : 'OFF (Instant Queue Only)'} for this clinic.`
+        );
+      } else {
+        showToast('error', data.message || 'Failed to update booking time preference.');
+      }
+    } catch (err: any) {
+      showToast('error', err.message || 'Error updating booking time preference.');
+    } finally {
+      setTogglingBookingTimeClinicId(null);
     }
   };
 
@@ -1234,6 +1281,43 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                       <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
                         <span className="text-slate-500 font-medium">Physicians: <b className="text-[#1E293B]">{clinic.doctorsCount || 0}</b></span>
                         <span className="text-slate-500 font-medium">Services: <b className="text-[#1E293B]">{clinic.servicesCount || 0}</b></span>
+                      </div>
+
+                      {/* Booking Time Slots Toggle */}
+                      <div className="mt-3.5 p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between gap-2">
+                        <div className="flex items-center space-x-2 min-w-0">
+                          <Clock className={`w-4 h-4 shrink-0 ${clinic.enableBookingTime !== false ? 'text-sky-600' : 'text-amber-600'}`} />
+                          <div className="truncate">
+                            <div className="text-[11px] font-bold text-slate-800 flex items-center space-x-1.5">
+                              <span>Time Slots:</span>
+                              <span className={`text-[10px] font-extrabold px-1.5 py-0.2 rounded ${
+                                clinic.enableBookingTime !== false
+                                  ? 'bg-sky-100 text-sky-800'
+                                  : 'bg-amber-100 text-amber-800'
+                              }`}>
+                                {clinic.enableBookingTime !== false ? 'ENABLED' : 'OFF (Instant Only)'}
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-slate-500 truncate">
+                              {clinic.enableBookingTime !== false
+                                ? 'Patients select appointment time'
+                                : 'Queue for now (+₹50 fast queue)'}
+                            </div>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          disabled={togglingBookingTimeClinicId === clinic.id}
+                          onClick={() => handleToggleBookingTime(clinic.id, clinic.enableBookingTime)}
+                          className={`shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition border shadow-xs active:scale-95 disabled:opacity-50 ${
+                            clinic.enableBookingTime !== false
+                              ? 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
+                              : 'bg-sky-600 text-white border-sky-600 hover:bg-sky-700'
+                          }`}
+                        >
+                          {togglingBookingTimeClinicId === clinic.id ? 'Updating...' : clinic.enableBookingTime !== false ? 'Turn OFF' : 'Turn ON'}
+                        </button>
                       </div>
                     </div>
 
@@ -2101,6 +2185,25 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                 </div>
               </div>
 
+              {/* Enable Booking Time Slots Setting */}
+              <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-4 flex items-start space-x-3">
+                <input
+                  type="checkbox"
+                  id="newClinicEnableBookingTime"
+                  checked={newClinicEnableBookingTime}
+                  onChange={(e) => setNewClinicEnableBookingTime(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 text-[#0284C7] rounded border-slate-300 focus:ring-[#0284C7]"
+                />
+                <label htmlFor="newClinicEnableBookingTime" className="text-xs cursor-pointer select-none">
+                  <span className="font-bold text-slate-800 block">
+                    Enable Appointment Time Slots
+                  </span>
+                  <span className="text-[11px] text-slate-500 block mt-0.5">
+                    When checked, patients pick specific appointment times. When unchecked, booking is for today/now directly with an optional +₹50 instant queue priority pass.
+                  </span>
+                </label>
+              </div>
+
               <div className="pt-3 flex items-center justify-end space-x-2 border-t border-slate-100">
                 <button
                   type="button"
@@ -2786,6 +2889,38 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                                 </span>
                               </div>
                             )}
+                          </div>
+
+                          {/* Booking Time Slots Toggle */}
+                          <div className="mt-3.5 p-2 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between gap-2">
+                            <div className="flex items-center space-x-2 min-w-0">
+                              <Clock className={`w-3.5 h-3.5 shrink-0 ${clinic.enableBookingTime !== false ? 'text-sky-600' : 'text-amber-600'}`} />
+                              <div className="truncate">
+                                <div className="text-[11px] font-bold text-slate-800 flex items-center space-x-1.5">
+                                  <span>Time Slots:</span>
+                                  <span className={`text-[10px] font-extrabold px-1.5 py-0.2 rounded ${
+                                    clinic.enableBookingTime !== false
+                                      ? 'bg-sky-100 text-sky-800'
+                                      : 'bg-amber-100 text-amber-800'
+                                  }`}>
+                                    {clinic.enableBookingTime !== false ? 'ENABLED' : 'OFF (Instant)'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              disabled={togglingBookingTimeClinicId === clinic.id}
+                              onClick={() => handleToggleBookingTime(clinic.id, clinic.enableBookingTime)}
+                              className={`shrink-0 px-2 py-0.5 rounded-lg text-[10px] font-extrabold transition border shadow-xs active:scale-95 disabled:opacity-50 ${
+                                clinic.enableBookingTime !== false
+                                  ? 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
+                                  : 'bg-sky-600 text-white border-sky-600 hover:bg-sky-700'
+                              }`}
+                            >
+                              {togglingBookingTimeClinicId === clinic.id ? 'Updating...' : clinic.enableBookingTime !== false ? 'Turn OFF' : 'Turn ON'}
+                            </button>
                           </div>
                         </div>
 

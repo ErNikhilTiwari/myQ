@@ -166,9 +166,18 @@ export class PaymentsService {
             data: { currentSeq: { increment: 1 } },
           });
 
-          const prefix = appt.bookingType === 'IN_CLINIC' ? 'Q' : 'A';
+          const clinic = await tx.clinic.findUnique({ where: { id: appt.clinicId } });
+          const isPriority = Boolean(appt.isPriority);
+
+          // Priority token prefix 'P' for instant priority pass (+₹50)
+          const prefix = isPriority ? 'P' : (appt.bookingType === 'IN_CLINIC' ? 'Q' : 'A');
           tokenNumber = `${prefix}${String(updatedQueue.currentSeq).padStart(2, '0')}`;
           const publicToken = `pt_${nanoid()}`;
+
+          // If booking time is turned off and priority pass wasn't selected, mark BOOKED (awaits check-in).
+          // If priority pass was selected (+₹50), patient joins the active queue RIGHT AWAY ('WAITING').
+          const shouldJoinRightAway = isPriority || (clinic?.enableBookingTime !== false);
+          const queueStatus = shouldJoinRightAway ? 'WAITING' : 'BOOKED';
 
           // Create Queue Entry
           const entry = await tx.queueEntry.create({
@@ -177,9 +186,9 @@ export class PaymentsService {
               userId: appt.userId,
               tokenNumber,
               sequenceNumber: updatedQueue.currentSeq,
-              status: 'WAITING',
+              status: queueStatus,
               publicToken,
-              estimatedWait: 15,
+              estimatedWait: isPriority ? 5 : 15,
             },
           });
 

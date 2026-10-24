@@ -8,7 +8,9 @@ import {
   ShieldCheck, 
   Edit3, 
   X, 
-  Save 
+  Save,
+  Clock,
+  Zap
 } from 'lucide-react';
 
 interface ClinicPricingConfigProps {
@@ -16,6 +18,7 @@ interface ClinicPricingConfigProps {
   token: string | null;
   initialInClinicPrice?: number;
   initialRemotePrice?: number;
+  initialEnableBookingTime?: boolean;
   onUpdated?: () => void;
 }
 
@@ -24,10 +27,13 @@ export const ClinicPricingConfig: React.FC<ClinicPricingConfigProps> = ({
   token,
   initialInClinicPrice = 200,
   initialRemotePrice = 250,
+  initialEnableBookingTime = true,
   onUpdated,
 }) => {
   const [inClinicPrice, setInClinicPrice] = useState<number>(initialInClinicPrice);
   const [remotePrice, setRemotePrice] = useState<number>(initialRemotePrice);
+  const [enableBookingTime, setEnableBookingTime] = useState<boolean>(initialEnableBookingTime);
+  const [isTogglingBookingTime, setIsTogglingBookingTime] = useState(false);
 
   // Target modal state: only 'IN_CLINIC' or 'REMOTE' at a time
   const [editingTarget, setEditingTarget] = useState<'IN_CLINIC' | 'REMOTE' | null>(null);
@@ -44,6 +50,44 @@ export const ClinicPricingConfig: React.FC<ClinicPricingConfigProps> = ({
   useEffect(() => {
     setRemotePrice(initialRemotePrice);
   }, [initialRemotePrice]);
+
+  useEffect(() => {
+    setEnableBookingTime(initialEnableBookingTime);
+  }, [initialEnableBookingTime]);
+
+  const handleToggleBookingTime = async () => {
+    if (!clinicId || !token) return;
+    setIsTogglingBookingTime(true);
+    const newSetting = !enableBookingTime;
+    try {
+      const res = await fetch(`/api/clinics/${clinicId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ enableBookingTime: newSetting }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setEnableBookingTime(newSetting);
+        setMessage({
+          type: 'success',
+          text: newSetting 
+            ? 'Booking time slots enabled! Patients can choose appointment time slots.' 
+            : 'Booking time slots turned OFF! Patients will book for now (instant queue only).',
+        });
+        if (onUpdated) onUpdated();
+        setTimeout(() => setMessage(null), 4000);
+      } else {
+        setMessage({ type: 'error', text: json.error?.message || 'Failed to update booking mode.' });
+      }
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message || 'Error updating booking mode.' });
+    } finally {
+      setIsTogglingBookingTime(false);
+    }
+  };
 
   const openModal = (target: 'IN_CLINIC' | 'REMOTE') => {
     setEditingTarget(target);
@@ -231,6 +275,80 @@ export const ClinicPricingConfig: React.FC<ClinicPricingConfigProps> = ({
           <div className="pt-2 border-t border-slate-200/60 text-[10px] text-[#0284C7] flex items-center space-x-1 font-medium">
             <CheckCircle className="w-3 h-3 shrink-0" />
             <span>Enforced strictly on server-side order calculation</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Booking Time & Priority Queue Mode Settings */}
+      <div className="bg-[#F8FAFC] border border-slate-200/90 rounded-2xl p-4 sm:p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/80">
+          <div className="flex items-center space-x-3">
+            <div className={`p-2.5 rounded-xl ${
+              enableBookingTime 
+                ? 'bg-sky-100 text-[#0284C7]' 
+                : 'bg-amber-100 text-amber-700'
+            }`}>
+              <Clock className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center space-x-2">
+                <h4 className="font-extrabold text-sm text-[#1E293B]">
+                  Clinic Booking Time Slots
+                </h4>
+                <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                  enableBookingTime
+                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                    : 'bg-amber-100 text-amber-900 border border-amber-300'
+                }`}>
+                  {enableBookingTime ? 'Time Slots Enabled' : 'Turned OFF (Book For Now)'}
+                </span>
+              </div>
+              <p className="text-xs text-[#64748B] mt-0.5">
+                {enableBookingTime
+                  ? 'Patients can select specific dates and consultation time slots (09:30 AM, etc.).'
+                  : 'Time slots are turned off. Patients book for now/today, and can join the queue right away with the ₹50 option.'}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleToggleBookingTime}
+            disabled={isTogglingBookingTime}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-2 shadow-xs active:scale-95 disabled:opacity-60 shrink-0 ${
+              enableBookingTime
+                ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+            }`}
+          >
+            <Clock className="w-3.5 h-3.5" />
+            <span>
+              {isTogglingBookingTime
+                ? 'Saving...'
+                : enableBookingTime
+                ? 'Turn OFF Booking Time'
+                : 'Turn ON Booking Time'}
+            </span>
+          </button>
+        </div>
+
+        {/* Priority Pass Explainer Card */}
+        <div className="bg-white border border-amber-200/80 rounded-xl p-3.5 flex items-start space-x-3 text-xs">
+          <div className="p-1.5 bg-amber-50 rounded-lg text-amber-600 shrink-0 mt-0.5">
+            <Zap className="w-4 h-4 fill-amber-500" />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center space-x-2">
+              <span className="font-black text-amber-900">
+                Instant Queue Right Away Pass (+₹50 Extra)
+              </span>
+              <span className="text-[10px] font-mono font-bold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">
+                Automatic Feature
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
+              When booking time is turned OFF, patients cannot book at a specified time—they register for today. Patients who choose the <b>+₹50 option join the doctor\'s live queue right away</b> with an active priority token (<span className="font-mono font-bold text-amber-700">P01, P02...</span>).
+            </p>
           </div>
         </div>
       </div>

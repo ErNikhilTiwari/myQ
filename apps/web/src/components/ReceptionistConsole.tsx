@@ -26,7 +26,8 @@ import {
   Monitor,
   Volume2,
   UserCheck,
-  Crown
+  Crown,
+  CalendarCheck
 } from 'lucide-react';
 import { ClinicAnalytics } from './ClinicAnalytics';
 import { DoctorManagement } from './DoctorManagement';
@@ -42,7 +43,7 @@ interface QueueItem {
   id: string;
   tokenNumber: string;
   sequenceNumber: number;
-  status: 'WAITING' | 'CALLED' | 'IN_SERVICE' | 'ON_HOLD' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
+  status: 'WAITING' | 'CALLED' | 'IN_SERVICE' | 'ON_HOLD' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW' | 'BOOKED';
   patientName: string;
   phoneNumber: string;
   estimatedWaitMinutes: number;
@@ -110,6 +111,7 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
   // Active queue state
   const [currentServing, setCurrentServing] = useState<QueueItem | null>(null);
   const [waitingList, setWaitingList] = useState<QueueItem[]>([]);
+  const [bookedList, setBookedList] = useState<QueueItem[]>([]);
   const [onHoldList, setOnHoldList] = useState<QueueItem[]>([]);
   const [completedList, setCompletedList] = useState<QueueItem[]>([]);
   
@@ -210,6 +212,7 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
           const data = res.data;
           setCurrentServing(data.currentServing ? normalizeEntry(data.currentServing) : null);
           setWaitingList((data.waiting || []).map(normalizeEntry));
+          setBookedList((data.booked || []).map(normalizeEntry));
           setOnHoldList((data.onHold || []).map(normalizeEntry));
           setCompletedList((data.completed || []).map(normalizeEntry));
         }
@@ -621,8 +624,9 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
           token={token} 
           initialInClinicPrice={(activeClinicObj as any)?.inClinicPrice || 200}
           initialRemotePrice={(activeClinicObj as any)?.remotePrice || 250}
+          initialEnableBookingTime={(activeClinicObj as any)?.enableBookingTime !== false}
           onUpdated={() => {
-            setFeedbackMsg({ type: 'success', text: 'Clinic appointment pricing updated successfully!' });
+            setFeedbackMsg({ type: 'success', text: 'Clinic appointment pricing & booking settings updated!' });
             setTimeout(() => setFeedbackMsg(null), 3000);
           }}
         />
@@ -745,6 +749,12 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
                   <div className="text-7xl font-black font-mono tracking-tight text-[#1E293B]">
                     {currentServing.tokenNumber}
                   </div>
+                  {currentServing.tokenNumber.startsWith('P') && (
+                    <div className="mt-2 inline-flex items-center space-x-1 text-[11px] font-black text-amber-800 bg-amber-100 border border-amber-300 px-3 py-1 rounded-full shadow-xs">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                      <span>PRIORITY PASS (+₹50)</span>
+                    </div>
+                  )}
                   <div className="mt-3.5 inline-flex items-center space-x-2 bg-emerald-50 border border-emerald-300/80 px-4 py-1.5 rounded-2xl shadow-xs">
                     <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-white border border-emerald-200 px-2 py-0.5 rounded-md">
                       Patient
@@ -864,9 +874,16 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
                       <div>
                         <div className="flex items-center space-x-2">
                           <span className="font-extrabold text-[#1E293B] text-sm font-mono">{item.tokenNumber}</span>
-                          <span className="text-[10px] font-bold text-sky-700 bg-sky-50 px-1.5 py-0.2 rounded border border-sky-200">
-                            Patient
-                          </span>
+                          {item.tokenNumber.startsWith('P') ? (
+                            <span className="text-[10px] font-black text-amber-800 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded flex items-center gap-1 shadow-xs">
+                              <Sparkles className="w-2.5 h-2.5 text-amber-600" />
+                              PRIORITY (+₹50)
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold text-sky-700 bg-sky-50 px-1.5 py-0.2 rounded border border-sky-200">
+                              Patient
+                            </span>
+                          )}
                         </div>
                         <div className="text-xs text-[#1E293B] font-bold mt-0.5">{item.patientName || 'Walk-in Patient'}</div>
                       </div>
@@ -966,6 +983,75 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Booked Online Appointments (Awaiting Clinic Arrival / Queue Admission) */}
+        {bookedList.length > 0 && (
+          <div className="mt-6 bg-gradient-to-r from-sky-50 via-white to-indigo-50 border border-sky-200 rounded-3xl p-6 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-sky-100 gap-2 mb-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-9 h-9 rounded-2xl bg-sky-100 text-sky-700 flex items-center justify-center shrink-0">
+                  <CalendarCheck className="w-5 h-5 text-sky-600" />
+                </div>
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <h4 className="text-sm font-black text-slate-800">
+                      Booked Online Patients ({bookedList.length})
+                    </h4>
+                    <span className="text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full">
+                      Awaiting Arrival at Clinic
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                    Patients booked for today (without instant priority pass). Click "Admit to Queue" when they arrive at the clinic counter.
+                  </p>
+                </div>
+              </div>
+              <span className="text-xs font-mono font-bold text-sky-800 bg-sky-100 px-3 py-1 rounded-xl self-start sm:self-auto border border-sky-200">
+                {bookedList.length} Arrived / Pending
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {bookedList.map((item) => (
+                <div
+                  key={item.id}
+                  className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs hover:border-sky-300 transition flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-base font-black font-mono text-slate-800">
+                        {item.tokenNumber}
+                      </span>
+                      <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
+                        Standard Slot
+                      </span>
+                    </div>
+                    <div className="text-xs font-bold text-slate-800">
+                      {item.patientName || 'Registered Patient'}
+                    </div>
+                    <div className="text-[11px] text-slate-500 font-mono mt-0.5">
+                      {item.phoneNumber}
+                    </div>
+                  </div>
+
+                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <span className="text-[10px] text-slate-400">
+                      {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    <button
+                      onClick={() => handleTransition(item.id, 'WAITING')}
+                      disabled={isSubmitting}
+                      className="bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition flex items-center space-x-1 shadow-xs active:scale-95 disabled:opacity-50"
+                    >
+                      <UserCheck className="w-3.5 h-3.5" />
+                      <span>Admit to Queue</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
       </div>
       </>
