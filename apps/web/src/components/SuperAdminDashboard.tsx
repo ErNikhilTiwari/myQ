@@ -816,10 +816,21 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     const phone = currentUser?.phoneNumber || '+919999999999';
     const now = Date.now();
     const recentAttempts = deleteOtpAttempts.filter((t) => now - t < 60000);
-    if (recentAttempts.length >= 3) {
-      setDeleteError('Too many OTP attempts (maximum 3 in 1 minute). Please wait 60 seconds.');
+    if (recentAttempts.length >= 5) {
+      setDeleteError('Too many OTP attempts (maximum 5 in 1 minute). Please wait 60 seconds.');
       setDeleteOtpCountdown(60);
       return;
+    }
+
+    if (recentAttempts.length >= 3) {
+      const lastAttempt = recentAttempts[recentAttempts.length - 1];
+      const elapsed = now - lastAttempt;
+      if (elapsed < 10000) {
+        const remaining = Math.ceil((10000 - elapsed) / 1000);
+        setDeleteError(`Please wait ${remaining}s before requesting a new OTP.`);
+        setDeleteOtpCountdown(remaining);
+        return;
+      }
     }
 
     setDeleteOtpSending(true);
@@ -838,24 +849,34 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
       const updatedAttempts = [...recentAttempts, now];
       setDeleteOtpAttempts(updatedAttempts);
 
-      // Cooldown is 10s normally, but increases to 60s if 3 tries in single minute
-      const cooldown = data.data?.resendCooldownSeconds ?? (updatedAttempts.length >= 3 ? 60 : 10);
+      // Cooldown policy: No cooldown for first 3 attempts, 10s after 3, 60s after 5
+      let cooldown = 0;
+      if (updatedAttempts.length >= 5) {
+        cooldown = 60;
+      } else if (updatedAttempts.length >= 3) {
+        cooldown = 10;
+      }
+      if (data.data?.resendCooldownSeconds !== undefined) {
+        cooldown = data.data.resendCooldownSeconds;
+      }
       setDeleteOtpCountdown(cooldown);
-      const interval = setInterval(() => {
-        setDeleteOtpCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(interval);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+      if (cooldown > 0) {
+        const interval = setInterval(() => {
+          setDeleteOtpCountdown((prev) => {
+            if (prev <= 1) {
+              clearInterval(interval);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+      }
       showToast('success', `Authorization OTP sent to ${phone}`);
     } catch (err: any) {
       setDeleteError(err.message || 'Failed to send authorization OTP');
-      if (err.message?.includes('3 attempts') || err.message?.includes('60 seconds') || recentAttempts.length >= 2) {
+      if (err.message?.includes('5 attempts') || err.message?.includes('60 seconds') || recentAttempts.length >= 4) {
         setDeleteOtpCountdown(60);
-      } else if (err.message?.includes('10 seconds')) {
+      } else if (err.message?.includes('10 seconds') || recentAttempts.length >= 3) {
         setDeleteOtpCountdown(10);
       }
     } finally {
@@ -3327,7 +3348,12 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                 )}
                 {deleteOtpCountdown > 10 && (
                   <p className="text-[11px] text-amber-700 font-medium bg-amber-50 border border-amber-200 p-2 rounded-lg text-center">
-                    ⚠️ 3 attempts reached within 1 minute. Please wait 60 seconds before resending.
+                    ⚠️ 5 attempts reached within 1 minute. Please wait 60 seconds before resending.
+                  </p>
+                )}
+                {deleteOtpCountdown > 0 && deleteOtpCountdown <= 10 && (
+                  <p className="text-[11px] text-sky-800 font-medium bg-sky-50 border border-sky-200 p-2 rounded-lg text-center">
+                    ⏳ 3 attempts reached in 1 minute. 10-second cooldown active.
                   </p>
                 )}
               </div>

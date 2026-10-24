@@ -72,7 +72,7 @@ describe('AuthService (Unit Tests)', () => {
   });
 
   describe('sendOtp', () => {
-    it('generates, hashes, saves OTP and dispatches to provider', async () => {
+    it('generates, hashes, saves OTP and dispatches with 0s cooldown for 1st attempt', async () => {
       mockPrismaService.oTPVerification.findFirst.mockResolvedValue(null);
       mockPrismaService.oTPVerification.count.mockResolvedValue(0);
       mockPrismaService.oTPVerification.create.mockResolvedValue({ id: 'otp-1' });
@@ -81,12 +81,13 @@ describe('AuthService (Unit Tests)', () => {
 
       expect(result.success).toBe(true);
       expect(result.expiresInSeconds).toBe(300);
-      expect(result.resendCooldownSeconds).toBe(10);
+      expect(result.resendCooldownSeconds).toBe(0); // No cooldown for first attempts!
       expect(mockPrismaService.oTPVerification.create).toHaveBeenCalled();
       expect(mockOtpProvider.lastSentOtps.has('+919876543210')).toBe(true);
     });
 
-    it('rate-limits rapid requests within 10 seconds', async () => {
+    it('enforces 10-second cooldown after 3 attempts in a single minute', async () => {
+      mockPrismaService.oTPVerification.count.mockResolvedValue(3);
       mockPrismaService.oTPVerification.findFirst.mockResolvedValue({ id: 'recent-otp' });
 
       await expect(
@@ -94,9 +95,8 @@ describe('AuthService (Unit Tests)', () => {
       ).rejects.toThrow(HttpException);
     });
 
-    it('rate-limits when 3 requests reached in a single minute', async () => {
-      mockPrismaService.oTPVerification.findFirst.mockResolvedValue(null);
-      mockPrismaService.oTPVerification.count.mockResolvedValue(3);
+    it('enforces 60-second cooldown after 5 attempts in a single minute', async () => {
+      mockPrismaService.oTPVerification.count.mockResolvedValue(5);
 
       await expect(
         service.sendOtp({ phoneNumber: '+919876543210' }),

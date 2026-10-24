@@ -165,10 +165,24 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
     const now = Date.now();
     const recentAttempts = otpAttemptsInMinute.filter((t) => now - t < 60000);
-    if (recentAttempts.length >= 3) {
-      setErrorMsg('Too many OTP attempts (maximum 3 in 1 minute). Please wait 60 seconds.');
+    
+    // Rule: After 5 attempts in single minute -> cooldown is 60s
+    if (recentAttempts.length >= 5) {
+      setErrorMsg('Too many OTP attempts (maximum 5 in 1 minute). Please wait 60 seconds.');
       setResendCountdown(60);
       return;
+    }
+
+    // Rule: After 3 attempts in single minute -> cooldown is 10s
+    if (recentAttempts.length >= 3) {
+      const lastAttempt = recentAttempts[recentAttempts.length - 1];
+      const elapsed = now - lastAttempt;
+      if (elapsed < 10000) {
+        const remaining = Math.ceil((10000 - elapsed) / 1000);
+        setErrorMsg(`Please wait ${remaining}s before requesting a new OTP.`);
+        setResendCountdown(remaining);
+        return;
+      }
     }
 
     setLoading(true);
@@ -201,15 +215,26 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         const updatedAttempts = [...recentAttempts, now];
         setOtpAttemptsInMinute(updatedAttempts);
 
-        // Resend cooldown is 10s normally, but increases to 60s if 3 tries occurred in a single minute
-        const cooldown = data.data?.resendCooldownSeconds ?? (updatedAttempts.length >= 3 ? 60 : 10);
+        // Cooldown policy:
+        // - First 3 attempts: No cooldown (0s)
+        // - After 3 attempts: 10s cooldown
+        // - After 5 attempts: 60s cooldown
+        let cooldown = 0;
+        if (updatedAttempts.length >= 5) {
+          cooldown = 60;
+        } else if (updatedAttempts.length >= 3) {
+          cooldown = 10;
+        }
+        if (data.data?.resendCooldownSeconds !== undefined) {
+          cooldown = data.data.resendCooldownSeconds;
+        }
         setResendCountdown(cooldown);
       } else {
         const errorText = data.error?.message || data.message || 'Failed to send OTP.';
         setErrorMsg(errorText);
-        if (errorText.includes('3 attempts') || errorText.includes('60 seconds') || recentAttempts.length >= 2) {
+        if (errorText.includes('5 attempts') || errorText.includes('60 seconds') || recentAttempts.length >= 4) {
           setResendCountdown(60);
-        } else if (errorText.includes('10 seconds')) {
+        } else if (errorText.includes('10 seconds') || recentAttempts.length >= 3) {
           setResendCountdown(10);
         }
       }
@@ -727,10 +752,15 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 </button>
               </div>
 
-              {/* Rate limit warning message: shown when 3 tries reached within single minute */}
+              {/* Rate limit warning banners: 10s after 3 attempts, 60s after 5 attempts */}
               {resendCountdown > 10 && (
                 <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-800 text-center font-medium">
-                  ⚠️ 3 attempts reached within 1 minute. Please wait 60 seconds before resending.
+                  ⚠️ 5 attempts reached within 1 minute. Please wait 60 seconds before resending.
+                </div>
+              )}
+              {resendCountdown > 0 && resendCountdown <= 10 && (
+                <div className="p-2 bg-sky-50 border border-sky-200 rounded-xl text-[10px] text-sky-800 text-center font-medium">
+                  ⏳ 3 attempts reached in 1 minute. 10-second cooldown active.
                 </div>
               )}
             </div>

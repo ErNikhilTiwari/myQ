@@ -57,24 +57,7 @@ export class AuthService {
   async sendOtp(dto: SendOtpRequestDto): Promise<SendOtpResponseDto> {
     const phone = this.validatePhoneNumber(dto.phoneNumber);
 
-    // 1. Minimum cooldown between consecutive OTP requests: 10 seconds (reduced from 60 seconds)
-    const recentOtpIn10s = await this.prisma.oTPVerification.findFirst({
-      where: {
-        phoneNumber: phone,
-        createdAt: {
-          gte: new Date(Date.now() - 10 * 1000), // within 10 seconds
-        },
-      },
-    });
-
-    if (recentOtpIn10s) {
-      throw new HttpException(
-        'Please wait at least 10 seconds before requesting a new OTP.',
-        HttpStatus.TOO_MANY_REQUESTS,
-      );
-    }
-
-    // 2. Rate-limiting: Count OTP requests in a single minute (60 seconds)
+    // 1. Rate-limiting check: Count OTP requests in the rolling single minute (60 seconds)
     const attemptsInLastMinute = await this.prisma.oTPVerification.count({
       where: {
         phoneNumber: phone,
@@ -84,11 +67,32 @@ export class AuthService {
       },
     });
 
-    if (attemptsInLastMinute >= 3) {
+    // Rule: After 5 attempts in single minute -> cooldown is 60 seconds (blocked until window clears)
+    if (attemptsInLastMinute >= 5) {
       throw new HttpException(
-        'Too many OTP requests. Maximum 3 attempts allowed per minute. Please wait 60 seconds before trying again.',
+        'Too many OTP requests. Maximum 5 attempts allowed in 1 minute. Please wait 60 seconds before trying again.',
         HttpStatus.TOO_MANY_REQUESTS,
       );
+    }
+
+    // Rule: After 3 attempts in single minute -> cooldown is 10 seconds between requests
+    // (For first 3 attempts, there is NO cooldown)
+    if (attemptsInLastMinute >= 3) {
+      const recentOtpIn10s = await this.prisma.oTPVerification.findFirst({
+        where: {
+          phoneNumber: phone,
+          createdAt: {
+            gte: new Date(Date.now() - 10 * 1000), // within 10 seconds
+          },
+        },
+      });
+
+      if (recentOtpIn10s) {
+        throw new HttpException(
+          'Please wait at least 10 seconds before requesting a new OTP.',
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
+      }
     }
 
     // Generate random 6-digit OTP
@@ -110,7 +114,17 @@ export class AuthService {
 
     const botInfo = await this.telegramProvider.getBotInfo();
     const currentAttempts = attemptsInLastMinute + 1;
-    const resendCooldownSeconds = currentAttempts >= 3 ? 60 : 10;
+
+    // Resend cooldown policy:
+    // - First 3 attempts: No cooldown (0s)
+    // - After 3 attempts: 10s cooldown
+    // - After 5 attempts: 60s cooldown
+    let resendCooldownSeconds = 0;
+    if (currentAttempts >= 5) {
+      resendCooldownSeconds = 60;
+    } else if (currentAttempts >= 3) {
+      resendCooldownSeconds = 10;
+    }
 
     return {
       success: true,
