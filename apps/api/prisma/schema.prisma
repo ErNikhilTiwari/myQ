@@ -89,6 +89,7 @@ model Clinic {
   whatsappConversations WhatsAppConversation[]
   advertisements        Advertisement[]
   subscriptions         Subscription[]
+  subscriptionInvoices  SubscriptionInvoice[]
   auditLogs             AuditLog[]
 
   @@index([slug])
@@ -391,23 +392,52 @@ model WhatsAppConversation {
 }
 
 model Subscription {
-  id          String    @id @default(uuid())
-  clinicId    String
-  plan        String    @default("FREE") // FREE, BASIC, PROFESSIONAL, ENTERPRISE
-  status      String    @default("ACTIVE") // ACTIVE, PAST_DUE, CANCELLED, EXPIRED
-  startDate   DateTime  @default(now())
-  endDate     DateTime?
-  maxDoctors  Int       @default(2)
-  maxStaff    Int       @default(5)
-  maxDisplays Int       @default(1)
-  hasAds      Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id           String    @id @default(uuid())
+  clinicId     String
+  plan         String    @default("FREE") // FREE, BASIC, PROFESSIONAL, ENTERPRISE
+  status       String    @default("ACTIVE") // ACTIVE, PAST_DUE, CANCELLED, EXPIRED, SUSPENDED
+  billingCycle String    @default("MONTHLY") // MONTHLY, QUARTERLY, YEARLY
+  amountPaid   Float     @default(0)
+  startDate    DateTime  @default(now())
+  endDate      DateTime?
+  maxDoctors   Int       @default(2)
+  maxStaff     Int       @default(5)
+  maxDisplays  Int       @default(1)
+  hasAds       Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  clinic Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  clinic   Clinic                @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  invoices SubscriptionInvoice[]
 
   @@index([clinicId])
   @@index([status])
+}
+
+model SubscriptionInvoice {
+  id                 String    @id @default(uuid())
+  subscriptionId     String
+  clinicId           String
+  invoiceNumber      String    @unique
+  plan               String
+  billingCycle       String    @default("MONTHLY") // MONTHLY, QUARTERLY, YEARLY
+  amount             Float
+  taxAmount          Float     @default(0)
+  totalAmount        Float
+  currency           String    @default("INR")
+  paymentMethod      String    @default("UPI") // UPI, CARD, NETBANKING, MANUAL_OVERRIDE
+  paymentStatus      String    @default("PAID") // PAID, PENDING, FAILED
+  transactionId      String?
+  billingPeriodStart DateTime  @default(now())
+  billingPeriodEnd   DateTime
+  paidAt             DateTime  @default(now())
+  createdAt          DateTime  @default(now())
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  clinic       Clinic       @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+
+  @@index([clinicId])
+  @@index([subscriptionId])
 }
 
 model PushSubscription {

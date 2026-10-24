@@ -32,6 +32,7 @@ import {
   Ban,
   Play,
   Lock,
+  Clock,
   ShieldAlert,
   Key,
   Eye,
@@ -76,12 +77,26 @@ interface ClinicData {
 interface SubscriptionData {
   id: string;
   clinicId: string;
+  clinicName: string;
+  clinicSlug?: string;
   plan: string;
   status: string;
-  currentPeriodEnd: string;
+  billingCycle?: string;
+  amountPaid?: number;
+  startDate?: string;
+  endDate?: string | null;
+  currentPeriodEnd?: string;
   maxDoctors: number;
-  maxDailyTokens: number;
-  clinicName: string;
+  maxStaff?: number;
+  maxDisplays?: number;
+  hasAds?: boolean;
+  maxDailyTokens?: number;
+  daysRemaining?: number;
+  isExpiringSoon?: boolean;
+  isExpired?: boolean;
+  doctorsUsed?: number;
+  staffUsed?: number;
+  displaysUsed?: number;
 }
 
 export interface ChainClinicData {
@@ -208,8 +223,18 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
 
   // Plan Upgrade Modal
   const [upgradeTarget, setUpgradeTarget] = useState<SubscriptionData | null>(null);
-  const [selectedPlan, setSelectedPlan] = useState<'FREE' | 'STARTER' | 'PRO' | 'ENTERPRISE'>('PRO');
+  const [selectedPlan, setSelectedPlan] = useState<'FREE' | 'BASIC' | 'PROFESSIONAL' | 'ENTERPRISE'>('PROFESSIONAL');
   const [submittingUpgrade, setSubmittingUpgrade] = useState(false);
+
+  // Extend Validity Modal
+  const [extendTarget, setExtendTarget] = useState<SubscriptionData | null>(null);
+  const [extendDays, setExtendDays] = useState(30);
+  const [submittingExtend, setSubmittingExtend] = useState(false);
+
+  // Subscription Filters
+  const [subStatusFilter, setSubStatusFilter] = useState<'ALL' | 'ACTIVE' | 'EXPIRING_SOON' | 'EXPIRED' | 'SUSPENDED'>('ALL');
+  const [subPlanFilter, setSubPlanFilter] = useState<'ALL' | 'FREE' | 'BASIC' | 'PROFESSIONAL' | 'ENTERPRISE'>('ALL');
+  const [subSearchQuery, setSubSearchQuery] = useState('');
 
   // Suspend Membership Modal
   const [suspendTarget, setSuspendTarget] = useState<ClinicData | null>(null);
@@ -570,6 +595,33 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     }
   };
 
+  const handleExtendValidity = async () => {
+    if (!extendTarget || !token) return;
+    setSubmittingExtend(true);
+    try {
+      const res = await fetch(`/api/super/subscriptions/${extendTarget.clinicId}/extend`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ additionalDays: extendDays }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setExtendTarget(null);
+        showToast('success', `Granted +${extendDays} days validity to "${extendTarget.clinicName}"!`);
+        await loadData();
+      } else {
+        showToast('error', json.error?.message || json.message || 'Failed to extend validity');
+      }
+    } catch (err: any) {
+      showToast('error', err.message || 'Failed to extend validity');
+    } finally {
+      setSubmittingExtend(false);
+    }
+  };
+
   const handleConfirmSuspend = async () => {
     if (!suspendTarget || !token) return;
     setSubmittingSuspend(true);
@@ -776,6 +828,26 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
       r.receptionist.phoneNumber.includes(recSearchQuery)
     ))
   );
+
+  const filteredSubscriptions = subscriptions.filter((sub) => {
+    const q = subSearchQuery.trim().toLowerCase();
+    const matchesQuery = !q || Boolean(
+      (sub.clinicName && sub.clinicName.toLowerCase().includes(q)) ||
+      (sub.clinicSlug && sub.clinicSlug.toLowerCase().includes(q)) ||
+      sub.plan.toLowerCase().includes(q)
+    );
+    const matchesStatus = subStatusFilter === 'ALL' || sub.status === subStatusFilter;
+    const matchesPlan = subPlanFilter === 'ALL' || sub.plan === subPlanFilter;
+    return matchesQuery && matchesStatus && matchesPlan;
+  });
+
+  const totalMRR = subscriptions.reduce((acc, s) => {
+    if (s.status !== 'ACTIVE' && s.status !== 'EXPIRING_SOON') return acc;
+    if (s.plan === 'BASIC') return acc + 999;
+    if (s.plan === 'PROFESSIONAL' || s.plan === 'PRO') return acc + 2499;
+    if (s.plan === 'ENTERPRISE') return acc + 7999;
+    return acc;
+  }, 0);
 
   return (
     <div className="flex-1 flex flex-col bg-[#F8FAFC] text-[#334155] p-4 md:p-6 overflow-y-auto">
@@ -1236,96 +1308,256 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
 
       {/* TAB 3: SAAS SUBSCRIPTIONS */}
       {activeTab === 'SUBSCRIPTIONS' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {subscriptions.length === 0 ? (
-            <div className="col-span-full py-16 text-center text-xs text-[#64748B] bg-white rounded-2xl border border-slate-200">
-              No active subscription records found.
+        <div className="space-y-4">
+          {/* SaaS Subscriptions KPI Banner */}
+          <div className="bg-gradient-to-r from-purple-900 to-indigo-950 text-white rounded-2xl p-5 shadow-sm border border-purple-800/50 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-center space-x-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center font-bold text-xl shadow-md text-amber-300">
+                <Crown className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center space-x-2">
+                  <h2 className="text-lg font-black tracking-tight text-white">SaaS Memberships &amp; Revenue Portal</h2>
+                  <span className="bg-purple-500/30 text-purple-200 text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase border border-purple-400/30">
+                    Platform Revenue
+                  </span>
+                </div>
+                <p className="text-xs text-purple-200/80 mt-0.5 font-medium">
+                  Multi-tier subscription management, validity overrides, and recurring billing oversight across all provisioned clinics.
+                </p>
+              </div>
             </div>
-          ) : (
-            subscriptions.map((sub) => (
-              <div 
-                key={sub.id}
-                className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm flex flex-col justify-between"
+
+            {/* Quick KPI Strip */}
+            <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+              <div className="bg-white/10 border border-white/10 rounded-xl px-3 py-1.5 shrink-0">
+                <span className="text-[10px] text-purple-200 uppercase font-bold block">Est. MRR</span>
+                <span className="text-base font-black text-amber-300 font-mono">
+                  ₹{totalMRR.toLocaleString('en-IN')}
+                </span>
+              </div>
+              <div className="bg-white/10 border border-white/10 rounded-xl px-3 py-1.5 shrink-0">
+                <span className="text-[10px] text-purple-200 uppercase font-bold block">Active</span>
+                <span className="text-base font-black text-emerald-300">
+                  {subscriptions.filter(s => s.status === 'ACTIVE').length}
+                </span>
+              </div>
+              <div className="bg-white/10 border border-white/10 rounded-xl px-3 py-1.5 shrink-0">
+                <span className="text-[10px] text-purple-200 uppercase font-bold block">Expiring Soon</span>
+                <span className="text-base font-black text-amber-300">
+                  {subscriptions.filter(s => s.isExpiringSoon || (s.daysRemaining !== undefined && s.daysRemaining <= 7 && s.daysRemaining > 0)).length}
+                </span>
+              </div>
+              <div className="bg-white/10 border border-white/10 rounded-xl px-3 py-1.5 shrink-0">
+                <span className="text-[10px] text-purple-200 uppercase font-bold block">Expired</span>
+                <span className="text-base font-black text-rose-300">
+                  {subscriptions.filter(s => s.isExpired || s.status === 'EXPIRED').length}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Search & Filter Bar */}
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+              <input
+                type="text"
+                placeholder="Search subscriptions by clinic name, slug, or plan..."
+                value={subSearchQuery}
+                onChange={(e) => setSubSearchQuery(e.target.value)}
+                className="w-full bg-[#F8FAFC] border border-slate-200 rounded-xl pl-10 pr-9 py-2 text-xs font-semibold text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none"
+              />
+              {subSearchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSubSearchQuery('')}
+                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 p-0.5 rounded-full hover:bg-slate-200"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2.5">
+              <select
+                value={subStatusFilter}
+                onChange={(e) => setSubStatusFilter(e.target.value as any)}
+                className="bg-[#F8FAFC] border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none"
               >
-                <div>
-                  <div className="flex items-start justify-between">
+                <option value="ALL">All Statuses ({subscriptions.length})</option>
+                <option value="ACTIVE">Active</option>
+                <option value="EXPIRING_SOON">Expiring Soon (≤ 7 Days)</option>
+                <option value="EXPIRED">Expired</option>
+                <option value="SUSPENDED">Suspended</option>
+              </select>
+
+              <select
+                value={subPlanFilter}
+                onChange={(e) => setSubPlanFilter(e.target.value as any)}
+                className="bg-[#F8FAFC] border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none"
+              >
+                <option value="ALL">All Plans</option>
+                <option value="FREE">Starter Free</option>
+                <option value="BASIC">Essential Practice</option>
+                <option value="PROFESSIONAL">Professional Clinic</option>
+                <option value="ENTERPRISE">Enterprise</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Subscriptions Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredSubscriptions.length === 0 ? (
+              <div className="col-span-full py-16 text-center text-xs text-[#64748B] bg-white rounded-2xl border border-slate-200 p-6">
+                <Crown className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+                <p className="font-bold text-slate-700 text-sm">No Matching Subscriptions</p>
+                <p className="text-slate-400 mt-1">Try clearing your search query or filters.</p>
+                {(subSearchQuery || subStatusFilter !== 'ALL' || subPlanFilter !== 'ALL') && (
+                  <button
+                    onClick={() => {
+                      setSubSearchQuery('');
+                      setSubStatusFilter('ALL');
+                      setSubPlanFilter('ALL');
+                    }}
+                    className="mt-3 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition"
+                  >
+                    Reset Filters
+                  </button>
+                )}
+              </div>
+            ) : (
+              filteredSubscriptions.map((sub) => {
+                const isExpiring = sub.isExpiringSoon || (sub.daysRemaining !== undefined && sub.daysRemaining <= 7 && sub.daysRemaining > 0 && sub.status !== 'EXPIRED');
+                const isExpired = sub.isExpired || sub.status === 'EXPIRED';
+
+                return (
+                  <div 
+                    key={sub.id}
+                    className="bg-white border border-slate-200/90 hover:border-slate-300 rounded-2xl p-5 shadow-sm flex flex-col justify-between hover:shadow-md transition-all"
+                  >
                     <div>
-                      <h3 className="font-extrabold text-[#1E293B] text-base">{sub.clinicName || 'Clinic'}</h3>
-                      <div className="flex items-center space-x-1.5 mt-1">
-                        <Crown className="w-3.5 h-3.5 text-amber-500" />
-                        <span className="text-xs font-black uppercase text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
-                          {sub.plan} Plan
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="font-extrabold text-[#1E293B] text-base">{sub.clinicName || 'Clinic'}</h3>
+                          <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                            <span className="text-xs font-black uppercase text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-md border border-purple-200/80">
+                              {sub.plan}
+                            </span>
+                            <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                              {sub.billingCycle || 'MONTHLY'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <span className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border ${
+                          isExpired
+                            ? 'bg-rose-50 text-rose-700 border-rose-200'
+                            : isExpiring
+                            ? 'bg-amber-50 text-amber-700 border-amber-200'
+                            : sub.status === 'SUSPENDED'
+                            ? 'bg-slate-100 text-slate-700 border-slate-300'
+                            : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        }`}>
+                          {sub.status}
                         </span>
+                      </div>
+
+                      <div className="mt-4 space-y-2 text-xs text-[#64748B] pt-3 border-t border-slate-100">
+                        <div className="flex justify-between items-center">
+                          <span>Doctor Chambers:</span>
+                          <span className="font-bold text-[#1E293B] font-mono">
+                            {sub.doctorsUsed || 0} / {sub.maxDoctors}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span>Front Desk Accounts:</span>
+                          <span className="font-bold text-[#1E293B] font-mono">
+                            {sub.staffUsed || 0} / {sub.maxStaff || 5}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span>Smart TV Displays:</span>
+                          <span className="font-bold text-[#1E293B] font-mono">
+                            {sub.displaysUsed || 0} / {sub.maxDisplays || 1} {sub.hasAds ? '(Ads)' : '(Zero-Ads)'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center pt-1 border-t border-slate-50">
+                          <span>Renews / Expiry:</span>
+                          <span className="font-bold text-[#1E293B] font-mono">
+                            {sub.endDate ? new Date(sub.endDate).toLocaleDateString() : 'N/A'}
+                          </span>
+                        </div>
+                        {sub.daysRemaining !== undefined && (
+                          <div className="flex justify-between items-center">
+                            <span>Remaining:</span>
+                            <span className={`font-black font-mono ${
+                              isExpired ? 'text-rose-600' : isExpiring ? 'text-amber-600' : 'text-emerald-600'
+                            }`}>
+                              {isExpired ? 'Expired' : `${sub.daysRemaining} Days`}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      sub.status === 'ACTIVE' ? 'bg-[#DCFCE7] text-[#16A34A]' : 'bg-amber-100 text-amber-800'
-                    }`}>
-                      {sub.status}
-                    </span>
-                  </div>
+                    <div className="mt-5 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-end gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setExtendTarget(sub);
+                          setExtendDays(30);
+                        }}
+                        className="flex items-center space-x-1 text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2.5 py-1.5 rounded-xl transition"
+                        title="Grant trial or grace days"
+                      >
+                        <Clock className="w-3.5 h-3.5 text-amber-600" />
+                        <span>Extend</span>
+                      </button>
 
-                  <div className="mt-4 space-y-1.5 text-xs text-[#64748B]">
-                    <div className="flex justify-between">
-                      <span>Doctor Chamber Limit:</span>
-                      <span className="font-bold text-[#1E293B] font-mono">{sub.maxDoctors}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Daily Token Quota:</span>
-                      <span className="font-bold text-[#1E293B] font-mono">{sub.maxDailyTokens}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Renews On:</span>
-                      <span className="font-medium text-[#1E293B]">
-                        {new Date(sub.currentPeriodEnd).toLocaleDateString()}
-                      </span>
+                      <button
+                        onClick={() => {
+                          setUpgradeTarget(sub);
+                          setSelectedPlan((sub.plan as any) || 'PROFESSIONAL');
+                        }}
+                        className="flex items-center space-x-1 text-xs font-bold text-[#0284C7] bg-[#E0F2FE] hover:bg-sky-100 px-2.5 py-1.5 rounded-xl transition"
+                      >
+                        <Sliders className="w-3.5 h-3.5" />
+                        <span>Change Tier</span>
+                      </button>
+
+                      {sub.status === 'ACTIVE' && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const targetClinic = clinics.find(c => c.id === sub.clinicId);
+                            if (targetClinic) {
+                              setSuspendTarget(targetClinic);
+                            } else {
+                              setSuspendTarget({
+                                id: sub.clinicId,
+                                name: sub.clinicName || 'Clinic',
+                                slug: '',
+                                phoneNumber: '',
+                                isActive: true,
+                                createdAt: '',
+                                doctorsCount: sub.maxDoctors,
+                                servicesCount: 0,
+                              });
+                            }
+                          }}
+                          className="flex items-center space-x-1 text-xs font-bold text-slate-600 hover:text-amber-700 bg-slate-100 hover:bg-amber-50 px-2 py-1.5 rounded-xl transition"
+                          title="Suspend membership"
+                        >
+                          <Ban className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
                   </div>
-                </div>
-
-                <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-end space-x-2">
-                  {sub.status === 'ACTIVE' && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const targetClinic = clinics.find(c => c.id === sub.clinicId);
-                        if (targetClinic) {
-                          setSuspendTarget(targetClinic);
-                        } else {
-                          setSuspendTarget({
-                            id: sub.clinicId,
-                            name: sub.clinicName || 'Clinic',
-                            slug: '',
-                            phoneNumber: '',
-                            isActive: true,
-                            createdAt: '',
-                            doctorsCount: sub.maxDoctors,
-                            servicesCount: 0,
-                          });
-                        }
-                      }}
-                      className="flex items-center space-x-1 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 px-2.5 py-1.5 rounded-xl transition"
-                      title="Suspend membership"
-                    >
-                      <Ban className="w-3.5 h-3.5 text-amber-600" />
-                      <span>Suspend</span>
-                    </button>
-                  )}
-                  <button
-                    onClick={() => {
-                      setUpgradeTarget(sub);
-                      setSelectedPlan(sub.plan as any || 'PRO');
-                    }}
-                    className="flex items-center space-x-1 text-xs font-bold text-[#0284C7] bg-[#E0F2FE] hover:bg-sky-100 px-3 py-1.5 rounded-xl transition"
-                  >
-                    <Sliders className="w-3.5 h-3.5" />
-                    <span>Change Tier</span>
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
+                );
+              })
+            )}
+          </div>
         </div>
       )}
 
@@ -1965,7 +2197,12 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
             </p>
 
             <div className="mt-4 space-y-2.5">
-              {(['FREE', 'STARTER', 'PRO', 'ENTERPRISE'] as const).map((tier) => (
+              {([
+                { tier: 'FREE', title: 'Starter Free', desc: '1 Doctor Chamber, 2 Staff, 1 TV Screen, Platform Ads (₹0)' },
+                { tier: 'BASIC', title: 'Essential Practice', desc: 'Up to 3 Doctors, 5 Staff, 2 TV Screens, Voice Chimes (₹999/mo)' },
+                { tier: 'PROFESSIONAL', title: 'Professional Clinic', desc: 'Up to 10 Doctors, 20 Staff, 5 TV Screens, Ad-Free (₹2,499/mo)' },
+                { tier: 'ENTERPRISE', title: 'Hospital & Chain Enterprise', desc: 'Up to 100 Doctors, 200 Staff, 25 TV Screens, Zero Ads (₹7,999/mo)' },
+              ] as const).map(({ tier, title, desc }) => (
                 <label
                   key={tier}
                   className={`flex items-center justify-between p-3.5 rounded-2xl border cursor-pointer transition ${
@@ -1979,17 +2216,12 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                       type="radio"
                       name="subscriptionTier"
                       checked={selectedPlan === tier}
-                      onChange={() => setSelectedPlan(tier)}
+                      onChange={() => setSelectedPlan(tier as any)}
                       className="text-[#0284C7] focus:ring-[#0284C7]"
                     />
                     <div>
-                      <span className="font-extrabold text-xs text-[#1E293B] block">{tier}</span>
-                      <span className="text-[10px] text-slate-500">
-                        {tier === 'FREE' ? '1 Doctor, 50 Tokens/day' :
-                         tier === 'STARTER' ? '3 Doctors, 150 Tokens/day' :
-                         tier === 'PRO' ? '10 Doctors, Unlimited Tokens' :
-                         'Unlimited Doctors & Multi-Chains'}
-                      </span>
+                      <span className="font-extrabold text-xs text-[#1E293B] block">{title}</span>
+                      <span className="text-[10px] text-slate-500">{desc}</span>
                     </div>
                   </div>
                 </label>
@@ -2011,6 +2243,90 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                 className="px-5 py-2 text-xs font-bold bg-[#0284C7] hover:bg-[#0369A1] text-white rounded-xl shadow-md transition disabled:opacity-50"
               >
                 {submittingUpgrade ? 'Updating...' : 'Save Plan'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 3B: EXTEND MEMBERSHIP VALIDITY */}
+      {extendTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl border border-slate-100">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center space-x-2.5">
+                <Clock className="w-5 h-5 text-amber-600" />
+                <h3 className="font-black text-lg text-[#1E293B]">Extend Membership Validity</h3>
+              </div>
+              <button onClick={() => setExtendTarget(null)} className="p-1 hover:bg-slate-100 text-slate-400 rounded-lg">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-[#64748B] mt-3">
+              Grant free trial or grace days to <b className="text-[#1E293B]">{extendTarget.clinicName}</b> ({extendTarget.plan} Plan)
+            </p>
+
+            <div className="mt-4 space-y-2">
+              <label className="text-xs font-bold text-slate-700 block">Select Additional Days:</label>
+              <div className="grid grid-cols-4 gap-2">
+                {[15, 30, 60, 90].map((days) => (
+                  <button
+                    key={days}
+                    type="button"
+                    onClick={() => setExtendDays(days)}
+                    className={`py-2 rounded-xl text-xs font-black transition ${
+                      extendDays === days
+                        ? 'bg-amber-600 text-white shadow-sm'
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                    }`}
+                  >
+                    +{days} Days
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-3">
+                <label className="text-xs font-semibold text-slate-600 block mb-1">Or Custom Days:</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="3650"
+                  value={extendDays}
+                  onChange={(e) => setExtendDays(Math.max(1, parseInt(e.target.value) || 1))}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-800"
+                />
+              </div>
+
+              <div className="mt-3 p-3 bg-amber-50 rounded-xl border border-amber-200/80 text-[11px] text-amber-800">
+                <span>Extended expiration date will be: </span>
+                <strong className="font-mono">
+                  {new Date(
+                    (extendTarget.endDate && new Date(extendTarget.endDate) > new Date()
+                      ? new Date(extendTarget.endDate)
+                      : new Date()
+                    ).getTime() + extendDays * 86400000
+                  ).toLocaleDateString()}
+                </strong>
+              </div>
+            </div>
+
+            <div className="mt-5 pt-3 flex items-center justify-end space-x-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setExtendTarget(null)}
+                className="px-4 py-2 text-xs font-bold text-[#64748B] hover:bg-slate-100 rounded-xl"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleExtendValidity}
+                disabled={submittingExtend}
+                className="px-5 py-2 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white rounded-xl shadow-md transition disabled:opacity-50 flex items-center space-x-1.5"
+              >
+                <Clock className="w-4 h-4" />
+                <span>{submittingExtend ? 'Granting...' : `Grant +${extendDays} Days`}</span>
               </button>
             </div>
           </div>

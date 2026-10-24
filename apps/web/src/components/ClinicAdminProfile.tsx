@@ -18,7 +18,8 @@ import {
   Volume2,
   DollarSign,
   UserCheck,
-  RefreshCw
+  RefreshCw,
+  Crown
 } from 'lucide-react';
 import { ClinicDto } from '@queueapp/shared';
 
@@ -685,6 +686,22 @@ export const ClinicAdminProfile: React.FC<ClinicAdminProfileProps> = ({
               <Volume2 className="w-4 h-4 text-amber-400 mb-2 group-hover:scale-110 transition-transform" />
               <p className="text-xs font-bold text-white">Voice Audio</p>
               <p className="text-[10px] text-slate-400 mt-0.5">Chime &amp; announcements</p>
+            </button>
+
+            <button
+              onClick={() => onNavigateTab('SUBSCRIPTION')}
+              className="p-3 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 rounded-2xl text-left transition group col-span-2 sm:col-span-4"
+            >
+              <div className="flex items-center space-x-2">
+                <Crown className="w-4 h-4 text-purple-400 group-hover:scale-110 transition-transform" />
+                <p className="text-xs font-bold text-white">Subscription &amp; Billing Portal</p>
+                <span className="text-[10px] bg-purple-500/20 text-purple-300 font-bold px-2 py-0.5 rounded-full border border-purple-400/30">
+                  Manage Tier &amp; Invoices
+                </span>
+              </div>
+              <p className="text-[10px] text-slate-400 mt-1">
+                View current plan limits, upgrade with Monthly/Quarterly/Yearly pricing, and download official payment receipts.
+              </p>
             </button>
           </div>
         </div>

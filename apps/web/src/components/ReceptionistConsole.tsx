@@ -25,7 +25,8 @@ import {
   DollarSign,
   Monitor,
   Volume2,
-  UserCheck
+  UserCheck,
+  Crown
 } from 'lucide-react';
 import { ClinicAnalytics } from './ClinicAnalytics';
 import { DoctorManagement } from './DoctorManagement';
@@ -34,7 +35,8 @@ import { ClinicPricingConfig } from './ClinicPricingConfig';
 import { VoiceAnnouncementConfig } from './VoiceAnnouncementConfig';
 import { ReceptionistManagement } from './ReceptionistManagement';
 import { ClinicAdminProfile } from './ClinicAdminProfile';
-import { VoiceAnnouncementMode } from '@queueapp/shared';
+import { ClinicSubscriptionTab } from './ClinicSubscriptionTab';
+import { VoiceAnnouncementMode, SubscriptionDto } from '@queueapp/shared';
 
 interface QueueItem {
   id: string;
@@ -102,7 +104,8 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
   const [selectedQueueId, setSelectedQueueId] = useState<string>('');
   
   // Navigation tabs within Clinic Console
-  const [activeConsoleTab, setActiveConsoleTab] = useState<'QUEUE' | 'DOCTORS' | 'SERVICES' | 'RECEPTIONIST' | 'ANALYTICS' | 'PRICING' | 'VOICE' | 'PROFILE'>('QUEUE');
+  const [activeConsoleTab, setActiveConsoleTab] = useState<'QUEUE' | 'DOCTORS' | 'SERVICES' | 'RECEPTIONIST' | 'ANALYTICS' | 'PRICING' | 'VOICE' | 'PROFILE' | 'SUBSCRIPTION'>('QUEUE');
+  const [clinicSub, setClinicSub] = useState<SubscriptionDto | null>(null);
   
   // Active queue state
   const [currentServing, setCurrentServing] = useState<QueueItem | null>(null);
@@ -162,6 +165,22 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
       })
       .catch((err) => console.error('Error fetching queues:', err));
   }, [clinicId, isReceptionistAuthenticated, token]);
+
+  // Fetch clinic subscription to power expiring membership notifications & tab badge
+  useEffect(() => {
+    if (!isReceptionistAuthenticated || !clinicId || !token) return;
+
+    fetch(`/api/clinics/${clinicId}/subscription`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.success && res.data) {
+          setClinicSub(res.data);
+        }
+      })
+      .catch(() => {});
+  }, [clinicId, isReceptionistAuthenticated, token, activeConsoleTab]);
 
   const normalizeEntry = (e: any): QueueItem => ({
     id: e.id,
@@ -491,6 +510,21 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
                 <Shield className="w-3.5 h-3.5 text-[#0284C7]" />
                 <span>Admin Profile</span>
               </button>
+              <button
+                onClick={() => setActiveConsoleTab('SUBSCRIPTION')}
+                className={`relative flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition ${
+                  activeConsoleTab === 'SUBSCRIPTION' ? 'bg-white text-[#1E293B] shadow-sm' : 'text-[#64748B] hover:text-[#1E293B]'
+                }`}
+              >
+                <Crown className="w-3.5 h-3.5 text-purple-600" />
+                <span>Subscription &amp; Billing</span>
+                {clinicSub?.isExpiringSoon && (
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" title="Expiring soon" />
+                )}
+                {clinicSub?.isExpired && (
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" title="Membership expired" />
+                )}
+              </button>
             </div>
           ) : (
             onOpenTVView && (
@@ -515,6 +549,55 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
           )}
         </div>
       </div>
+
+      {/* Expiring / Expired Notification Banner for Clinic Admin across all tabs */}
+      {isOwnerOrAdmin && activeConsoleTab !== 'SUBSCRIPTION' && clinicSub?.isExpired && (
+        <div className="mb-6 bg-red-600 text-white p-4 rounded-2xl shadow-lg border border-red-400/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in slide-in-from-top-2">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+              <AlertCircle className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <span className="font-black text-sm block">Subscription Expired!</span>
+              <p className="text-xs text-red-100 mt-0.5">
+                Your clinic membership has expired. Multi-doctor chambers and smart TV queue features are restricted. Renew now to restore full access.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setActiveConsoleTab('SUBSCRIPTION')}
+            className="bg-white hover:bg-red-50 text-red-700 font-extrabold px-4 py-2 rounded-xl text-xs transition active:scale-95 shrink-0 flex items-center space-x-1.5 shadow-sm"
+          >
+            <Crown className="w-4 h-4 text-amber-500" />
+            <span>Renew Membership Now</span>
+          </button>
+        </div>
+      )}
+
+      {isOwnerOrAdmin && activeConsoleTab !== 'SUBSCRIPTION' && !clinicSub?.isExpired && clinicSub?.isExpiringSoon && (
+        <div className="mb-6 bg-gradient-to-r from-amber-500 to-orange-600 text-white p-4 rounded-2xl shadow-lg border border-amber-300/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in slide-in-from-top-2">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+              <Clock className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <span className="font-black text-sm block">
+                Membership Expiring Soon • {clinicSub.daysRemaining} {clinicSub.daysRemaining === 1 ? 'Day' : 'Days'} Remaining!
+              </span>
+              <p className="text-xs text-amber-100 mt-0.5">
+                Your {clinicSub.plan} plan expires on {clinicSub.endDate ? new Date(clinicSub.endDate).toLocaleDateString() : 'soon'}. Renew today to prevent service interruption.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setActiveConsoleTab('SUBSCRIPTION')}
+            className="bg-white hover:bg-amber-50 text-amber-800 font-extrabold px-4 py-2 rounded-xl text-xs transition active:scale-95 shrink-0 flex items-center space-x-1.5 shadow-sm"
+          >
+            <Crown className="w-4 h-4 text-amber-600" />
+            <span>Renew Plan</span>
+          </button>
+        </div>
+      )}
 
       {/* Conditional Content by Active Tab */}
       {isOwnerOrAdmin && activeConsoleTab === 'VOICE' && (
@@ -599,6 +682,15 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
           currentUser={currentUser}
           onProfileUpdated={onProfileUpdated}
           onNavigateTab={(tab) => setActiveConsoleTab(tab)}
+        />
+      )}
+
+      {isOwnerOrAdmin && activeConsoleTab === 'SUBSCRIPTION' && (
+        <ClinicSubscriptionTab
+          clinicId={clinicId}
+          clinicName={activeClinicObj?.name || currentUser?.clinicName || clinics.find(c => c.id === clinicId)?.name || 'Clinic'}
+          token={token}
+          onRefreshData={fetchQueueDetails}
         />
       )}
 
