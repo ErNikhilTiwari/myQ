@@ -143,6 +143,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
   const [receptionists, setReceptionists] = useState<ClinicReceptionistSummaryData[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [recSearchQuery, setRecSearchQuery] = useState('');
+  const [suspendedSearchQuery, setSuspendedSearchQuery] = useState('');
   const [clinicChainFilter, setClinicChainFilter] = useState('ALL');
   const [clinicCityFilter, setClinicCityFilter] = useState('ALL');
   const [loading, setLoading] = useState(false);
@@ -246,7 +247,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
           const res = await fetch('/api/super/clinics', { headers });
           if (res.ok) {
             const json = await res.json();
-            if (json?.success && Array.isArray(json.data) && json.data.length > 0) {
+            if (json?.success && Array.isArray(json.data)) {
               return json;
             }
           }
@@ -258,7 +259,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
           const res2 = await fetch('/api/clinics?all=true', { headers });
           if (res2.ok) {
             const json2 = await res2.json();
-            if (json2?.success && Array.isArray(json2.data) && json2.data.length > 0) {
+            if (json2?.success && Array.isArray(json2.data)) {
               return json2;
             }
           }
@@ -753,7 +754,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
   });
 
   const filteredSuspendedClinics = suspendedClinics.filter((c) => {
-    const q = searchQuery.trim().toLowerCase();
+    const q = suspendedSearchQuery.trim().toLowerCase();
     const cleanQDigits = q.replace(/\D/g, '');
     const cleanPhoneDigits = c.phoneNumber ? c.phoneNumber.replace(/\D/g, '') : '';
 
@@ -954,6 +955,29 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
               onChange={(e) => setRecSearchQuery(e.target.value)}
               className="w-full bg-[#F8FAFC] border border-slate-200 rounded-xl pl-9 pr-3 py-1.5 text-xs font-semibold text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none"
             />
+          </div>
+        )}
+
+        {activeTab === 'SUSPENDED' && (
+          <div className="relative flex-1 sm:max-w-xs">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+            <input
+              type="text"
+              placeholder="Search suspended clinics..."
+              value={suspendedSearchQuery}
+              onChange={(e) => setSuspendedSearchQuery(e.target.value)}
+              className="w-full bg-[#F8FAFC] border border-slate-200 rounded-xl pl-9 pr-8 py-1.5 text-xs font-semibold text-[#1E293B] focus:ring-2 focus:ring-amber-500 focus:outline-none"
+            />
+            {suspendedSearchQuery && (
+              <button
+                type="button"
+                onClick={() => setSuspendedSearchQuery('')}
+                className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 p-0.5 rounded-full hover:bg-slate-200 transition"
+                title="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -1499,13 +1523,27 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
 
           {/* Suspended Clinics Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredSuspendedClinics.length === 0 ? (
+            {suspendedClinics.length === 0 ? (
               <div className="col-span-full py-16 text-center text-xs text-[#64748B] bg-white rounded-2xl border border-slate-200 p-6">
                 <ShieldCheck className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
                 <p className="font-bold text-slate-700 text-sm">No Suspended Memberships</p>
                 <p className="text-slate-400 mt-1">
                   All provisioned clinics currently have active subscription memberships.
                 </p>
+              </div>
+            ) : filteredSuspendedClinics.length === 0 ? (
+              <div className="col-span-full py-16 text-center text-xs text-[#64748B] bg-white rounded-2xl border border-slate-200 p-6">
+                <Search className="w-10 h-10 text-amber-500 mx-auto mb-2" />
+                <p className="font-bold text-slate-700 text-sm">No Matching Suspended Clinics</p>
+                <p className="text-slate-400 mt-1">
+                  No suspended clinics match &quot;{suspendedSearchQuery}&quot;.
+                </p>
+                <button
+                  onClick={() => setSuspendedSearchQuery('')}
+                  className="mt-3 px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-800 text-xs font-bold rounded-lg transition"
+                >
+                  Clear Search
+                </button>
               </div>
             ) : (
               filteredSuspendedClinics.map((clinic) => {
