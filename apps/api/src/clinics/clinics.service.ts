@@ -28,28 +28,56 @@ export class ClinicsService {
       ];
     }
 
-    const clinics = await this.prisma.clinic.findMany({
-      where,
-      include: {
-        subscriptions: {
-          orderBy: { createdAt: 'desc' },
-          take: 1,
-        },
-        _count: {
-          select: {
-            doctors: true,
-            services: true,
-            queues: true,
+    try {
+      const clinics = await this.prisma.clinic.findMany({
+        where,
+        include: {
+          subscriptions: {
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+          },
+          _count: {
+            select: {
+              doctors: true,
+              services: true,
+              queues: true,
+            },
           },
         },
-      },
-      orderBy: { name: 'asc' },
-    });
+        orderBy: { name: 'asc' },
+      });
 
-    return clinics.map((c) => {
-      const latestSub = c.subscriptions?.[0];
-      const subscriptionStatus = latestSub?.status || (c.isActive ? 'ACTIVE' : 'SUSPENDED');
-      return {
+      return clinics.map((c) => {
+        const latestSub = c.subscriptions?.[0];
+        const subscriptionStatus = latestSub?.status || (c.isActive ? 'ACTIVE' : 'SUSPENDED');
+        return {
+          id: c.id,
+          chainId: c.chainId || null,
+          name: c.name,
+          slug: c.slug,
+          phoneNumber: c.phoneNumber,
+          email: c.email,
+          address: c.address,
+          city: c.city || null,
+          inClinicPrice: c.inClinicPrice ?? 200,
+          remotePrice: c.remotePrice ?? 250,
+          voiceAnnouncementMode: (c as any).voiceAnnouncementMode ?? 'TOKEN_PATIENT_DOCTOR_ROOM',
+          isActive: c.isActive,
+          subscriptionStatus,
+          plan: latestSub?.plan || 'FREE',
+          createdAt: c.createdAt.toISOString(),
+          doctorsCount: c._count?.doctors ?? 0,
+          servicesCount: c._count?.services ?? 0,
+          queuesCount: c._count?.queues ?? 0,
+        };
+      });
+    } catch (err) {
+      console.error('[ClinicsService.findAll] Primary query error, activating fallback:', err);
+      const basicClinics = await this.prisma.clinic.findMany({
+        where,
+        orderBy: { name: 'asc' },
+      });
+      return basicClinics.map((c) => ({
         id: c.id,
         chainId: c.chainId || null,
         name: c.name,
@@ -62,14 +90,14 @@ export class ClinicsService {
         remotePrice: c.remotePrice ?? 250,
         voiceAnnouncementMode: (c as any).voiceAnnouncementMode ?? 'TOKEN_PATIENT_DOCTOR_ROOM',
         isActive: c.isActive,
-        subscriptionStatus,
-        plan: latestSub?.plan || 'FREE',
+        subscriptionStatus: c.isActive ? 'ACTIVE' : 'SUSPENDED',
+        plan: 'FREE',
         createdAt: c.createdAt.toISOString(),
-        doctorsCount: c._count.doctors,
-        servicesCount: c._count.services,
-        queuesCount: c._count.queues,
-      };
-    });
+        doctorsCount: 0,
+        servicesCount: 0,
+        queuesCount: 0,
+      }));
+    }
   }
 
   /**
@@ -736,28 +764,56 @@ export class ClinicsService {
    * Super Admin lists ALL clinics (active + suspended) with subscription status & counts
    */
   async getAllSuperClinics() {
-    const clinics = await this.prisma.clinic.findMany({
-      include: {
-        subscriptions: {
-          orderBy: { createdAt: 'desc' },
-          take: 1,
-        },
-        _count: {
-          select: {
-            doctors: true,
-            services: true,
-            queues: true,
-            staff: true,
+    try {
+      const clinics = await this.prisma.clinic.findMany({
+        include: {
+          subscriptions: {
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+          },
+          _count: {
+            select: {
+              doctors: true,
+              services: true,
+              queues: true,
+              staff: true,
+            },
           },
         },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+        orderBy: { createdAt: 'desc' },
+      });
 
-    return clinics.map((c) => {
-      const latestSub = c.subscriptions?.[0];
-      const subscriptionStatus = latestSub?.status || (c.isActive ? 'ACTIVE' : 'SUSPENDED');
-      return {
+      return clinics.map((c) => {
+        const latestSub = c.subscriptions?.[0];
+        const subscriptionStatus = latestSub?.status || (c.isActive ? 'ACTIVE' : 'SUSPENDED');
+        return {
+          id: c.id,
+          chainId: c.chainId || null,
+          name: c.name,
+          slug: c.slug,
+          phoneNumber: c.phoneNumber,
+          email: c.email,
+          address: c.address,
+          city: c.city || null,
+          inClinicPrice: c.inClinicPrice ?? 200,
+          remotePrice: c.remotePrice ?? 250,
+          voiceAnnouncementMode: (c as any).voiceAnnouncementMode ?? 'TOKEN_PATIENT_DOCTOR_ROOM',
+          isActive: c.isActive,
+          subscriptionStatus,
+          plan: latestSub?.plan || 'FREE',
+          createdAt: c.createdAt.toISOString(),
+          doctorsCount: c._count?.doctors ?? 0,
+          servicesCount: c._count?.services ?? 0,
+          queuesCount: c._count?.queues ?? 0,
+          staffCount: c._count?.staff ?? 0,
+        };
+      });
+    } catch (err) {
+      console.error('[ClinicsService.getAllSuperClinics] Primary query error, activating fallback:', err);
+      const basicClinics = await this.prisma.clinic.findMany({
+        orderBy: { createdAt: 'desc' },
+      });
+      return basicClinics.map((c) => ({
         id: c.id,
         chainId: c.chainId || null,
         name: c.name,
@@ -770,15 +826,15 @@ export class ClinicsService {
         remotePrice: c.remotePrice ?? 250,
         voiceAnnouncementMode: (c as any).voiceAnnouncementMode ?? 'TOKEN_PATIENT_DOCTOR_ROOM',
         isActive: c.isActive,
-        subscriptionStatus,
-        plan: latestSub?.plan || 'FREE',
+        subscriptionStatus: c.isActive ? 'ACTIVE' : 'SUSPENDED',
+        plan: 'FREE',
         createdAt: c.createdAt.toISOString(),
-        doctorsCount: c._count.doctors,
-        servicesCount: c._count.services,
-        queuesCount: c._count.queues,
-        staffCount: c._count.staff,
-      };
-    });
+        doctorsCount: 0,
+        servicesCount: 0,
+        queuesCount: 0,
+        staffCount: 0,
+      }));
+    }
   }
 
   /**

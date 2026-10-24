@@ -272,28 +272,50 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
           const res = await fetch('/api/super/clinics', { headers });
           if (res.ok) {
             const json = await res.json();
-            if (json?.success && Array.isArray(json.data)) {
+            if (Array.isArray(json?.data) && json.data.length > 0) {
+              return json;
+            }
+            if (Array.isArray(json?.data)) {
+              // Check fallback if super returned empty array
+              const fallback = await fetch('/api/clinics?all=true', { headers }).then(r => r.json()).catch(() => null);
+              if (Array.isArray(fallback?.data) && fallback.data.length > json.data.length) {
+                return fallback;
+              }
               return json;
             }
           }
-        } catch {
-          // ignore error and try fallback
+        } catch (e) {
+          console.warn('Super clinics fetch error, falling back:', e);
         }
 
         try {
           const res2 = await fetch('/api/clinics?all=true', { headers });
           if (res2.ok) {
             const json2 = await res2.json();
-            if (json2?.success && Array.isArray(json2.data)) {
+            if (Array.isArray(json2?.data)) {
               return json2;
             }
           }
-        } catch {
-          // ignore error and try fallback
+        } catch (e) {
+          console.warn('Clinics all=true fetch error, falling back:', e);
         }
 
-        const res3 = await fetch('/api/clinics');
-        return res3.json();
+        try {
+          const res3 = await fetch('/api/clinics');
+          if (res3.ok) {
+            const json3 = await res3.json();
+            if (Array.isArray(json3?.data)) {
+              return json3;
+            }
+            if (Array.isArray(json3)) {
+              return { success: true, data: json3 };
+            }
+          }
+        } catch (e) {
+          console.warn('Public clinics fetch error:', e);
+        }
+
+        return { success: true, data: [] };
       };
 
       const [cRes, chainRes, subRes, recRes] = await Promise.all([
@@ -303,7 +325,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
         fetch('/api/super/receptionists', { headers }).then(r => r.json()).catch(() => ({ success: false })),
       ]);
 
-      if (cRes?.success && Array.isArray(cRes.data)) {
+      if (Array.isArray(cRes?.data)) {
         setClinics(cRes.data);
       } else if (Array.isArray(cRes)) {
         setClinics(cRes);
@@ -788,13 +810,13 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     const cleanPhoneDigits = c.phoneNumber ? c.phoneNumber.replace(/\D/g, '') : '';
 
     const matchesQuery = !q || Boolean(
-      c.name.toLowerCase().includes(q) ||
-      c.slug.toLowerCase().includes(q) ||
+      (c.name && c.name.toLowerCase().includes(q)) ||
+      (c.slug && c.slug.toLowerCase().includes(q)) ||
       (c.city && c.city.toLowerCase().includes(q)) ||
       (c.address && c.address.toLowerCase().includes(q)) ||
       (c.email && c.email.toLowerCase().includes(q)) ||
       (cleanQDigits.length > 0 && cleanPhoneDigits.includes(cleanQDigits)) ||
-      c.phoneNumber.includes(q)
+      (c.phoneNumber && c.phoneNumber.includes(q))
     );
 
     const matchesChain = clinicChainFilter === 'ALL' ||
@@ -811,12 +833,12 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     const cleanPhoneDigits = c.phoneNumber ? c.phoneNumber.replace(/\D/g, '') : '';
 
     return !q || Boolean(
-      c.name.toLowerCase().includes(q) ||
-      c.slug.toLowerCase().includes(q) ||
+      (c.name && c.name.toLowerCase().includes(q)) ||
+      (c.slug && c.slug.toLowerCase().includes(q)) ||
       (c.city && c.city.toLowerCase().includes(q)) ||
       (c.address && c.address.toLowerCase().includes(q)) ||
       (cleanQDigits.length > 0 && cleanPhoneDigits.includes(cleanQDigits)) ||
-      c.phoneNumber.includes(q)
+      (c.phoneNumber && c.phoneNumber.includes(q))
     );
   });
 

@@ -13,7 +13,9 @@
     "typecheck": "npm run typecheck --workspaces",
     "dev": "npm run dev --workspaces",
     "host": "npm run build --workspace=@queueapp/web && npm run build --workspace=@queueapp/api && node apps/api/dist/src/main.js",
-    "host:quick": "node apps/api/dist/src/main.js"
+    "host:quick": "node apps/api/dist/src/main.js",
+    "db:push": "npm.cmd --prefix apps/api run db:push",
+    "db:generate": "npm.cmd --prefix apps/api run db:generate"
   },
   "devDependencies": {
     "@types/node": "^20.11.24",
