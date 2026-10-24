@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { 
   CreateClinicDto, 
@@ -89,11 +89,19 @@ export class ClinicsService {
       throw new ConflictException(`Clinic slug "${dto.slug}" already exists. Please choose another.`);
     }
 
+    const rawDigits = dto.phoneNumber.replace(/\D/g, '').slice(-10);
+    if (rawDigits.length !== 10 || !/^[6-9]\d{9}$/.test(rawDigits)) {
+      throw new BadRequestException(
+        'Invalid mobile number. Please provide a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9 (e.g. 9876543210).',
+      );
+    }
+    const cleanPhone = `+91${rawDigits}`;
+
     const clinic = await this.prisma.clinic.create({
       data: {
         name: dto.name,
         slug: dto.slug,
-        phoneNumber: dto.phoneNumber,
+        phoneNumber: cleanPhone,
         email: dto.email,
         address: dto.address,
         city: dto.city,
@@ -106,11 +114,7 @@ export class ClinicsService {
 
     // Auto-provision Clinic Admin User account and link ClinicStaff
     if (dto.phoneNumber) {
-      const cleanPhone = dto.phoneNumber.startsWith('+91')
-        ? dto.phoneNumber
-        : `+91${dto.phoneNumber.replace(/\D/g, '').slice(-10)}`;
-
-      const defaultPasswordHash = await bcrypt.hash('Password@123', 10);
+      const adminPasswordHash = await bcrypt.hash(dto.adminPassword?.trim() || 'Password@123', 10);
 
       let adminUser = await this.prisma.user.findFirst({
         where: {
@@ -127,7 +131,7 @@ export class ClinicsService {
             phoneNumber: cleanPhone,
             name: `${dto.name} Admin`,
             email: dto.email || null,
-            passwordHash: defaultPasswordHash,
+            passwordHash: adminPasswordHash,
             role: UserRole.CLINIC_ADMIN,
           },
         });
@@ -137,6 +141,14 @@ export class ClinicsService {
           data: {
             role: UserRole.CLINIC_ADMIN,
             name: adminUser.name.startsWith('Patient ') ? `${dto.name} Admin` : adminUser.name,
+            passwordHash: dto.adminPassword ? adminPasswordHash : (adminUser.passwordHash || adminPasswordHash),
+          },
+        });
+      } else if (dto.adminPassword) {
+        adminUser = await this.prisma.user.update({
+          where: { id: adminUser.id },
+          data: {
+            passwordHash: adminPasswordHash,
           },
         });
       }
@@ -375,17 +387,20 @@ export class ClinicsService {
       );
     }
 
-    const rawPhone = dto.phoneNumber.trim();
-    const cleanPhone = rawPhone.startsWith('+91')
-      ? rawPhone
-      : `+91${rawPhone.replace(/\D/g, '').slice(-10)}`;
+    const rawDigits = dto.phoneNumber.replace(/\D/g, '').slice(-10);
+    if (rawDigits.length !== 10 || !/^[6-9]\d{9}$/.test(rawDigits)) {
+      throw new BadRequestException(
+        'Invalid mobile number. Please provide a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.',
+      );
+    }
+    const cleanPhone = `+91${rawDigits}`;
 
     const passwordHash = await bcrypt.hash(dto.password || 'Password@123', 10);
 
     let user = await this.prisma.user.findFirst({
       where: {
         OR: [
-          { phoneNumber: rawPhone },
+          { phoneNumber: rawDigits },
           { phoneNumber: cleanPhone },
         ],
       },
@@ -482,9 +497,13 @@ export class ClinicsService {
     if (typeof dto.isActive === 'boolean') updateData.isActive = dto.isActive;
 
     if (dto.phoneNumber) {
-      const cleanPhone = dto.phoneNumber.startsWith('+91')
-        ? dto.phoneNumber
-        : `+91${dto.phoneNumber.replace(/\D/g, '').slice(-10)}`;
+      const rawDigits = dto.phoneNumber.replace(/\D/g, '').slice(-10);
+      if (rawDigits.length !== 10 || !/^[6-9]\d{9}$/.test(rawDigits)) {
+        throw new BadRequestException(
+          'Invalid mobile number. Please provide a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.',
+        );
+      }
+      const cleanPhone = `+91${rawDigits}`;
 
       const phoneConflict = await this.prisma.user.findFirst({
         where: {

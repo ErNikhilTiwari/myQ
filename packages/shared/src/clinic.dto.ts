@@ -28,6 +28,7 @@ export interface CreateClinicDto {
   name: string;
   slug: string;
   phoneNumber: string;
+  adminPassword?: string;
   email?: string;
   address?: string;
   city?: string;

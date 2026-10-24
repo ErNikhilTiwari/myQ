@@ -101,6 +101,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
   const [newClinicName, setNewClinicName] = useState('');
   const [newClinicSlug, setNewClinicSlug] = useState('');
   const [newClinicPhone, setNewClinicPhone] = useState('');
+  const [newClinicAdminPassword, setNewClinicAdminPassword] = useState('');
   const [newClinicEmail, setNewClinicEmail] = useState('');
   const [newClinicAddress, setNewClinicAddress] = useState('');
   const [newClinicCity, setNewClinicCity] = useState('');
@@ -174,8 +175,22 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
   const handleCreateClinic = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newClinicName.trim() || !newClinicSlug.trim() || !newClinicPhone.trim()) {
-      setClinicFormError('Clinic name, unique slug identifier, and phone number are required.');
+      setClinicFormError('Clinic name, unique slug identifier, and mobile number are required.');
       return;
+    }
+
+    const cleanPhoneDigits = newClinicPhone.replace(/\D/g, '').slice(-10);
+    if (cleanPhoneDigits.length !== 10 || !/^[6-9]\d{9}$/.test(cleanPhoneDigits)) {
+      setClinicFormError('Please enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9 for the clinic.');
+      return;
+    }
+
+    if (newClinicReceptionistPhone.trim()) {
+      const cleanRecDigits = newClinicReceptionistPhone.replace(/\D/g, '').slice(-10);
+      if (cleanRecDigits.length !== 10 || !/^[6-9]\d{9}$/.test(cleanRecDigits)) {
+        setClinicFormError('Please enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9 for the receptionist.');
+        return;
+      }
     }
 
     setSubmittingClinic(true);
@@ -191,13 +206,14 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
         body: JSON.stringify({
           name: newClinicName.trim(),
           slug: newClinicSlug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-'),
-          phoneNumber: newClinicPhone.startsWith('+91') ? newClinicPhone : `+91${newClinicPhone.replace(/\D/g, '')}`,
+          phoneNumber: cleanPhoneDigits,
+          adminPassword: newClinicAdminPassword.trim() || undefined,
           email: newClinicEmail.trim() || undefined,
           address: newClinicAddress.trim() || undefined,
           city: newClinicCity.trim() || undefined,
           chainId: newClinicChainId || undefined,
           receptionistName: newClinicReceptionistName.trim() || undefined,
-          receptionistPhoneNumber: newClinicReceptionistPhone.trim() || undefined,
+          receptionistPhoneNumber: newClinicReceptionistPhone.trim() ? newClinicReceptionistPhone.replace(/\D/g, '').slice(-10) : undefined,
           receptionistPassword: newClinicReceptionistPassword.trim() || undefined,
         }),
       });
@@ -210,6 +226,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
         setNewClinicName('');
         setNewClinicSlug('');
         setNewClinicPhone('');
+        setNewClinicAdminPassword('');
         setNewClinicEmail('');
         setNewClinicAddress('');
         setNewClinicCity('');
@@ -1000,17 +1017,46 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-[#64748B] block mb-1">Phone Number (+91)</label>
-                  <input
-                    type="text"
-                    placeholder="+919876543210"
-                    value={newClinicPhone}
-                    onChange={(e) => setNewClinicPhone(e.target.value)}
-                    className="w-full bg-[#F8FAFC] border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none"
-                    required
-                  />
+                  <label className="text-xs font-bold text-[#64748B] block mb-1">
+                    Clinic Mobile Number (10 Digits) <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex items-center">
+                    <span className="bg-slate-100 border border-r-0 border-slate-300 text-slate-600 text-xs px-3 py-2 rounded-l-xl font-bold font-mono">
+                      +91
+                    </span>
+                    <input
+                      type="tel"
+                      maxLength={10}
+                      placeholder="9876543210"
+                      value={newClinicPhone}
+                      onChange={(e) => setNewClinicPhone(e.target.value.replace(/\D/g, ''))}
+                      className="w-full bg-[#F8FAFC] border border-slate-200 rounded-r-xl px-3.5 py-2 text-xs font-mono font-semibold text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none"
+                      required
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    Indian mobile number for Clinic Admin login.
+                  </p>
                 </div>
 
+                <div>
+                  <label className="text-xs font-bold text-[#64748B] block mb-1">
+                    Admin Password <span className="text-slate-400 font-normal">(Optional, default: Password@123)</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Password@123"
+                    value={newClinicAdminPassword}
+                    onChange={(e) => setNewClinicAdminPassword(e.target.value)}
+                    className="w-full bg-[#F8FAFC] border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-mono font-semibold text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    Initial password for Clinic Admin account.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-[#64748B] block mb-1">Contact Email</label>
                   <input
@@ -1021,9 +1067,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                     className="w-full bg-[#F8FAFC] border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none"
                   />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-[#64748B] block mb-1">City</label>
                   <input
@@ -1034,7 +1078,9 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                     className="w-full bg-[#F8FAFC] border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none"
                   />
                 </div>
+              </div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-[#64748B] block mb-1">Hospital Chain (Optional)</label>
                   <select
@@ -1050,21 +1096,21 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                     ))}
                   </select>
                 </div>
-              </div>
 
-              <div>
-                <label className="text-xs font-bold text-[#64748B] block mb-1">Street Address</label>
-                <input
-                  type="text"
-                  placeholder="e.g. 104 Park Avenue, Medical Enclave"
-                  value={newClinicAddress}
-                  onChange={(e) => setNewClinicAddress(e.target.value)}
-                  className="w-full bg-[#F8FAFC] border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none"
-                />
+                <div>
+                  <label className="text-xs font-bold text-[#64748B] block mb-1">Street Address</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 104 Park Avenue, Medical Enclave"
+                    value={newClinicAddress}
+                    onChange={(e) => setNewClinicAddress(e.target.value)}
+                    className="w-full bg-[#F8FAFC] border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none"
+                  />
+                </div>
               </div>
 
               {/* Optional Front Desk Receptionist Account */}
-              <div className="bg-teal-50/70 border border-teal-200/80 rounded-2xl p-3.5 space-y-2.5">
+              <div className="bg-teal-50/70 border border-teal-200/80 rounded-2xl p-4 space-y-3">
                 <div className="flex items-center space-x-2">
                   <UserCheck className="w-4 h-4 text-teal-600" />
                   <span className="text-xs font-bold text-teal-900">Front Desk Receptionist (Optional • 1 Limit)</span>
@@ -1072,7 +1118,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                 <p className="text-[11px] text-teal-700/90 leading-relaxed">
                   Optionally provision the clinic's dedicated front desk receptionist now, or assign later via the Receptionists tab.
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="text-[11px] font-bold text-slate-600 block mb-1">Receptionist Name</label>
                     <input
@@ -1099,6 +1145,18 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                       />
                     </div>
                   </div>
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                    Receptionist Password <span className="text-slate-400 font-normal">(Optional, default: Password@123)</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Password@123"
+                    value={newClinicReceptionistPassword}
+                    onChange={(e) => setNewClinicReceptionistPassword(e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-mono font-semibold text-slate-800 focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                  />
                 </div>
               </div>
 
