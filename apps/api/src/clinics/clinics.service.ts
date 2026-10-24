@@ -42,11 +42,13 @@ export class ClinicsService {
 
     return clinics.map((c) => ({
       id: c.id,
+      chainId: c.chainId || null,
       name: c.name,
       slug: c.slug,
       phoneNumber: c.phoneNumber,
       email: c.email,
       address: c.address,
+      city: c.city || null,
       inClinicPrice: c.inClinicPrice ?? 200,
       remotePrice: c.remotePrice ?? 250,
       voiceAnnouncementMode: (c as any).voiceAnnouncementMode ?? 'TOKEN_PATIENT_DOCTOR_ROOM',
@@ -212,14 +214,27 @@ export class ClinicsService {
       where: { isActive: true },
       include: {
         clinics: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            city: true,
-            phoneNumber: true,
-            address: true,
-            isActive: true,
+          include: {
+            _count: {
+              select: {
+                doctors: true,
+                services: true,
+                queues: true,
+              },
+            },
+            staff: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    phoneNumber: true,
+                    email: true,
+                    role: true,
+                  },
+                },
+              },
+            },
           },
         },
         _count: {
@@ -237,7 +252,25 @@ export class ClinicsService {
       isActive: c.isActive,
       createdAt: c.createdAt.toISOString(),
       clinicsCount: c._count.clinics,
-      clinics: c.clinics,
+      clinics: c.clinics.map((clinic) => ({
+        id: clinic.id,
+        name: clinic.name,
+        slug: clinic.slug,
+        phoneNumber: clinic.phoneNumber,
+        email: clinic.email,
+        address: clinic.address,
+        city: clinic.city,
+        inClinicPrice: clinic.inClinicPrice ?? 200,
+        remotePrice: clinic.remotePrice ?? 250,
+        voiceAnnouncementMode: clinic.voiceAnnouncementMode,
+        isActive: clinic.isActive,
+        createdAt: clinic.createdAt.toISOString(),
+        doctorsCount: clinic._count.doctors,
+        servicesCount: clinic._count.services,
+        queuesCount: clinic._count.queues,
+        receptionist: clinic.staff.find((s) => s.role === 'RECEPTIONIST')?.user || null,
+        admin: clinic.staff.find((s) => s.role === 'CLINIC_ADMIN')?.user || null,
+      })),
     }));
   }
 
@@ -254,7 +287,23 @@ export class ClinicsService {
                 queues: true,
               },
             },
+            staff: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    phoneNumber: true,
+                    email: true,
+                    role: true,
+                  },
+                },
+              },
+            },
           },
+        },
+        _count: {
+          select: { clinics: true },
         },
       },
     });
@@ -263,7 +312,34 @@ export class ClinicsService {
       throw new NotFoundException(`Hospital chain with ID "${id}" not found.`);
     }
 
-    return chain;
+    return {
+      id: chain.id,
+      name: chain.name,
+      code: chain.code,
+      headquarters: chain.headquarters,
+      isActive: chain.isActive,
+      createdAt: chain.createdAt.toISOString(),
+      clinicsCount: chain._count.clinics,
+      clinics: chain.clinics.map((clinic) => ({
+        id: clinic.id,
+        name: clinic.name,
+        slug: clinic.slug,
+        phoneNumber: clinic.phoneNumber,
+        email: clinic.email,
+        address: clinic.address,
+        city: clinic.city,
+        inClinicPrice: clinic.inClinicPrice ?? 200,
+        remotePrice: clinic.remotePrice ?? 250,
+        voiceAnnouncementMode: clinic.voiceAnnouncementMode,
+        isActive: clinic.isActive,
+        createdAt: clinic.createdAt.toISOString(),
+        doctorsCount: clinic._count.doctors,
+        servicesCount: clinic._count.services,
+        queuesCount: clinic._count.queues,
+        receptionist: clinic.staff.find((s) => s.role === 'RECEPTIONIST')?.user || null,
+        admin: clinic.staff.find((s) => s.role === 'CLINIC_ADMIN')?.user || null,
+      })),
+    };
   }
 
   /**
