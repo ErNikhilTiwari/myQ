@@ -13,14 +13,11 @@ import {
   Save,
   CheckCircle2,
   AlertCircle,
-  ExternalLink,
-  Copy,
   Sparkles,
   Stethoscope,
   Volume2,
   DollarSign,
   UserCheck,
-  Check,
   RefreshCw
 } from 'lucide-react';
 import { ClinicDto } from '@queueapp/shared';
@@ -71,7 +68,6 @@ export const ClinicAdminProfile: React.FC<ClinicAdminProfileProps> = ({
 
   // Feedback notifications
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [copiedLink, setCopiedLink] = useState(false);
 
   const showToast = (type: 'success' | 'error', message: string) => {
     setFeedback({ type, message });
@@ -259,15 +255,6 @@ export const ClinicAdminProfile: React.FC<ClinicAdminProfileProps> = ({
     }
   };
 
-  const copyClinicPublicLink = () => {
-    if (!clinic?.slug) return;
-    const url = `${window.location.origin}/?clinic=${clinic.slug}`;
-    navigator.clipboard.writeText(url);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2500);
-    showToast('success', 'Clinic patient booking link copied to clipboard!');
-  };
-
   return (
     <div className="space-y-6 max-w-5xl mx-auto w-full pb-10 animate-in fade-in duration-200">
       {/* Toast Alert */}
@@ -314,26 +301,6 @@ export const ClinicAdminProfile: React.FC<ClinicAdminProfileProps> = ({
             </p>
           </div>
         </div>
-
-        {/* Quick Facility Overview & Link */}
-        {clinic && (
-          <div className="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-3.5 flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full md:w-auto">
-            <div className="text-left">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Patient Booking Portal</p>
-              <p className="text-xs font-mono font-semibold text-sky-300">
-                slug: <span className="text-white font-bold">{clinic.slug}</span>
-              </p>
-            </div>
-            <button
-              onClick={copyClinicPublicLink}
-              className="flex items-center space-x-1.5 bg-[#0284C7] hover:bg-[#0369A1] text-white px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-sm active:scale-95 shrink-0"
-              title="Copy Patient Direct Link"
-            >
-              {copiedLink ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copiedLink ? 'Copied!' : 'Copy Link'}</span>
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Main Grid: Admin Profile & Security Form + Clinic Info Form */}
@@ -577,34 +544,18 @@ export const ClinicAdminProfile: React.FC<ClinicAdminProfileProps> = ({
         </div>
 
         <form onSubmit={handleSaveClinicDetails} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-bold text-[#64748B] block mb-1">
-                Clinic Display Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={clinicName}
-                onChange={(e) => setClinicName(e.target.value)}
-                placeholder="e.g. Apollo Medical Center"
-                className="w-full bg-[#F8FAFC] border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#1E293B] focus:ring-2 focus:ring-teal-500 focus:outline-none"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-bold text-[#64748B] block mb-1">
-                Clinic Public Slug <span className="text-slate-400 font-normal">(Direct URL identifier)</span>
-              </label>
-              <div className="flex items-center">
-                <input
-                  type="text"
-                  value={clinic?.slug || ''}
-                  disabled
-                  className="w-full bg-slate-100 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-mono font-semibold text-slate-500 cursor-not-allowed"
-                />
-              </div>
-            </div>
+          <div>
+            <label className="text-xs font-bold text-[#64748B] block mb-1">
+              Clinic Display Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={clinicName}
+              onChange={(e) => setClinicName(e.target.value)}
+              placeholder="e.g. Apollo Medical Center"
+              className="w-full bg-[#F8FAFC] border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#1E293B] focus:ring-2 focus:ring-teal-500 focus:outline-none"
+              required
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
