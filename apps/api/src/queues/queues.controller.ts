@@ -68,8 +68,9 @@ export class QueuesController {
   async getQueueDetails(
     @Param('clinicId') clinicId: string,
     @Param('queueId') queueId: string,
+    @Query('date') date?: string,
   ): Promise<ApiResponse> {
-    const data = await this.queuesService.getQueueDetails(clinicId, queueId);
+    const data = await this.queuesService.getQueueDetails(clinicId, queueId, date);
     return { success: true, data };
   }
 

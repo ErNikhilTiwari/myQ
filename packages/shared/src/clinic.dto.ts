@@ -19,6 +19,10 @@ export interface ClinicDto {
   voiceAnnouncementMode?: VoiceAnnouncementMode;
   enableBookingTime?: boolean;
   enablePriorityQueue?: boolean;
+  workingDays?: string;
+  openTime?: string;
+  closeTime?: string;
+  holidays?: string;
   isActive: boolean;
   createdAt: string;
   doctorsCount?: number;
@@ -39,6 +43,10 @@ export interface CreateClinicDto {
   voiceAnnouncementMode?: VoiceAnnouncementMode;
   enableBookingTime?: boolean;
   enablePriorityQueue?: boolean;
+  workingDays?: string;
+  openTime?: string;
+  closeTime?: string;
+  holidays?: string;
   receptionistName?: string;
   receptionistPhoneNumber?: string;
   receptionistPassword?: string;
@@ -101,6 +109,10 @@ export interface UpdateClinicDto {
   voiceAnnouncementMode?: VoiceAnnouncementMode;
   enableBookingTime?: boolean;
   enablePriorityQueue?: boolean;
+  workingDays?: string;
+  openTime?: string;
+  closeTime?: string;
+  holidays?: string;
   isActive?: boolean;
 }
 

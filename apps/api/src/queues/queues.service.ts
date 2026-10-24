@@ -86,7 +86,15 @@ export class QueuesService {
   /**
    * Get queue details with partitioned lists for receptionist dashboard
    */
-  async getQueueDetails(clinicId: string, queueId: string) {
+  /**
+   * Get queue details with partitioned lists for receptionist dashboard
+   * Supports targetDateStr (YYYY-MM-DD): defaults to Today.
+   * Only includes patients who booked for that date (or walk-ins on that date).
+   */
+  async getQueueDetails(clinicId: string, queueId: string, targetDateStr?: string) {
+    const tz = 'Asia/Kolkata';
+    const effectiveDateStr = targetDateStr || new Date().toLocaleDateString('en-CA', { timeZone: tz });
+
     const queue = await this.prisma.queue.findFirst({
       where: { id: queueId, clinicId },
       include: {
@@ -94,7 +102,28 @@ export class QueuesService {
         service: true,
         queueEntries: {
           include: {
-            user: { select: { id: true, name: true, phoneNumber: true } },
+            user: {
+              select: {
+                id: true,
+                name: true,
+                phoneNumber: true,
+                patientProfile: {
+                  select: { age: true, gender: true },
+                },
+              },
+            },
+            appointments: {
+              select: {
+                id: true,
+                slotTime: true,
+                createdAt: true,
+                bookingType: true,
+                isPriority: true,
+                bookingFee: true,
+                paymentStatus: true,
+                status: true,
+              },
+            },
           },
           orderBy: { sequenceNumber: 'asc' },
         },
@@ -105,20 +134,97 @@ export class QueuesService {
       throw new NotFoundException(`Queue "${queueId}" not found in clinic "${clinicId}".`);
     }
 
-    const currentServing = queue.queueEntries.find(
+    // Filter queue entries belonging to the requested date
+    const dateFilteredEntries = queue.queueEntries.filter((entry) => {
+      const appt = entry.appointments?.[0];
+      if (appt?.slotTime) {
+        const apptDate = new Date(appt.slotTime).toLocaleDateString('en-CA', { timeZone: tz });
+        return apptDate === effectiveDateStr;
+      }
+      // If walk-in without scheduled appointment, check token issuance date
+      const createdDate = new Date(entry.createdAt).toLocaleDateString('en-CA', { timeZone: tz });
+      return createdDate === effectiveDateStr;
+    });
+
+    // Also look for scheduled appointments on this date that do not yet have a queueEntryId
+    const scheduledAppts = await this.prisma.appointment.findMany({
+      where: {
+        clinicId,
+        ...(queue.doctorId ? { doctorId: queue.doctorId } : {}),
+        status: { in: ['CONFIRMED', 'PENDING'] },
+        queueEntryId: null,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            phoneNumber: true,
+            patientProfile: {
+              select: { age: true, gender: true },
+            },
+          },
+        },
+      },
+      orderBy: { slotTime: 'asc' },
+    });
+
+    const scheduledForDate = scheduledAppts.filter((a) => {
+      const aDate = new Date(a.slotTime).toLocaleDateString('en-CA', { timeZone: tz });
+      return aDate === effectiveDateStr;
+    });
+
+    const currentServing = dateFilteredEntries.find(
       (e) => e.status === 'CALLED' || e.status === 'IN_SERVICE',
     );
-    const waiting = queue.queueEntries.filter((e) => e.status === 'WAITING');
-    const booked = queue.queueEntries.filter((e) => e.status === 'BOOKED');
-    const onHold = queue.queueEntries.filter((e) => e.status === 'ON_HOLD');
-    const skipped = queue.queueEntries.filter((e) => e.status === 'SKIPPED');
-    const completed = queue.queueEntries.filter((e) => e.status === 'COMPLETED');
+    const waiting = dateFilteredEntries.filter((e) => e.status === 'WAITING');
+    const booked = dateFilteredEntries.filter((e) => e.status === 'BOOKED');
+    const onHold = dateFilteredEntries.filter((e) => e.status === 'ON_HOLD');
+    const skipped = dateFilteredEntries.filter((e) => e.status === 'SKIPPED');
+    const completed = dateFilteredEntries.filter((e) => e.status === 'COMPLETED');
 
-    const mapEntry = (e: any) => ({
-      ...e,
-      patientName: e.user?.name || 'Walk-in Patient',
-      phoneNumber: e.user?.phoneNumber || '',
-    });
+    const mapEntry = (e: any) => {
+      const appt = e.appointments?.[0];
+      const slotTimeIso = appt?.slotTime ? new Date(appt.slotTime).toISOString() : null;
+      const bookingCreatedAt = appt?.createdAt ? new Date(appt.createdAt).toISOString() : e.createdAt;
+      return {
+        ...e,
+        patientName: e.user?.name || 'Walk-in Patient',
+        phoneNumber: e.user?.phoneNumber || '',
+        bookingDate: bookingCreatedAt,
+        bookingTime: bookingCreatedAt,
+        slotTime: slotTimeIso,
+        bookingType: appt?.bookingType || 'WALK_IN',
+        isPriority: Boolean(appt?.isPriority || e.tokenNumber?.startsWith('P')),
+        age: e.user?.patientProfile?.age ?? null,
+        gender: e.user?.patientProfile?.gender ?? null,
+        paymentStatus: appt?.paymentStatus || 'COMPLETED',
+        bookingFee: appt?.bookingFee ?? 0,
+      };
+    };
+
+    // Synthesize un-checked-in scheduled appointments into booked list for future date visibility
+    const mappedScheduled = scheduledForDate.map((a, idx) => ({
+      id: a.id,
+      tokenNumber: `APT-${idx + 1}`,
+      sequenceNumber: 0,
+      status: 'BOOKED',
+      patientName: a.user?.name || 'Scheduled Patient',
+      phoneNumber: a.user?.phoneNumber || '',
+      estimatedWaitMinutes: 0,
+      createdAt: a.createdAt.toISOString(),
+      bookingDate: a.createdAt.toISOString(),
+      bookingTime: a.createdAt.toISOString(),
+      slotTime: a.slotTime.toISOString(),
+      bookingType: a.bookingType,
+      isPriority: Boolean(a.isPriority),
+      age: a.user?.patientProfile?.age ?? null,
+      gender: a.user?.patientProfile?.gender ?? null,
+      paymentStatus: a.paymentStatus,
+      bookingFee: a.bookingFee,
+    }));
+
+    const allBooked = [...booked.map(mapEntry), ...mappedScheduled];
 
     return {
       queue: {
@@ -130,14 +236,15 @@ export class QueuesService {
         doctor: queue.doctor,
         service: queue.service,
       },
+      selectedDate: effectiveDateStr,
       currentServing: currentServing ? mapEntry(currentServing) : null,
       waiting: waiting.map(mapEntry),
-      booked: booked.map(mapEntry),
+      booked: allBooked,
       onHold: onHold.map(mapEntry),
       skipped: skipped.map(mapEntry),
       completed: completed.map(mapEntry),
       completedCount: completed.length,
-      totalToday: queue.queueEntries.length,
+      totalToday: dateFilteredEntries.length + mappedScheduled.length,
     };
   }
 

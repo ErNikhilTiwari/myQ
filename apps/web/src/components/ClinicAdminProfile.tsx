@@ -19,7 +19,12 @@ import {
   DollarSign,
   UserCheck,
   RefreshCw,
-  Crown
+  Crown,
+  Calendar,
+  Clock,
+  CalendarDays,
+  Sun,
+  Trash2
 } from 'lucide-react';
 import { ClinicDto } from '@queueapp/shared';
 
@@ -49,6 +54,15 @@ export const ClinicAdminProfile: React.FC<ClinicAdminProfileProps> = ({
   const [clinicEmail, setClinicEmail] = useState('');
   const [clinicAddress, setClinicAddress] = useState('');
   const [clinicCity, setClinicCity] = useState('');
+
+  // Working Hours, Operating Days & Holidays State
+  const [workingDays, setWorkingDays] = useState<string[]>([
+    'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'
+  ]);
+  const [openTime, setOpenTime] = useState<string>('09:00 AM');
+  const [closeTime, setCloseTime] = useState<string>('06:00 PM');
+  const [holidays, setHolidays] = useState<string[]>([]);
+  const [savingSchedule, setSavingSchedule] = useState(false);
 
   // Admin Profile fields
   const [adminName, setAdminName] = useState(currentUser?.name || '');
@@ -92,6 +106,17 @@ export const ClinicAdminProfile: React.FC<ClinicAdminProfileProps> = ({
         setClinicEmail(c.email || '');
         setClinicAddress(c.address || '');
         setClinicCity(c.city || '');
+        if (c.workingDays) {
+          setWorkingDays(c.workingDays.split(',').map((s: string) => s.trim().toUpperCase()));
+        }
+        if (c.openTime) setOpenTime(c.openTime);
+        if (c.closeTime) setCloseTime(c.closeTime);
+        if (c.holidays) {
+          try {
+            const parsed = JSON.parse(c.holidays);
+            if (Array.isArray(parsed)) setHolidays(parsed);
+          } catch {}
+        }
       }
     } catch (err) {
       console.error('Failed to load clinic details:', err);
@@ -239,6 +264,10 @@ export const ClinicAdminProfile: React.FC<ClinicAdminProfileProps> = ({
           email: clinicEmail.trim() || undefined,
           address: clinicAddress.trim() || undefined,
           city: clinicCity.trim() || undefined,
+          workingDays: workingDays.join(','),
+          openTime,
+          closeTime,
+          holidays: JSON.stringify(holidays),
         }),
       });
 
@@ -254,6 +283,148 @@ export const ClinicAdminProfile: React.FC<ClinicAdminProfileProps> = ({
     } finally {
       setSavingClinic(false);
     }
+  };
+
+  // Days of week metadata
+  const DAYS_OF_WEEK = [
+    { key: 'MONDAY', label: 'Mon', full: 'Monday' },
+    { key: 'TUESDAY', label: 'Tue', full: 'Tuesday' },
+    { key: 'WEDNESDAY', label: 'Wed', full: 'Wednesday' },
+    { key: 'THURSDAY', label: 'Thu', full: 'Thursday' },
+    { key: 'FRIDAY', label: 'Fri', full: 'Friday' },
+    { key: 'SATURDAY', label: 'Sat', full: 'Saturday' },
+    { key: 'SUNDAY', label: 'Sun', full: 'Sunday' },
+  ];
+
+  const TIME_OPTIONS = [
+    '07:00 AM', '07:30 AM', '08:00 AM', '08:30 AM', '09:00 AM', '09:30 AM', '10:00 AM',
+    '10:30 AM', '11:00 AM', '11:30 AM', '12:00 PM', '01:00 PM', '02:00 PM', '03:00 PM',
+    '04:00 PM', '05:00 PM', '06:00 PM', '07:00 PM', '08:00 PM', '09:00 PM', '10:00 PM'
+  ];
+
+  const handleToggleDay = (dayKey: string) => {
+    setWorkingDays((prev) =>
+      prev.includes(dayKey) ? prev.filter((d) => d !== dayKey) : [...prev, dayKey]
+    );
+  };
+
+  const handleToggleHoliday = (dateStr: string) => {
+    setHolidays((prev) =>
+      prev.includes(dateStr) ? prev.filter((d) => d !== dateStr) : [...prev, dateStr].sort()
+    );
+  };
+
+  // Handle Save Working Hours, Days and Holidays
+  const handleSaveSchedule = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token || !clinicId) return;
+
+    if (workingDays.length === 0) {
+      showToast('error', 'Please select at least one working day for the clinic.');
+      return;
+    }
+
+    try {
+      setSavingSchedule(true);
+      const res = await fetch(`/api/clinics/${clinicId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          workingDays: workingDays.join(','),
+          openTime,
+          closeTime,
+          holidays: JSON.stringify(holidays),
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success && data.data) {
+        showToast('success', 'Clinic operating days, hours, and holidays updated successfully!');
+        setClinic(data.data);
+      } else {
+        showToast('error', data.error?.message || data.message || 'Failed to update clinic schedule.');
+      }
+    } catch (err: any) {
+      showToast('error', err.message || 'Error updating schedule.');
+    } finally {
+      setSavingSchedule(false);
+    }
+  };
+
+  // Renders a monthly calendar for holiday selection
+  const renderMonthCalendar = (baseDate: Date) => {
+    const year = baseDate.getFullYear();
+    const month = baseDate.getMonth();
+    const monthName = baseDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    const firstDay = new Date(year, month, 1).getDay(); // 0 is Sunday
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const todayStr = new Date().toLocaleDateString('en-CA');
+
+    const blanks = Array.from({ length: firstDay });
+    const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+    const monthHolidays = holidays.filter((h) => {
+      const [hY, hM] = h.split('-').map(Number);
+      return hY === year && hM === month + 1;
+    });
+
+    return (
+      <div className="bg-[#F8FAFC] border border-slate-200 rounded-2xl p-4 space-y-3">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-200/80">
+          <span className="font-black text-xs text-[#1E293B] uppercase tracking-wide flex items-center space-x-1.5">
+            <Calendar className="w-3.5 h-3.5 text-[#0284C7]" />
+            <span>{monthName}</span>
+          </span>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200">
+            {monthHolidays.length} {monthHolidays.length === 1 ? 'Holiday' : 'Holidays'}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-400">
+          <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+        </div>
+
+        <div className="grid grid-cols-7 gap-1">
+          {blanks.map((_, i) => (
+            <div key={`blank-${i}`} className="h-8" />
+          ))}
+
+          {days.map((day) => {
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const isPast = dateStr < todayStr;
+            const isHoliday = holidays.includes(dateStr);
+            const isToday = dateStr === todayStr;
+
+            return (
+              <button
+                key={dateStr}
+                type="button"
+                onClick={() => !isPast && handleToggleHoliday(dateStr)}
+                disabled={isPast}
+                className={`h-8 rounded-xl text-xs font-bold transition flex items-center justify-center relative ${
+                  isPast
+                    ? 'text-slate-300 bg-transparent cursor-not-allowed'
+                    : isHoliday
+                    ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-sm ring-2 ring-rose-300 font-black'
+                    : isToday
+                    ? 'bg-sky-100 hover:bg-sky-200 text-[#0284C7] font-black border border-sky-300'
+                    : 'bg-white hover:bg-slate-200/80 text-slate-700 border border-slate-200/80'
+                }`}
+                title={isHoliday ? `${dateStr} is marked as Holiday` : isPast ? 'Past date' : `Click to mark ${dateStr} as Holiday`}
+              >
+                <span>{day}</span>
+                {isHoliday && (
+                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-600 border border-white rounded-full shadow-xs" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -632,6 +803,174 @@ export const ClinicAdminProfile: React.FC<ClinicAdminProfileProps> = ({
                 <>
                   <Save className="w-4 h-4" />
                   <span>Save Clinic Details</span>
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* SECTION 3: Clinic Working Timings, Operating Days & Holiday Calendar      */}
+      {/* ========================================================================= */}
+      <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm space-y-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 rounded-xl bg-sky-50 text-[#0284C7] border border-sky-100">
+              <CalendarDays className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-base font-black text-[#1E293B]">Operating Days, Hours &amp; Holiday Calendar</h2>
+              <p className="text-xs text-[#64748B]">
+                Configure clinic active working days, daily consultation hours, and mark holidays for current &amp; next month
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <span className="text-[11px] font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-xl border border-slate-200">
+              {workingDays.length} Working Days &bull; {holidays.length} Holidays
+            </span>
+          </div>
+        </div>
+
+        <form onSubmit={handleSaveSchedule} className="space-y-6">
+          {/* Working Days Selector */}
+          <div>
+            <label className="text-xs font-bold text-[#1E293B] block mb-2 flex items-center space-x-2">
+              <Sun className="w-3.5 h-3.5 text-amber-500" />
+              <span>Clinic Operating Days (Select Active Days)</span>
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
+              {DAYS_OF_WEEK.map((d) => {
+                const isActive = workingDays.includes(d.key);
+                return (
+                  <button
+                    key={d.key}
+                    type="button"
+                    onClick={() => handleToggleDay(d.key)}
+                    className={`p-3 rounded-2xl border text-center transition flex flex-col items-center justify-center space-y-1 ${
+                      isActive
+                        ? 'bg-sky-50 border-[#0284C7] text-[#0284C7] shadow-xs ring-2 ring-sky-300/30'
+                        : 'bg-[#F8FAFC] border-slate-200 text-slate-400 hover:border-slate-300'
+                    }`}
+                  >
+                    <span className="text-xs font-black uppercase tracking-wider">{d.label}</span>
+                    <span className="text-[10px] font-medium">{isActive ? 'Open' : 'Closed'}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <span className="text-[11px] text-slate-400 mt-1.5 block">
+              Days marked "Closed" prevent appointments and warn patients in the booking portal.
+            </span>
+          </div>
+
+          {/* Working Timings */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+            <div>
+              <label className="text-xs font-bold text-[#1E293B] block mb-1.5 flex items-center space-x-1.5">
+                <Clock className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Daily Opening Time</span>
+              </label>
+              <select
+                value={openTime}
+                onChange={(e) => setOpenTime(e.target.value)}
+                className="w-full bg-[#F8FAFC] border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none"
+              >
+                {TIME_OPTIONS.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-[#1E293B] block mb-1.5 flex items-center space-x-1.5">
+                <Clock className="w-3.5 h-3.5 text-rose-600" />
+                <span>Daily Closing Time</span>
+              </label>
+              <select
+                value={closeTime}
+                onChange={(e) => setCloseTime(e.target.value)}
+                className="w-full bg-[#F8FAFC] border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none"
+              >
+                {TIME_OPTIONS.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Holiday Calendar for Current and Next Month */}
+          <div className="pt-3 border-t border-slate-100 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-xs font-black text-[#1E293B] block">
+                  Mark Official Clinic Holidays (Current &amp; Next Month)
+                </label>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Click on any date to toggle it as a holiday. Patients cannot book consultations on marked holidays.
+                </p>
+              </div>
+              {holidays.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setHolidays([])}
+                  className="text-[11px] font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-2.5 py-1 rounded-xl transition flex items-center space-x-1"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>Clear All Holidays</span>
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {renderMonthCalendar(new Date())}
+              {renderMonthCalendar(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1))}
+            </div>
+
+            {/* Marked Holiday Chips */}
+            {holidays.length > 0 && (
+              <div className="bg-rose-50/60 border border-rose-200/80 rounded-2xl p-3.5 space-y-2">
+                <span className="text-[11px] font-black uppercase tracking-wider text-rose-800 block">
+                  Configured Holidays ({holidays.length}):
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {holidays.map((hDate) => (
+                    <span
+                      key={hDate}
+                      className="bg-white border border-rose-300 text-rose-800 text-[11px] font-bold px-2.5 py-1 rounded-xl flex items-center space-x-1.5 shadow-2xs"
+                    >
+                      <span>{hDate}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleHoliday(hDate)}
+                        className="text-rose-400 hover:text-rose-700 font-black ml-1 text-xs"
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="pt-2 flex justify-end">
+            <button
+              type="submit"
+              disabled={savingSchedule}
+              className="bg-[#0284C7] hover:bg-[#0369A1] text-white px-6 py-2.5 rounded-xl font-bold text-xs shadow-sm transition flex items-center space-x-2 disabled:opacity-50 active:scale-[0.99]"
+            >
+              {savingSchedule ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>Saving Schedule...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  <span>Save Timings &amp; Holidays</span>
                 </>
               )}
             </button>

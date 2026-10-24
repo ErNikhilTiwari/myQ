@@ -104,11 +104,24 @@ export class AppointmentsService {
       throw new BadRequestException('Invalid slotTime format. Must be a valid ISO 8601 string.');
     }
 
-    const clinic = await this.prisma.clinic.findUnique({
-      where: { id: dto.clinicId },
-    });
+    let clinicId = dto.clinicId;
+    if (!clinicId && dto.doctorId) {
+      const doc = await this.prisma.doctor.findUnique({
+        where: { id: dto.doctorId },
+      });
+      if (doc) {
+        clinicId = doc.clinicId;
+        dto.clinicId = doc.clinicId;
+      }
+    }
+
+    const clinic = clinicId
+      ? await this.prisma.clinic.findUnique({
+          where: { id: clinicId },
+        })
+      : null;
     if (!clinic) {
-      throw new NotFoundException(`Clinic with ID "${dto.clinicId}" not found.`);
+      throw new NotFoundException(`Clinic with ID "${dto.clinicId || clinicId}" not found.`);
     }
 
     // STRICT SERVER-SIDE PRICING CALCULATION
@@ -176,6 +189,29 @@ export class AppointmentsService {
 
       if (diffDays > 2) {
         throw new BadRequestException('Appointments can only be booked for today or up to 2 days in advance.');
+      }
+
+      // Check clinic holidays
+      if ((clinic as any).holidays) {
+        try {
+          const holidays: string[] = JSON.parse((clinic as any).holidays);
+          if (Array.isArray(holidays) && holidays.includes(slotDateStr)) {
+            throw new BadRequestException(`Clinic is closed on ${slotDateStr} due to a marked holiday. Please choose another date.`);
+          }
+        } catch (err: any) {
+          if (err instanceof BadRequestException) throw err;
+        }
+      }
+
+      // Check clinic working days
+      if ((clinic as any).workingDays) {
+        const dayNames = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+        const dayIndex = new Date(slotDate.toLocaleString('en-US', { timeZone: tz })).getDay();
+        const dayName = dayNames[dayIndex];
+        const activeDays = (clinic as any).workingDays.toUpperCase().split(',').map((s: string) => s.trim());
+        if (!activeDays.includes(dayName)) {
+          throw new BadRequestException(`Clinic is closed on ${dayName}s. Please choose an active working day.`);
+        }
       }
 
       // Check 1: Patient must not have overlapping appointment for this exact slot

@@ -27,7 +27,9 @@ import {
   Volume2,
   UserCheck,
   Crown,
-  CalendarCheck
+  CalendarCheck,
+  Calendar,
+  CalendarDays
 } from 'lucide-react';
 import { ClinicAnalytics } from './ClinicAnalytics';
 import { DoctorManagement } from './DoctorManagement';
@@ -50,6 +52,15 @@ interface QueueItem {
   holdReason?: string;
   calledAt?: string;
   createdAt: string;
+  bookingDate?: string;
+  bookingTime?: string;
+  slotTime?: string | null;
+  bookingType?: string;
+  isPriority?: boolean;
+  age?: number | null;
+  gender?: string | null;
+  paymentStatus?: string;
+  bookingFee?: number;
 }
 
 interface Doctor {
@@ -114,6 +125,67 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
   const [bookedList, setBookedList] = useState<QueueItem[]>([]);
   const [onHoldList, setOnHoldList] = useState<QueueItem[]>([]);
   const [completedList, setCompletedList] = useState<QueueItem[]>([]);
+
+  // Queue Date Horizon (Today + Next 2 Days)
+  const formatLocalDate = (d: Date): string => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const todayObj = new Date();
+  const tomorrowObj = new Date();
+  tomorrowObj.setDate(tomorrowObj.getDate() + 1);
+  const dayAfterTomorrowObj = new Date();
+  dayAfterTomorrowObj.setDate(dayAfterTomorrowObj.getDate() + 2);
+
+  const availableQueueDates = [
+    {
+      dateStr: formatLocalDate(todayObj),
+      label: 'Today',
+      sublabel: todayObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', weekday: 'short' }),
+      isToday: true,
+    },
+    {
+      dateStr: formatLocalDate(tomorrowObj),
+      label: 'Tomorrow',
+      sublabel: tomorrowObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', weekday: 'short' }),
+      isToday: false,
+    },
+    {
+      dateStr: formatLocalDate(dayAfterTomorrowObj),
+      label: dayAfterTomorrowObj.toLocaleDateString('en-US', { weekday: 'long' }),
+      sublabel: dayAfterTomorrowObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      isToday: false,
+    },
+  ];
+
+  const [selectedQueueDate, setSelectedQueueDate] = useState<string>(formatLocalDate(todayObj));
+
+  const formatDateTime = (isoStr?: string | null): string | null => {
+    if (!isoStr) return null;
+    const d = new Date(isoStr);
+    if (isNaN(d.getTime())) return null;
+    return d.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const formatTimeOnly = (isoStr?: string | null): string | null => {
+    if (!isoStr) return null;
+    const d = new Date(isoStr);
+    if (isNaN(d.getTime())) return null;
+    return d.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const isViewingToday = selectedQueueDate === formatLocalDate(todayObj);
   
   // Registration Form Modal
   const [showWalkinModal, setShowWalkinModal] = useState(false);
@@ -195,13 +267,22 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
     holdReason: e.holdReason,
     calledAt: e.calledAt,
     createdAt: e.createdAt,
+    bookingDate: e.bookingDate || e.createdAt,
+    bookingTime: e.bookingTime || e.createdAt,
+    slotTime: e.slotTime || null,
+    bookingType: e.bookingType || 'WALK_IN',
+    isPriority: Boolean(e.isPriority || e.tokenNumber?.startsWith('P')),
+    age: e.age ?? e.user?.patientProfile?.age ?? null,
+    gender: e.gender ?? e.user?.patientProfile?.gender ?? null,
+    paymentStatus: e.paymentStatus,
+    bookingFee: e.bookingFee,
   });
 
   // Fetch active queue details with instant refresh support
   const fetchQueueDetails = React.useCallback(() => {
     if (!isReceptionistAuthenticated || !clinicId || !selectedQueueId) return;
 
-    fetch(`/api/clinics/${clinicId}/queues/${selectedQueueId}`, {
+    fetch(`/api/clinics/${clinicId}/queues/${selectedQueueId}?date=${selectedQueueDate}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -218,7 +299,7 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
         }
       })
       .catch(() => {});
-  }, [clinicId, selectedQueueId, isReceptionistAuthenticated, token]);
+  }, [clinicId, selectedQueueId, isReceptionistAuthenticated, token, selectedQueueDate]);
 
   // Poll active queue details every 2.5s
   useEffect(() => {
@@ -701,7 +782,45 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
 
       {(!isOwnerOrAdmin || activeConsoleTab === 'QUEUE') && (
         <>
-          {/* Queue Selector Tabs */}
+          {/* Queue Date Horizon Selector: Today, Tomorrow, Day after tomorrow */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 bg-white border border-slate-200/80 p-3.5 rounded-2xl shadow-xs">
+            <div className="flex items-center space-x-2.5">
+              <CalendarDays className="w-5 h-5 text-sky-600 shrink-0" />
+              <div>
+                <span className="text-xs font-black text-slate-800 uppercase tracking-wide">Queue Date Horizon</span>
+                <p className="text-[11px] text-slate-500">Live consultation queue for today or preview appointments for the next 2 days</p>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+              {availableQueueDates.map((item) => {
+                const isSelected = selectedQueueDate === item.dateStr;
+                return (
+                  <button
+                    key={item.dateStr}
+                    onClick={() => setSelectedQueueDate(item.dateStr)}
+                    className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold transition shrink-0 active:scale-95 border ${
+                      isSelected
+                        ? 'bg-sky-600 border-sky-600 text-white shadow-sm'
+                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+                    }`}
+                  >
+                    <span>{item.label}</span>
+                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+                      isSelected ? 'bg-sky-700 text-sky-100' : 'bg-slate-200 text-slate-600'
+                    }`}>
+                      {item.sublabel}
+                    </span>
+                    {item.isToday && (
+                      <span className={`w-2 h-2 rounded-full ${isSelected ? 'bg-white' : 'bg-emerald-500'} animate-pulse`} title="Today's Live Queue" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Queue Selector Tabs (Doctors / Rooms) */}
           <div className="flex items-center space-x-2 overflow-x-auto pb-3 mb-6 scrollbar-none">
             {queues.length === 0 ? (
               <div className="text-xs text-[#64748B]">No active queues found in this clinic facility.</div>
@@ -727,335 +846,558 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
             )}
           </div>
 
-          {/* Grid Layout: Serving Counter + Waiting & On-Hold Columns */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 items-start">
-            
-            {/* Left Col: Primary Serving Chamber Card */}
-            <div className="bg-white border-2 border-[#0284C7]/30 rounded-3xl p-6 shadow-md flex flex-col justify-between h-full">
-              <div>
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                  <span className="text-xs font-black tracking-wider uppercase text-[#16A34A] flex items-center space-x-1.5">
-                    <span className="w-2 h-2 rounded-full bg-[#16A34A] animate-pulse" />
-                    <span>ACTIVE CONSULTATION</span>
-              </span>
-              <span className="text-xs font-mono text-[#64748B] font-bold">
-                {activeQueueObj?.doctor?.roomNumber || 'Room 101'}
-              </span>
-            </div>
-
-            {/* Token Hero Section */}
-            <div className="text-center py-6">
-              {currentServing ? (
-                <>
-                  <div className="text-7xl font-black font-mono tracking-tight text-[#1E293B]">
-                    {currentServing.tokenNumber}
+          {!isViewingToday ? (
+            /* Advance Queue Horizon View (Tomorrow & Day after tomorrow) */
+            <div className="space-y-4">
+              <div className="bg-gradient-to-r from-sky-600 to-indigo-700 text-white p-4 rounded-2xl shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                    <Calendar className="w-5 h-5 text-sky-200" />
                   </div>
-                  {currentServing.tokenNumber.startsWith('P') && (
-                    <div className="mt-2 inline-flex items-center space-x-1 text-[11px] font-black text-amber-800 bg-amber-100 border border-amber-300 px-3 py-1 rounded-full shadow-xs">
-                      <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                      <span>PRIORITY PASS (+₹50)</span>
-                    </div>
-                  )}
-                  <div className="mt-3.5 inline-flex items-center space-x-2 bg-emerald-50 border border-emerald-300/80 px-4 py-1.5 rounded-2xl shadow-xs">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-white border border-emerald-200 px-2 py-0.5 rounded-md">
-                      Patient
-                    </span>
-                    <span className="text-lg font-black text-emerald-950">
-                      {currentServing.patientName || 'Walk-in Patient'}
-                    </span>
+                  <div>
+                    <h3 className="font-extrabold text-sm flex items-center space-x-2">
+                      <span>Advance Scheduled Queue: {availableQueueDates.find(d => d.dateStr === selectedQueueDate)?.label} ({selectedQueueDate})</span>
+                      <span className="bg-white/20 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Advance View</span>
+                    </h3>
+                    <p className="text-xs text-sky-100 mt-0.5">
+                      Doctor: {activeQueueObj?.doctor?.name || activeQueueObj?.name || 'Assigned Doctor'} ({activeQueueObj?.doctor?.roomNumber || 'Room 1'}) • Showing appointments scheduled for this upcoming date.
+                    </p>
                   </div>
-                  <div className="text-xs text-[#64748B] font-mono mt-1.5 font-semibold">
-                    {currentServing.phoneNumber || 'Counter Token'}
-                  </div>
-                  <div className="mt-3.5 inline-flex items-center space-x-2 bg-[#E0F2FE] border border-[#0284C7]/20 text-[#0284C7] px-3.5 py-1 rounded-full text-xs font-bold">
-                    <Activity className="w-3.5 h-3.5 animate-spin" />
-                    <span>In Chamber Consultation</span>
-                  </div>
-                </>
-              ) : (
-                <div className="py-8">
-                  <div className="text-slate-300 text-5xl mb-3">🛋️</div>
-                  <div className="text-sm font-bold text-[#334155]">Doctor Chamber Idle</div>
-                  <p className="text-xs text-[#64748B] mt-1">Press "Call Next Patient" to summon next in line</p>
                 </div>
-              )}
-            </div>
-          </div>
-
-          {/* Action Control Buttons */}
-          <div className="space-y-3 pt-4 border-t border-slate-100">
-            {currentServing ? (
-              <div className="grid grid-cols-2 gap-2.5">
                 <button
-                  onClick={() => handleTransition(currentServing.id, 'COMPLETED')}
-                  disabled={isSubmitting}
-                  className="bg-[#16A34A] hover:bg-[#15803D] text-white py-3 rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 shadow-sm"
+                  onClick={() => setSelectedQueueDate(formatLocalDate(todayObj))}
+                  className="bg-white hover:bg-sky-50 text-sky-800 font-extrabold px-3.5 py-2 rounded-xl text-xs transition active:scale-95 shrink-0 shadow-xs flex items-center space-x-1.5 self-start sm:self-auto"
                 >
-                  <CheckCircle className="w-4 h-4" />
-                  <span>Complete</span>
-                </button>
-                <button
-                  onClick={() => setHoldingTokenId(currentServing.id)}
-                  disabled={isSubmitting}
-                  className="bg-[#D97706] hover:bg-[#B45309] text-white py-3 rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 shadow-sm"
-                >
-                  <PauseCircle className="w-4 h-4" />
-                  <span>Put On Hold</span>
-                </button>
-                <button
-                  onClick={() => handleTransition(currentServing.id, 'ON_HOLD', 'Not Present')}
-                  disabled={isSubmitting}
-                  className="bg-amber-50 hover:bg-amber-100 text-[#B45309] border border-amber-300 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center space-x-1 transition active:scale-95 shadow-sm"
-                  title="Marks patient as not present and moves to On-Hold list"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>No-Show (Hold)</span>
-                </button>
-                <button
-                  onClick={() => {
-                    setTokenToCancel(currentServing);
-                    setCancelReason('');
-                    setCancelReasonError('');
-                    setShowCancelModal(true);
-                  }}
-                  disabled={isSubmitting}
-                  className="bg-rose-50 hover:bg-rose-100 text-[#DC2626] py-2.5 rounded-xl font-bold text-xs flex items-center justify-center space-x-1 transition border border-rose-200 active:scale-95 shadow-sm"
-                >
-                  <AlertCircle className="w-3.5 h-3.5" />
-                  <span>Cancel</span>
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>Return to Today's Live Queue</span>
                 </button>
               </div>
-            ) : null}
 
-            <button
-              onClick={handleCallNext}
-              disabled={isSubmitting || waitingList.length === 0}
-              className={`w-full py-4 rounded-2xl font-black text-sm flex items-center justify-center space-x-2 transition shadow-md active:scale-95 ${
-                waitingList.length > 0
-                  ? 'bg-[#0284C7] hover:bg-[#0369A1] text-white'
-                  : 'bg-slate-100 text-[#94A3B8] cursor-not-allowed border border-slate-200'
-              }`}
-            >
-              <PhoneCall className="w-5 h-5" />
-              <span>
-                {waitingList.length > 0 ? `Call Next Patient (${waitingList[0].tokenNumber})` : 'Queue Empty'}
-              </span>
-            </button>
-          </div>
-        </div>
-
-        {/* Center Col: Waiting Queue List */}
-        <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-full min-h-[480px]">
-          <div>
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <span className="text-xs font-black tracking-wider uppercase text-[#1E293B] flex items-center space-x-2">
-                <Users className="w-4 h-4 text-[#0284C7]" />
-                <span>WAITING LIST ({waitingList.length})</span>
-              </span>
-              <span className="text-xs font-mono text-[#0284C7] bg-[#E0F2FE] px-2 py-0.5 rounded font-bold">
-                Avg ~12m
-              </span>
-            </div>
-
-            <div className="space-y-2.5 mt-4 max-h-[380px] overflow-y-auto pr-1">
-              {waitingList.length === 0 ? (
-                <div className="text-center py-12 text-[#94A3B8] text-xs">
-                  No patients waiting in this queue.
+              <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-2 mb-4">
+                  <div className="flex items-center space-x-2">
+                    <CalendarCheck className="w-4 h-4 text-sky-600" />
+                    <h4 className="text-sm font-black text-slate-800">
+                      Scheduled Patients ({bookedList.length + waitingList.length})
+                    </h4>
+                  </div>
+                  <span className="text-xs text-slate-400 font-medium">
+                    Appointments for this date will enter the live queue on the morning of {selectedQueueDate}
+                  </span>
                 </div>
-              ) : (
-                waitingList.map((item, idx) => (
-                  <div
-                    key={item.id}
-                    className="p-3 bg-[#F8FAFC] border border-slate-200/80 rounded-2xl flex items-center justify-between transition hover:border-[#0284C7]/40"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <span className="w-7 h-7 rounded-xl bg-slate-200 text-[#334155] flex items-center justify-center font-bold text-xs font-mono">
-                        {idx + 1}
-                      </span>
-                      <div>
-                        <div className="flex items-center space-x-2">
-                          <span className="font-extrabold text-[#1E293B] text-sm font-mono">{item.tokenNumber}</span>
-                          {item.tokenNumber.startsWith('P') ? (
-                            <span className="text-[10px] font-black text-amber-800 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded flex items-center gap-1 shadow-xs">
-                              <Sparkles className="w-2.5 h-2.5 text-amber-600" />
-                              PRIORITY (+₹50)
+
+                {bookedList.length + waitingList.length === 0 ? (
+                  <div className="text-center py-16">
+                    <div className="text-4xl mb-3">📅</div>
+                    <h5 className="text-sm font-bold text-slate-700">No Advance Bookings Yet</h5>
+                    <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                      No patients have booked appointments for this date yet. As patients book online or at reception, their slots and tokens will appear here.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {[...bookedList, ...waitingList].map((patient, pIdx) => (
+                      <div
+                        key={patient.id || pIdx}
+                        className="bg-slate-50/70 border border-slate-200 rounded-2xl p-4 hover:border-sky-300 hover:bg-white transition flex flex-col justify-between"
+                      >
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-black font-mono text-slate-900 bg-white border border-slate-200 px-2.5 py-1 rounded-xl shadow-xs">
+                              {patient.tokenNumber}
                             </span>
-                          ) : (
-                            <span className="text-[10px] font-bold text-sky-700 bg-sky-50 px-1.5 py-0.2 rounded border border-sky-200">
+                            {patient.slotTime ? (
+                              <span className="text-[11px] font-bold font-mono text-amber-900 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-lg flex items-center space-x-1">
+                                <Clock className="w-3 h-3 text-amber-600" />
+                                <span>Slot: {formatTimeOnly(patient.slotTime)}</span>
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-bold text-slate-500 bg-slate-200/60 px-2 py-0.5 rounded">
+                                Flexible Slot
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="text-sm font-extrabold text-slate-800">
+                            {patient.patientName || 'Registered Patient'}
+                          </div>
+                          <div className="text-xs text-slate-500 font-mono mt-0.5">
+                            {patient.phoneNumber || 'No phone provided'}
+                          </div>
+
+                          {/* Patient Details: Age, Gender, Booking Channel */}
+                          <div className="flex flex-wrap items-center gap-1.5 mt-2.5 text-[10px]">
+                            {(patient.age || patient.gender) && (
+                              <span className="bg-white text-slate-700 border border-slate-200 px-1.5 py-0.5 rounded font-semibold">
+                                {patient.age ? `${patient.age}y` : ''}{patient.age && patient.gender ? ', ' : ''}{patient.gender || ''}
+                              </span>
+                            )}
+                            {patient.bookingType && (
+                              <span className="bg-sky-50 text-sky-700 border border-sky-200 px-1.5 py-0.5 rounded font-semibold">
+                                {patient.bookingType === 'REMOTE' ? '🌐 Online' : patient.bookingType === 'IN_CLINIC' ? '📱 QR' : '🏢 Counter'}
+                              </span>
+                            )}
+                            {patient.isPriority && (
+                              <span className="bg-amber-100 text-amber-800 border border-amber-300 px-1.5 py-0.5 rounded font-black flex items-center gap-0.5">
+                                <Sparkles className="w-2.5 h-2.5 text-amber-600" />
+                                Priority (+₹50)
+                              </span>
+                            )}
+                            <span className={`px-1.5 py-0.5 rounded font-semibold ${
+                              patient.paymentStatus === 'COMPLETED' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600'
+                            }`}>
+                              {patient.paymentStatus === 'COMPLETED' ? `Paid ₹${patient.bookingFee || 200}` : 'Pay at Clinic'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="mt-3.5 pt-2.5 border-t border-slate-200/80 flex items-center justify-between text-[10px] text-slate-500">
+                          <span className="font-mono">
+                            📅 Booked: {formatDateTime(patient.bookingDate || patient.createdAt)}
+                          </span>
+                          <span className="text-sky-700 font-bold bg-sky-50 border border-sky-200 px-2 py-0.5 rounded-full">
+                            Scheduled
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            /* Today's Live Consultation Queue View */
+            <div className="space-y-6">
+              {/* Grid Layout: Serving Counter + Waiting & On-Hold Columns */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 items-start">
+                
+                {/* Left Col: Primary Serving Chamber Card */}
+                <div className="bg-white border-2 border-[#0284C7]/30 rounded-3xl p-6 shadow-md flex flex-col justify-between h-full">
+                  <div>
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                      <span className="text-xs font-black tracking-wider uppercase text-[#16A34A] flex items-center space-x-1.5">
+                        <span className="w-2 h-2 rounded-full bg-[#16A34A] animate-pulse" />
+                        <span>ACTIVE CONSULTATION</span>
+                      </span>
+                      <span className="text-xs font-mono text-[#64748B] font-bold">
+                        {activeQueueObj?.doctor?.roomNumber || 'Room 101'}
+                      </span>
+                    </div>
+
+                    {/* Token Hero Section */}
+                    <div className="text-center py-6">
+                      {currentServing ? (
+                        <>
+                          <div className="text-7xl font-black font-mono tracking-tight text-[#1E293B]">
+                            {currentServing.tokenNumber}
+                          </div>
+                          {currentServing.tokenNumber.startsWith('P') && (
+                            <div className="mt-2 inline-flex items-center space-x-1 text-[11px] font-black text-amber-800 bg-amber-100 border border-amber-300 px-3 py-1 rounded-full shadow-xs">
+                              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                              <span>PRIORITY PASS (+₹50)</span>
+                            </div>
+                          )}
+                          <div className="mt-3.5 inline-flex items-center space-x-2 bg-emerald-50 border border-emerald-300/80 px-4 py-1.5 rounded-2xl shadow-xs">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-white border border-emerald-200 px-2 py-0.5 rounded-md">
                               Patient
                             </span>
-                          )}
+                            <span className="text-lg font-black text-emerald-950">
+                              {currentServing.patientName || 'Walk-in Patient'}
+                            </span>
+                          </div>
+                          <div className="text-xs text-[#64748B] font-mono mt-1.5 font-semibold">
+                            {currentServing.phoneNumber || 'Counter Token'}
+                          </div>
+
+                          {/* Staff Detailed Patient Metadata for Current Serving */}
+                          <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5 text-[11px] max-w-xs mx-auto">
+                            {(currentServing.age || currentServing.gender) && (
+                              <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md font-semibold">
+                                {currentServing.age ? `${currentServing.age}y` : ''}{currentServing.age && currentServing.gender ? ', ' : ''}{currentServing.gender || ''}
+                              </span>
+                            )}
+                            {currentServing.slotTime && (
+                              <span className="bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-md font-mono font-bold">
+                                🕒 Slot: {formatTimeOnly(currentServing.slotTime)}
+                              </span>
+                            )}
+                            {currentServing.bookingType && (
+                              <span className="bg-sky-50 text-sky-700 border border-sky-200 px-2 py-0.5 rounded-md font-semibold">
+                                {currentServing.bookingType === 'REMOTE' ? '🌐 Online' : currentServing.bookingType === 'IN_CLINIC' ? '📱 QR' : '🏢 Walk-in'}
+                              </span>
+                            )}
+                            {currentServing.bookingDate && (
+                              <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-mono text-[10px]">
+                                📅 Booked: {formatDateTime(currentServing.bookingDate)}
+                              </span>
+                            )}
+                            {currentServing.paymentStatus && (
+                              <span className={`px-2 py-0.5 rounded-md font-semibold text-[10px] ${
+                                currentServing.paymentStatus === 'COMPLETED' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600'
+                              }`}>
+                                {currentServing.paymentStatus === 'COMPLETED' ? `Paid ₹${currentServing.bookingFee || 200}` : 'Pay at Clinic'}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="mt-3.5 inline-flex items-center space-x-2 bg-[#E0F2FE] border border-[#0284C7]/20 text-[#0284C7] px-3.5 py-1 rounded-full text-xs font-bold">
+                            <Activity className="w-3.5 h-3.5 animate-spin" />
+                            <span>In Chamber Consultation</span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="py-8">
+                          <div className="text-slate-300 text-5xl mb-3">🛋️</div>
+                          <div className="text-sm font-bold text-[#334155]">Doctor Chamber Idle</div>
+                          <p className="text-xs text-[#64748B] mt-1">Press "Call Next Patient" to summon next in line</p>
                         </div>
-                        <div className="text-xs text-[#1E293B] font-bold mt-0.5">{item.patientName || 'Walk-in Patient'}</div>
-                      </div>
-                    </div>
-
-                    <div className="text-right">
-                      <div className="text-xs font-bold text-[#0284C7] flex items-center justify-end space-x-1">
-                        <Clock className="w-3 h-3" />
-                        <span>~{(idx + 1) * 12}m</span>
-                      </div>
-                      <div className="text-[10px] text-[#94A3B8] font-mono">{item.phoneNumber}</div>
+                      )}
                     </div>
                   </div>
-                ))
-              )}
-            </div>
-          </div>
-          <div className="text-center text-[11px] text-[#94A3B8] pt-3 border-t border-slate-100 font-medium">
-            Waiting times updated dynamically
-          </div>
-        </div>
 
-        {/* Right Col: On-Hold & Completed Lists */}
-        <div className="space-y-6">
-          {/* On Hold Patients Card */}
-          <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
-              <span className="text-xs font-black tracking-wider uppercase text-[#D97706] flex items-center space-x-2">
-                <PauseCircle className="w-4 h-4 text-[#D97706]" />
-                <span>ON HOLD ({onHoldList.length})</span>
-              </span>
-            </div>
+                  {/* Action Control Buttons */}
+                  <div className="space-y-3 pt-4 border-t border-slate-100">
+                    {currentServing ? (
+                      <div className="grid grid-cols-2 gap-2.5">
+                        <button
+                          onClick={() => handleTransition(currentServing.id, 'COMPLETED')}
+                          disabled={isSubmitting}
+                          className="bg-[#16A34A] hover:bg-[#15803D] text-white py-3 rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 shadow-sm"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                          <span>Complete</span>
+                        </button>
+                        <button
+                          onClick={() => setHoldingTokenId(currentServing.id)}
+                          disabled={isSubmitting}
+                          className="bg-[#D97706] hover:bg-[#B45309] text-white py-3 rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95 shadow-sm"
+                        >
+                          <PauseCircle className="w-4 h-4" />
+                          <span>Put On Hold</span>
+                        </button>
+                        <button
+                          onClick={() => handleTransition(currentServing.id, 'ON_HOLD', 'Not Present')}
+                          disabled={isSubmitting}
+                          className="bg-amber-50 hover:bg-amber-100 text-[#B45309] border border-amber-300 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center space-x-1 transition active:scale-95 shadow-sm"
+                          title="Marks patient as not present and moves to On-Hold list"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          <span>No-Show (Hold)</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setTokenToCancel(currentServing);
+                            setCancelReason('');
+                            setCancelReasonError('');
+                            setShowCancelModal(true);
+                          }}
+                          disabled={isSubmitting}
+                          className="bg-rose-50 hover:bg-rose-100 text-[#DC2626] py-2.5 rounded-xl font-bold text-xs flex items-center justify-center space-x-1 transition border border-rose-200 active:scale-95 shadow-sm"
+                        >
+                          <AlertCircle className="w-3.5 h-3.5" />
+                          <span>Cancel</span>
+                        </button>
+                      </div>
+                    ) : null}
 
-            <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
-              {onHoldList.length === 0 ? (
-                <div className="text-center py-6 text-[#94A3B8] text-xs">No tokens on hold</div>
-              ) : (
-                onHoldList.map((h) => (
-                  <div
-                    key={h.id}
-                    className="p-3 bg-[#FEF3C7]/40 border border-[#D97706]/30 rounded-2xl flex items-center justify-between"
-                  >
-                    <div>
-                      <div className="flex items-center space-x-2">
-                        <span className="font-bold text-xs font-mono text-[#1E293B]">{h.tokenNumber}</span>
-                        <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-1.5 py-0.2 rounded">
-                          Patient
-                        </span>
-                        <span className="text-xs font-bold text-[#1E293B]">{h.patientName || 'Walk-in Patient'}</span>
-                      </div>
-                      <div className="text-[11px] text-[#B45309] font-medium mt-0.5">
-                        <span className="font-semibold">Reason:</span> {h.holdReason || 'Not Present'}
-                      </div>
-                    </div>
                     <button
-                      onClick={() => handleTransition(h.id, 'WAITING')}
-                      className="bg-[#D97706] hover:bg-[#B45309] text-white px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center space-x-1 shadow-sm"
+                      onClick={handleCallNext}
+                      disabled={isSubmitting || waitingList.length === 0}
+                      className={`w-full py-4 rounded-2xl font-black text-sm flex items-center justify-center space-x-2 transition shadow-md active:scale-95 ${
+                        waitingList.length > 0
+                          ? 'bg-[#0284C7] hover:bg-[#0369A1] text-white'
+                          : 'bg-slate-100 text-[#94A3B8] cursor-not-allowed border border-slate-200'
+                      }`}
                     >
-                      <PlayCircle className="w-3.5 h-3.5" />
-                      <span>Resume</span>
+                      <PhoneCall className="w-5 h-5" />
+                      <span>
+                        {waitingList.length > 0 ? `Call Next Patient (${waitingList[0].tokenNumber})` : 'Queue Empty'}
+                      </span>
                     </button>
                   </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Recently Completed Patients Card */}
-          <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
-              <span className="text-xs font-black tracking-wider uppercase text-[#16A34A] flex items-center space-x-2">
-                <CheckCircle className="w-4 h-4 text-[#16A34A]" />
-                <span>RECENTLY SERVED ({completedList.length})</span>
-              </span>
-            </div>
-
-            <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
-              {completedList.length === 0 ? (
-                <div className="text-center py-6 text-[#94A3B8] text-xs">No consultations completed yet today</div>
-              ) : (
-                completedList.slice(0, 5).map((c) => (
-                  <div
-                    key={c.id}
-                    className="p-2.5 bg-[#F8FAFC] border border-slate-200/80 rounded-xl flex items-center justify-between text-xs"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <span className="font-bold font-mono text-[#1E293B]">{c.tokenNumber}</span>
-                      <span className="text-slate-300">&bull;</span>
-                      <span className="text-[#1E293B] font-semibold">{c.patientName || 'Walk-in Patient'}</span>
-                    </div>
-                    <span className="text-[10px] font-bold text-[#16A34A] bg-[#DCFCE7] px-2 py-0.5 rounded-full">
-                      COMPLETED
-                    </span>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Booked Online Appointments (Awaiting Clinic Arrival / Queue Admission) */}
-        {bookedList.length > 0 && (
-          <div className="mt-6 bg-gradient-to-r from-sky-50 via-white to-indigo-50 border border-sky-200 rounded-3xl p-6 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-sky-100 gap-2 mb-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-9 h-9 rounded-2xl bg-sky-100 text-sky-700 flex items-center justify-center shrink-0">
-                  <CalendarCheck className="w-5 h-5 text-sky-600" />
                 </div>
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <h4 className="text-sm font-black text-slate-800">
-                      Booked Online Patients ({bookedList.length})
-                    </h4>
-                    <span className="text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full">
-                      Awaiting Arrival at Clinic
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-500 font-medium mt-0.5">
-                    Patients booked for today (without instant priority pass). Click "Admit to Queue" when they arrive at the clinic counter.
-                  </p>
-                </div>
-              </div>
-              <span className="text-xs font-mono font-bold text-sky-800 bg-sky-100 px-3 py-1 rounded-xl self-start sm:self-auto border border-sky-200">
-                {bookedList.length} Arrived / Pending
-              </span>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {bookedList.map((item) => (
-                <div
-                  key={item.id}
-                  className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs hover:border-sky-300 transition flex flex-col justify-between"
-                >
+                {/* Center Col: Waiting Queue List */}
+                <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-full min-h-[480px]">
                   <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-base font-black font-mono text-slate-800">
-                        {item.tokenNumber}
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                      <span className="text-xs font-black tracking-wider uppercase text-[#1E293B] flex items-center space-x-2">
+                        <Users className="w-4 h-4 text-[#0284C7]" />
+                        <span>WAITING LIST ({waitingList.length})</span>
                       </span>
-                      <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
-                        Standard Slot
+                      <span className="text-xs font-mono text-[#0284C7] bg-[#E0F2FE] px-2 py-0.5 rounded font-bold">
+                        Avg ~12m
                       </span>
                     </div>
-                    <div className="text-xs font-bold text-slate-800">
-                      {item.patientName || 'Registered Patient'}
-                    </div>
-                    <div className="text-[11px] text-slate-500 font-mono mt-0.5">
-                      {item.phoneNumber}
+
+                    <div className="space-y-2.5 mt-4 max-h-[380px] overflow-y-auto pr-1">
+                      {waitingList.length === 0 ? (
+                        <div className="text-center py-12 text-[#94A3B8] text-xs">
+                          No patients waiting in this queue.
+                        </div>
+                      ) : (
+                        waitingList.map((item, idx) => (
+                          <div
+                            key={item.id}
+                            className="p-3 bg-[#F8FAFC] border border-slate-200/80 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2 transition hover:border-[#0284C7]/40"
+                          >
+                            <div className="flex items-start space-x-3">
+                              <span className="w-7 h-7 rounded-xl bg-slate-200 text-[#334155] flex items-center justify-center font-bold text-xs font-mono shrink-0 mt-0.5">
+                                {idx + 1}
+                              </span>
+                              <div>
+                                <div className="flex items-center space-x-2">
+                                  <span className="font-extrabold text-[#1E293B] text-sm font-mono">{item.tokenNumber}</span>
+                                  {item.tokenNumber.startsWith('P') ? (
+                                    <span className="text-[10px] font-black text-amber-800 bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded flex items-center gap-1 shadow-xs">
+                                      <Sparkles className="w-2.5 h-2.5 text-amber-600" />
+                                      PRIORITY (+₹50)
+                                    </span>
+                                  ) : (
+                                    <span className="text-[10px] font-bold text-sky-700 bg-sky-50 px-1.5 py-0.2 rounded border border-sky-200">
+                                      Patient
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-xs text-[#1E293B] font-bold mt-0.5">{item.patientName || 'Walk-in Patient'}</div>
+
+                                {/* Enhanced Patient Details for Staff */}
+                                <div className="flex flex-wrap items-center gap-1.5 mt-1.5 text-[10px]">
+                                  {(item.age || item.gender) && (
+                                    <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-semibold">
+                                      {item.age ? `${item.age}y` : ''}{item.age && item.gender ? ', ' : ''}{item.gender || ''}
+                                    </span>
+                                  )}
+                                  {item.slotTime && (
+                                    <span className="bg-amber-50 text-amber-800 border border-amber-200 px-1.5 py-0.5 rounded font-mono font-bold">
+                                      🕒 Slot: {formatTimeOnly(item.slotTime)}
+                                    </span>
+                                  )}
+                                  {item.bookingDate && (
+                                    <span className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-mono">
+                                      📅 Booked: {formatDateTime(item.bookingDate)}
+                                    </span>
+                                  )}
+                                  {item.bookingType && (
+                                    <span className="bg-sky-50 text-sky-700 border border-sky-200 px-1.5 py-0.5 rounded font-semibold">
+                                      {item.bookingType === 'REMOTE' ? '🌐 Online' : item.bookingType === 'IN_CLINIC' ? '📱 QR' : '🏢 Walk-in'}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="text-right shrink-0">
+                              <div className="text-xs font-bold text-[#0284C7] flex items-center sm:justify-end space-x-1">
+                                <Clock className="w-3 h-3" />
+                                <span>~{(idx + 1) * 12}m</span>
+                              </div>
+                              <div className="text-[10px] text-[#94A3B8] font-mono">{item.phoneNumber}</div>
+                            </div>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
-
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
-                    <span className="text-[10px] text-slate-400">
-                      {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                    <button
-                      onClick={() => handleTransition(item.id, 'WAITING')}
-                      disabled={isSubmitting}
-                      className="bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition flex items-center space-x-1 shadow-xs active:scale-95 disabled:opacity-50"
-                    >
-                      <UserCheck className="w-3.5 h-3.5" />
-                      <span>Admit to Queue</span>
-                    </button>
+                  <div className="text-center text-[11px] text-[#94A3B8] pt-3 border-t border-slate-100 font-medium">
+                    Waiting times updated dynamically
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
 
-      </div>
-      </>
+                {/* Right Col: On-Hold & Completed Lists */}
+                <div className="space-y-6">
+                  {/* On Hold Patients Card */}
+                  <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+                      <span className="text-xs font-black tracking-wider uppercase text-[#D97706] flex items-center space-x-2">
+                        <PauseCircle className="w-4 h-4 text-[#D97706]" />
+                        <span>ON HOLD ({onHoldList.length})</span>
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
+                      {onHoldList.length === 0 ? (
+                        <div className="text-center py-6 text-[#94A3B8] text-xs">No tokens on hold</div>
+                      ) : (
+                        onHoldList.map((h) => (
+                          <div
+                            key={h.id}
+                            className="p-3 bg-[#FEF3C7]/40 border border-[#D97706]/30 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                          >
+                            <div>
+                              <div className="flex items-center space-x-2">
+                                <span className="font-bold text-xs font-mono text-[#1E293B]">{h.tokenNumber}</span>
+                                <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-1.5 py-0.2 rounded">
+                                  Patient
+                                </span>
+                                <span className="text-xs font-bold text-[#1E293B]">{h.patientName || 'Walk-in Patient'}</span>
+                              </div>
+                              <div className="text-[11px] text-[#B45309] font-medium mt-0.5">
+                                <span className="font-semibold">Reason:</span> {h.holdReason || 'Not Present'}
+                              </div>
+                              {/* Enhanced details for staff */}
+                              <div className="flex flex-wrap items-center gap-1.5 mt-1 text-[10px]">
+                                {(h.age || h.gender) && (
+                                  <span className="bg-amber-100/70 text-amber-900 px-1.5 py-0.5 rounded font-semibold">
+                                    {h.age ? `${h.age}y` : ''}{h.age && h.gender ? ', ' : ''}{h.gender || ''}
+                                  </span>
+                                )}
+                                {h.slotTime && (
+                                  <span className="bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.5 rounded font-mono font-bold">
+                                    🕒 Slot: {formatTimeOnly(h.slotTime)}
+                                  </span>
+                                )}
+                                {h.bookingDate && (
+                                  <span className="text-amber-800 font-mono">
+                                    📅 {formatDateTime(h.bookingDate)}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => handleTransition(h.id, 'WAITING')}
+                              className="bg-[#D97706] hover:bg-[#B45309] text-white px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center space-x-1 shadow-sm shrink-0 self-end sm:self-auto"
+                            >
+                              <PlayCircle className="w-3.5 h-3.5" />
+                              <span>Resume</span>
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Recently Completed Patients Card */}
+                  <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+                      <span className="text-xs font-black tracking-wider uppercase text-[#16A34A] flex items-center space-x-2">
+                        <CheckCircle className="w-4 h-4 text-[#16A34A]" />
+                        <span>RECENTLY SERVED ({completedList.length})</span>
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
+                      {completedList.length === 0 ? (
+                        <div className="text-center py-6 text-[#94A3B8] text-xs">No consultations completed yet today</div>
+                      ) : (
+                        completedList.slice(0, 5).map((c) => (
+                          <div
+                            key={c.id}
+                            className="p-2.5 bg-[#F8FAFC] border border-slate-200/80 rounded-xl flex items-center justify-between text-xs"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <span className="font-bold font-mono text-[#1E293B]">{c.tokenNumber}</span>
+                              <span className="text-slate-300">&bull;</span>
+                              <span className="text-[#1E293B] font-semibold">{c.patientName || 'Walk-in Patient'}</span>
+                            </div>
+                            <span className="text-[10px] font-bold text-[#16A34A] bg-[#DCFCE7] px-2 py-0.5 rounded-full">
+                              COMPLETED
+                            </span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Booked Online Appointments for Today (Awaiting Clinic Arrival / Queue Admission) */}
+              {bookedList.length > 0 && (
+                <div className="bg-gradient-to-r from-sky-50 via-white to-indigo-50 border border-sky-200 rounded-3xl p-6 shadow-sm">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-sky-100 gap-2 mb-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-9 h-9 rounded-2xl bg-sky-100 text-sky-700 flex items-center justify-center shrink-0">
+                        <CalendarCheck className="w-5 h-5 text-sky-600" />
+                      </div>
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <h4 className="text-sm font-black text-slate-800">
+                            Today's Booked Online Patients ({bookedList.length})
+                          </h4>
+                          <span className="text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-full">
+                            Awaiting Arrival at Clinic
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                          Patients booked for today (without instant priority pass). Click "Admit to Queue" when they arrive at the clinic counter.
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-mono font-bold text-sky-800 bg-sky-100 px-3 py-1 rounded-xl self-start sm:self-auto border border-sky-200">
+                      {bookedList.length} Arrived / Pending
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {bookedList.map((item) => (
+                      <div
+                        key={item.id}
+                        className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs hover:border-sky-300 transition flex flex-col justify-between"
+                      >
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-base font-black font-mono text-slate-800">
+                              {item.tokenNumber}
+                            </span>
+                            {item.slotTime ? (
+                              <span className="text-[10px] font-bold font-mono text-amber-900 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
+                                🕒 Slot: {formatTimeOnly(item.slotTime)}
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
+                                Standard Slot
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs font-bold text-slate-800">
+                            {item.patientName || 'Registered Patient'}
+                          </div>
+                          <div className="text-[11px] text-slate-500 font-mono mt-0.5">
+                            {item.phoneNumber}
+                          </div>
+
+                          {/* Patient demographics & booking channel */}
+                          <div className="flex flex-wrap items-center gap-1.5 mt-2 text-[10px]">
+                            {(item.age || item.gender) && (
+                              <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-semibold">
+                                {item.age ? `${item.age}y` : ''}{item.age && item.gender ? ', ' : ''}{item.gender || ''}
+                              </span>
+                            )}
+                            {item.bookingType && (
+                              <span className="bg-sky-50 text-sky-700 border border-sky-200 px-1.5 py-0.5 rounded font-semibold">
+                                {item.bookingType === 'REMOTE' ? '🌐 Online' : item.bookingType === 'IN_CLINIC' ? '📱 QR' : '🏢 Walk-in'}
+                              </span>
+                            )}
+                            <span className={`px-1.5 py-0.5 rounded font-semibold ${
+                              item.paymentStatus === 'COMPLETED' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600'
+                            }`}>
+                              {item.paymentStatus === 'COMPLETED' ? `Paid ₹${item.bookingFee || 200}` : 'Pay at Clinic'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                          <span className="text-[10px] text-slate-500 font-mono">
+                            📅 Booked: {formatDateTime(item.bookingDate || item.createdAt)}
+                          </span>
+                          <button
+                            onClick={() => handleTransition(item.id, 'WAITING')}
+                            disabled={isSubmitting}
+                            className="bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition flex items-center space-x-1 shadow-xs active:scale-95 disabled:opacity-50"
+                          >
+                            <UserCheck className="w-3.5 h-3.5" />
+                            <span>Admit to Queue</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </>
       )}
 
       {/* New Walk-in Patient Modal */}
