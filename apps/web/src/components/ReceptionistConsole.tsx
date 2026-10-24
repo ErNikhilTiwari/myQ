@@ -17,6 +17,7 @@ import {
   Lock,
   LogIn,
   ShieldAlert,
+  Shield,
   BarChart3,
   Stethoscope,
   Layers,
@@ -32,6 +33,7 @@ import { ServiceQueueManagement } from './ServiceQueueManagement';
 import { ClinicPricingConfig } from './ClinicPricingConfig';
 import { VoiceAnnouncementConfig } from './VoiceAnnouncementConfig';
 import { ReceptionistManagement } from './ReceptionistManagement';
+import { ClinicAdminProfile } from './ClinicAdminProfile';
 import { VoiceAnnouncementMode } from '@queueapp/shared';
 
 interface QueueItem {
@@ -79,6 +81,7 @@ interface ReceptionistConsoleProps {
   clinics: ClinicOption[];
   isClinicAdminMode?: boolean;
   onOpenTVView?: () => void;
+  onProfileUpdated?: (updatedUser: any) => void;
 }
 
 export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
@@ -89,6 +92,7 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
   clinics,
   isClinicAdminMode,
   onOpenTVView,
+  onProfileUpdated,
 }) => {
   const isOwnerOrAdmin = isClinicAdminMode !== undefined
     ? isClinicAdminMode
@@ -98,7 +102,7 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
   const [selectedQueueId, setSelectedQueueId] = useState<string>('');
   
   // Navigation tabs within Clinic Console
-  const [activeConsoleTab, setActiveConsoleTab] = useState<'QUEUE' | 'DOCTORS' | 'SERVICES' | 'RECEPTIONIST' | 'ANALYTICS' | 'PRICING' | 'VOICE'>('QUEUE');
+  const [activeConsoleTab, setActiveConsoleTab] = useState<'QUEUE' | 'DOCTORS' | 'SERVICES' | 'RECEPTIONIST' | 'ANALYTICS' | 'PRICING' | 'VOICE' | 'PROFILE'>('QUEUE');
   
   // Active queue state
   const [currentServing, setCurrentServing] = useState<QueueItem | null>(null);
@@ -478,6 +482,15 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
                 <Volume2 className="w-3.5 h-3.5 text-sky-500" />
                 <span>Voice Announcements</span>
               </button>
+              <button
+                onClick={() => setActiveConsoleTab('PROFILE')}
+                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition ${
+                  activeConsoleTab === 'PROFILE' ? 'bg-white text-[#1E293B] shadow-sm' : 'text-[#64748B] hover:text-[#1E293B]'
+                }`}
+              >
+                <Shield className="w-3.5 h-3.5 text-[#0284C7]" />
+                <span>Admin Profile</span>
+              </button>
             </div>
           ) : (
             onOpenTVView && (
@@ -576,6 +589,16 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
           clinicId={clinicId} 
           token={token} 
           clinicName={activeClinicObj?.name || currentUser?.clinicName || clinics.find(c => c.id === clinicId)?.name} 
+        />
+      )}
+
+      {isOwnerOrAdmin && activeConsoleTab === 'PROFILE' && (
+        <ClinicAdminProfile
+          clinicId={clinicId}
+          token={token}
+          currentUser={currentUser}
+          onProfileUpdated={onProfileUpdated}
+          onNavigateTab={(tab) => setActiveConsoleTab(tab)}
         />
       )}
 

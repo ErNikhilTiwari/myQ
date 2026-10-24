@@ -275,9 +275,21 @@ export class ClinicsService {
       throw new NotFoundException(`Clinic with ID "${id}" not found.`);
     }
 
+    const dataToUpdate: any = { ...dto };
+
+    if (dto.phoneNumber) {
+      const rawDigits = dto.phoneNumber.replace(/\D/g, '').slice(-10);
+      if (rawDigits.length !== 10 || !/^[6-9]\d{9}$/.test(rawDigits)) {
+        throw new BadRequestException(
+          'Invalid mobile number. Please provide a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.',
+        );
+      }
+      dataToUpdate.phoneNumber = `+91${rawDigits}`;
+    }
+
     return this.prisma.clinic.update({
       where: { id },
-      data: dto,
+      data: dataToUpdate,
     });
   }
 

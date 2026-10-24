@@ -264,7 +264,15 @@ export default function App() {
         <div className="flex items-center space-x-2.5">
           {currentUser ? (
             <div className="flex items-center space-x-2">
-              <div className="hidden sm:flex items-center space-x-1.5 bg-[#0F172A] border border-slate-700 px-2.5 py-1 rounded-xl">
+              <div 
+                onClick={() => {
+                  if (currentUser.role === 'CLINIC_ADMIN') setActiveTab('CLINIC_ADMIN');
+                }}
+                className={`hidden sm:flex items-center space-x-1.5 bg-[#0F172A] border border-slate-700 px-2.5 py-1 rounded-xl ${
+                  currentUser.role === 'CLINIC_ADMIN' ? 'cursor-pointer hover:border-sky-500/60 transition' : ''
+                }`}
+                title={currentUser.role === 'CLINIC_ADMIN' ? 'Click to open Clinic Admin Console & Profile' : undefined}
+              >
                 <span className="w-2 h-2 rounded-full bg-[#16A34A] animate-pulse" />
                 <span className="font-bold text-slate-100">{currentUser.name || currentUser.phoneNumber}</span>
                 <span className="text-[10px] bg-slate-800 text-sky-300 px-1.5 py-0.5 rounded font-mono font-medium">
@@ -524,6 +532,20 @@ export default function App() {
                     <span className="text-slate-400 text-[11px]">Logged in as:</span>
                     <span className="font-bold text-sky-400">{currentUser.name || currentUser.phoneNumber}</span>
                   </div>
+
+                  {currentUser?.role === 'CLINIC_ADMIN' && (
+                    <button
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        setActiveTab('CLINIC_ADMIN');
+                      }}
+                      className="w-full flex items-center justify-center space-x-2 bg-sky-600/20 hover:bg-sky-600 text-sky-300 hover:text-white border border-sky-500/30 py-2.5 rounded-xl font-bold text-xs transition"
+                    >
+                      <Shield className="w-4 h-4" />
+                      <span>Admin Profile &amp; Password</span>
+                    </button>
+                  )}
+
                   <button
                     onClick={handleLogout}
                     className="w-full flex items-center justify-center space-x-2 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 py-2.5 rounded-xl font-bold text-xs transition"
@@ -781,6 +803,12 @@ export default function App() {
             clinics={clinics}
             isClinicAdminMode={true}
             onOpenTVView={() => setActiveTab('TV_VIEWER')}
+            onProfileUpdated={(updatedUser) => {
+              const merged = { ...currentUser, ...updatedUser };
+              setCurrentUser(merged);
+              localStorage.setItem('user', JSON.stringify(merged));
+              localStorage.setItem('queueapp_user', JSON.stringify(merged));
+            }}
           />
         )}
 

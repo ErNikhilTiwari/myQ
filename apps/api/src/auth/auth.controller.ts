@@ -4,7 +4,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import {
   ApiResponse,
 } from '@queueapp/shared';
-import { SendOtpDto, VerifyOtpDto, RefreshTokenDto, LoginPasswordDto, UpdateProfileDto } from './dto/auth.dto';
+import { SendOtpDto, VerifyOtpDto, RefreshTokenDto, LoginPasswordDto, UpdateProfileDto, ChangePasswordDto } from './dto/auth.dto';
 
 @Controller('api/auth')
 export class AuthController {
@@ -69,6 +69,18 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async updateProfile(@Req() req: any, @Body() dto: UpdateProfileDto): Promise<ApiResponse> {
     const data = await this.authService.updateProfile(req.user.id, dto);
+    return {
+      success: true,
+      data,
+      meta: { timestamp: new Date().toISOString() },
+    };
+  }
+
+  @Post('change-password')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async changePassword(@Req() req: any, @Body() dto: ChangePasswordDto): Promise<ApiResponse> {
+    const data = await this.authService.changePassword(req.user.id, dto);
     return {
       success: true,
       data,

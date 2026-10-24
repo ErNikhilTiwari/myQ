@@ -27,6 +27,7 @@ export interface AuthUserDto {
   id: string;
   phoneNumber: string;
   name: string;
+  email?: string | null;
   role: UserRole;
   clinicId?: string;
   age?: number | null;
@@ -55,3 +56,17 @@ export interface LoginPasswordResponseDto {
   tokens: AuthTokensDto;
   isNewUser: boolean;
 }
+
+export interface UpdateUserProfileDto {
+  name?: string;
+  email?: string;
+  phoneNumber?: string;
+  age?: number;
+  gender?: string;
+}
+
+export interface ChangePasswordDto {
+  currentPassword?: string;
+  newPassword: string;
+}
+

@@ -45,9 +45,28 @@ export class UpdateProfileDto {
   name?: string;
 
   @IsOptional()
+  @IsString()
+  email?: string;
+
+  @IsOptional()
+  @IsString()
+  phoneNumber?: string;
+
+  @IsOptional()
   age?: number;
 
   @IsOptional()
   @IsString()
   gender?: string;
 }
+
+export class ChangePasswordDto {
+  @IsOptional()
+  @IsString()
+  currentPassword?: string;
+
+  @IsNotEmpty()
+  @IsString()
+  newPassword: string;
+}
+

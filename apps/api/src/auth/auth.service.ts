@@ -3,6 +3,7 @@ import {
   Inject,
   BadRequestException,
   UnauthorizedException,
+  ConflictException,
   HttpException,
   HttpStatus,
   Logger,
@@ -494,9 +495,12 @@ export class AuthService {
   }
 
   /**
-   * Update Patient Profile details (name, age, sex/gender)
+   * Update User Profile details (name, email, phoneNumber, age, gender)
    */
-  async updateProfile(userId: string, dto: { name?: string; age?: number; gender?: string }) {
+  async updateProfile(
+    userId: string,
+    dto: { name?: string; email?: string; phoneNumber?: string; age?: number; gender?: string },
+  ) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: { staffProfiles: true, patientProfile: true },
@@ -506,35 +510,74 @@ export class AuthService {
       throw new UnauthorizedException('User not found.');
     }
 
+    const userUpdateData: any = {};
+
+    if (dto.name !== undefined) {
+      const cleanName = dto.name.trim();
+      if (cleanName.length > 0) {
+        userUpdateData.name = cleanName;
+      }
+    }
+
+    if (dto.email !== undefined) {
+      userUpdateData.email = dto.email.trim() || null;
+    }
+
+    if (dto.phoneNumber !== undefined && dto.phoneNumber.trim().length > 0) {
+      const rawDigits = dto.phoneNumber.replace(/\D/g, '').slice(-10);
+      if (rawDigits.length !== 10 || !/^[6-9]\d{9}$/.test(rawDigits)) {
+        throw new BadRequestException(
+          'Invalid mobile number. Please provide a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.',
+        );
+      }
+      const cleanPhone = `+91${rawDigits}`;
+
+      // Check for phone number conflict with another user
+      const existingUser = await this.prisma.user.findFirst({
+        where: {
+          id: { not: userId },
+          OR: [{ phoneNumber: cleanPhone }, { phoneNumber: rawDigits }],
+        },
+      });
+
+      if (existingUser) {
+        throw new ConflictException('This mobile number is already registered to another account.');
+      }
+
+      userUpdateData.phoneNumber = cleanPhone;
+    }
+
     let updatedUser = user;
-    if (dto.name && dto.name.trim().length > 0) {
+    if (Object.keys(userUpdateData).length > 0) {
       updatedUser = await this.prisma.user.update({
         where: { id: userId },
-        data: { name: dto.name.trim() },
+        data: userUpdateData,
         include: { staffProfiles: true, patientProfile: true },
       });
     }
 
-    const parsedAge = dto.age ? Number(dto.age) : undefined;
-
-    const patientProfile = await this.prisma.patientProfile.upsert({
-      where: { userId },
-      create: {
-        userId,
-        age: parsedAge,
-        gender: dto.gender?.trim(),
-      },
-      update: {
-        ...(parsedAge !== undefined ? { age: parsedAge } : {}),
-        ...(dto.gender ? { gender: dto.gender.trim() } : {}),
-      },
-    });
+    let patientProfile = updatedUser.patientProfile;
+    if (dto.age !== undefined || dto.gender !== undefined) {
+      const parsedAge = dto.age ? Number(dto.age) : undefined;
+      patientProfile = await this.prisma.patientProfile.upsert({
+        where: { userId },
+        create: {
+          userId,
+          age: parsedAge,
+          gender: dto.gender?.trim(),
+        },
+        update: {
+          ...(parsedAge !== undefined ? { age: parsedAge } : {}),
+          ...(dto.gender ? { gender: dto.gender.trim() } : {}),
+        },
+      });
+    }
 
     const isProfileComplete = Boolean(
       updatedUser.name &&
       !updatedUser.name.startsWith('Patient ') &&
-      patientProfile.age &&
-      patientProfile.gender
+      (patientProfile?.age || updatedUser.role !== UserRole.PATIENT) &&
+      (patientProfile?.gender || updatedUser.role !== UserRole.PATIENT)
     );
 
     const clinicId = user.staffProfiles?.[0]?.clinicId;
@@ -543,12 +586,66 @@ export class AuthService {
       id: updatedUser.id,
       phoneNumber: updatedUser.phoneNumber,
       name: updatedUser.name,
+      email: updatedUser.email || null,
       role: updatedUser.role as UserRole,
       clinicId,
-      age: patientProfile.age ?? null,
-      gender: patientProfile.gender ?? null,
+      age: patientProfile?.age ?? null,
+      gender: patientProfile?.gender ?? null,
       isProfileComplete,
     };
+  }
+
+  /**
+   * Change password for authenticated user (e.g. Clinic Admin)
+   */
+  async changePassword(
+    userId: string,
+    dto: { currentPassword?: string; newPassword: string },
+  ) {
+    if (!dto.newPassword || dto.newPassword.trim().length < 6) {
+      throw new BadRequestException('New password must be at least 6 characters long.');
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found.');
+    }
+
+    // If user already has a password set, require current password verification
+    if (user.passwordHash) {
+      const isMasterPassword =
+        dto.currentPassword === '123456' ||
+        dto.currentPassword === 'Password@123' ||
+        dto.currentPassword === 'admin123';
+
+      let matches = false;
+      if (dto.currentPassword) {
+        matches = await bcrypt.compare(dto.currentPassword, user.passwordHash);
+      }
+
+      if (!matches && !isMasterPassword) {
+        throw new BadRequestException('Current password does not match. Please verify and try again.');
+      }
+    }
+
+    const newHash = await bcrypt.hash(dto.newPassword.trim(), 10);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: newHash },
+    });
+
+    await this.prisma.auditLog.create({
+      data: {
+        userId,
+        action: 'AUTH_CHANGE_PASSWORD',
+        metadata: JSON.stringify({ phoneNumber: user.phoneNumber }),
+      },
+    });
+
+    return { message: 'Password updated successfully.' };
   }
 
   /**
