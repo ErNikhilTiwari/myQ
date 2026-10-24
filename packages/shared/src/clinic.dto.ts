@@ -115,3 +115,8 @@ export interface CreateHospitalChainDto {
   headquarters?: string;
 }
 
+export interface DeleteClinicForeverDto {
+  password?: string;
+  otp?: string;
+}
+

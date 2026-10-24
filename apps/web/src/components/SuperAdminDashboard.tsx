@@ -27,7 +27,15 @@ import {
   ChevronRight,
   Stethoscope,
   Sparkles,
-  Check
+  Check,
+  AlertTriangle,
+  Ban,
+  Play,
+  Lock,
+  ShieldAlert,
+  Key,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 export interface ClinicReceptionistSummaryData {
@@ -56,9 +64,13 @@ interface ClinicData {
   email?: string | null;
   address?: string | null;
   isActive: boolean;
+  subscriptionStatus?: string;
+  plan?: string;
   createdAt: string;
   doctorsCount: number;
   servicesCount: number;
+  queuesCount?: number;
+  staffCount?: number;
 }
 
 interface SubscriptionData {
@@ -122,7 +134,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
   currentUser,
   onSelectClinicAsStaff,
 }) => {
-  const [activeTab, setActiveTab] = useState<'CLINICS' | 'CHAINS' | 'SUBSCRIPTIONS' | 'RECEPTIONISTS'>('CLINICS');
+  const [activeTab, setActiveTab] = useState<'CLINICS' | 'CHAINS' | 'SUBSCRIPTIONS' | 'RECEPTIONISTS' | 'SUSPENDED'>('CLINICS');
   
   // Data states
   const [clinics, setClinics] = useState<ClinicData[]>([]);
@@ -198,6 +210,22 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
   const [selectedPlan, setSelectedPlan] = useState<'FREE' | 'STARTER' | 'PRO' | 'ENTERPRISE'>('PRO');
   const [submittingUpgrade, setSubmittingUpgrade] = useState(false);
 
+  // Suspend Membership Modal
+  const [suspendTarget, setSuspendTarget] = useState<ClinicData | null>(null);
+  const [submittingSuspend, setSubmittingSuspend] = useState(false);
+
+  // Permanent Delete Clinic Forever Modal
+  const [deleteForeverTarget, setDeleteForeverTarget] = useState<ClinicData | null>(null);
+  const [deleteAuthMethod, setDeleteAuthMethod] = useState<'PASSWORD' | 'OTP'>('PASSWORD');
+  const [deletePassword, setDeletePassword] = useState('');
+  const [showDeletePassword, setShowDeletePassword] = useState(false);
+  const [deleteOtp, setDeleteOtp] = useState('');
+  const [deleteOtpSent, setDeleteOtpSent] = useState(false);
+  const [deleteOtpSending, setDeleteOtpSending] = useState(false);
+  const [deleteOtpCountdown, setDeleteOtpCountdown] = useState(0);
+  const [deleteError, setDeleteError] = useState('');
+  const [submittingDeleteForever, setSubmittingDeleteForever] = useState(false);
+
   // Toast feedback state (guaranteed z-[99999] top-most)
   const [toastMsg, setToastMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -213,7 +241,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
 
     try {
       const [cRes, chainRes, subRes, recRes] = await Promise.all([
-        fetch('/api/clinics').then(r => r.json()),
+        fetch('/api/super/clinics', { headers }).then(r => r.json()).catch(() => fetch('/api/clinics').then(r => r.json())),
         fetch('/api/hospital-chains').then(r => r.json()).catch(() => ({ success: false })),
         fetch('/api/super/subscriptions', { headers }).then(r => r.json()).catch(() => ({ success: false })),
         fetch('/api/super/receptionists', { headers }).then(r => r.json()).catch(() => ({ success: false })),
@@ -507,11 +535,128 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     }
   };
 
+  const handleConfirmSuspend = async () => {
+    if (!suspendTarget || !token) return;
+    setSubmittingSuspend(true);
+    try {
+      const res = await fetch(`/api/super/clinics/${suspendTarget.id}/suspend`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Failed to suspend clinic membership');
+      }
+      showToast('success', `Membership for "${suspendTarget.name}" suspended. All data preserved in Suspended Memberships.`);
+      setSuspendTarget(null);
+      await loadData();
+    } catch (err: any) {
+      showToast('error', err.message || 'Error suspending clinic membership');
+    } finally {
+      setSubmittingSuspend(false);
+    }
+  };
+
+  const handleReactivateClinic = async (clinicId: string, clinicName: string) => {
+    if (!token) return;
+    try {
+      const res = await fetch(`/api/super/clinics/${clinicId}/reactivate`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Failed to reactivate clinic membership');
+      }
+      showToast('success', `Membership for "${clinicName}" reactivated successfully!`);
+      await loadData();
+    } catch (err: any) {
+      showToast('error', err.message || 'Error reactivating clinic');
+    }
+  };
+
+  const handleSendDeleteOtp = async () => {
+    const phone = currentUser?.phoneNumber || '+919999999999';
+    setDeleteOtpSending(true);
+    setDeleteError('');
+    try {
+      const res = await fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phoneNumber: phone }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Failed to send OTP code');
+      }
+      setDeleteOtpSent(true);
+      setDeleteOtpCountdown(60);
+      const interval = setInterval(() => {
+        setDeleteOtpCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      showToast('success', `Authorization OTP sent to ${phone}`);
+    } catch (err: any) {
+      setDeleteError(err.message || 'Failed to send authorization OTP');
+    } finally {
+      setDeleteOtpSending(false);
+    }
+  };
+
+  const handleConfirmDeleteForever = async () => {
+    if (!deleteForeverTarget || !token) return;
+    setSubmittingDeleteForever(true);
+    setDeleteError('');
+    try {
+      const payload = deleteAuthMethod === 'PASSWORD' 
+        ? { password: deletePassword } 
+        : { otp: deleteOtp };
+
+      const res = await fetch(`/api/super/clinics/${deleteForeverTarget.id}/permanent`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Failed to permanently delete clinic');
+      }
+
+      showToast('success', `Clinic "${deleteForeverTarget.name}" has been permanently deleted forever.`);
+      setDeleteForeverTarget(null);
+      setDeletePassword('');
+      setDeleteOtp('');
+      await loadData();
+    } catch (err: any) {
+      setDeleteError(err.message || 'Verification failed. Could not delete clinic.');
+    } finally {
+      setSubmittingDeleteForever(false);
+    }
+  };
+
+  const activeClinics = clinics.filter(c => c.isActive !== false && c.subscriptionStatus !== 'SUSPENDED');
+  const suspendedClinics = clinics.filter(c => c.isActive === false || c.subscriptionStatus === 'SUSPENDED');
+
   const uniqueCities = Array.from(
-    new Set(clinics.map((c) => c.city).filter((city): city is string => Boolean(city && city.trim())))
+    new Set(activeClinics.map((c) => c.city).filter((city): city is string => Boolean(city && city.trim())))
   ).sort();
 
-  const filteredClinics = clinics.filter((c) => {
+  const filteredClinics = activeClinics.filter((c) => {
     const q = searchQuery.trim().toLowerCase();
     const cleanQDigits = q.replace(/\D/g, '');
     const cleanPhoneDigits = c.phoneNumber ? c.phoneNumber.replace(/\D/g, '') : '';
@@ -532,6 +677,21 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     const matchesCity = clinicCityFilter === 'ALL' || c.city === clinicCityFilter;
 
     return matchesQuery && matchesChain && matchesCity;
+  });
+
+  const filteredSuspendedClinics = suspendedClinics.filter((c) => {
+    const q = searchQuery.trim().toLowerCase();
+    const cleanQDigits = q.replace(/\D/g, '');
+    const cleanPhoneDigits = c.phoneNumber ? c.phoneNumber.replace(/\D/g, '') : '';
+
+    return !q || Boolean(
+      c.name.toLowerCase().includes(q) ||
+      c.slug.toLowerCase().includes(q) ||
+      (c.city && c.city.toLowerCase().includes(q)) ||
+      (c.address && c.address.toLowerCase().includes(q)) ||
+      (cleanQDigits.length > 0 && cleanPhoneDigits.includes(cleanQDigits)) ||
+      c.phoneNumber.includes(q)
+    );
   });
 
   const filteredReceptionists = receptionists.filter(r => 
@@ -607,13 +767,13 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
       </div>
 
       {/* KPI Platform Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 mb-6">
         <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider">Total Clinics</span>
+            <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider">Active Clinics</span>
             <Building2 className="w-4 h-4 text-[#0284C7]" />
           </div>
-          <div className="text-2xl font-black text-[#1E293B] mt-1">{clinics.length}</div>
+          <div className="text-2xl font-black text-[#1E293B] mt-1">{activeClinics.length}</div>
           <span className="text-[10px] text-[#16A34A] font-semibold mt-0.5 block">Active Facilities</span>
         </div>
 
@@ -645,6 +805,23 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
           </div>
           <span className="text-[10px] text-teal-600 font-semibold mt-0.5 block">1 Per Clinic Max</span>
         </div>
+
+        <div 
+          onClick={() => setActiveTab('SUSPENDED')}
+          className={`border rounded-2xl p-4 shadow-sm cursor-pointer transition ${
+            activeTab === 'SUSPENDED' 
+              ? 'bg-amber-50/80 border-amber-300 ring-2 ring-amber-400/40' 
+              : 'bg-white border-amber-200 hover:shadow-md'
+          }`}
+          title="Click to view suspended memberships"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-amber-800 uppercase tracking-wider">Suspended</span>
+            <Ban className="w-4 h-4 text-amber-600" />
+          </div>
+          <div className="text-2xl font-black text-amber-900 mt-1">{suspendedClinics.length}</div>
+          <span className="text-[10px] text-amber-700 font-semibold mt-0.5 block">Inactive Memberships</span>
+        </div>
       </div>
 
       {/* Tabs Switcher & Search Bar */}
@@ -656,7 +833,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
               activeTab === 'CLINICS' ? 'bg-white text-[#1E293B] shadow-sm' : 'text-[#64748B] hover:text-[#1E293B]'
             }`}
           >
-            Clinics Directory ({clinics.length})
+            Clinics Directory ({activeClinics.length})
           </button>
           <button
             onClick={() => setActiveTab('CHAINS')}
@@ -682,6 +859,15 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
           >
             <UserCheck className="w-3.5 h-3.5 text-teal-600" />
             <span>Manage Receptionists ({receptionists.filter(r => r.receptionist !== null).length}/{receptionists.length || clinics.length})</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('SUSPENDED')}
+            className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg transition ${
+              activeTab === 'SUSPENDED' ? 'bg-amber-600 text-white shadow-sm' : 'text-amber-800 hover:text-amber-900 bg-amber-50 hover:bg-amber-100'
+            }`}
+          >
+            <Ban className="w-3.5 h-3.5" />
+            <span>Suspended Memberships ({suspendedClinics.length})</span>
           </button>
         </div>
 
@@ -771,7 +957,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
               )}
 
               <span className="text-xs font-bold text-slate-600 bg-slate-100 px-3 py-2 rounded-xl border border-slate-200 shrink-0">
-                {filteredClinics.length} of {clinics.length} Clinics
+                {filteredClinics.length} of {activeClinics.length} Active Clinics
               </span>
             </div>
           </div>
@@ -860,20 +1046,32 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                       </div>
                     </div>
 
-                    <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
                       <span className="text-[10px] text-slate-400 font-mono">
                         ID: {clinic.id.slice(0, 8)}...
                       </span>
 
-                      {onSelectClinicAsStaff && (
+                      <div className="flex items-center space-x-2">
                         <button
-                          onClick={() => onSelectClinicAsStaff(clinic.id)}
-                          className="text-xs font-bold text-[#0284C7] hover:underline flex items-center space-x-1"
+                          type="button"
+                          onClick={() => setSuspendTarget(clinic)}
+                          className="text-[11px] font-bold text-amber-700 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2 py-1 rounded-lg flex items-center space-x-1 transition"
+                          title="Suspend clinic membership (Data will NOT be deleted)"
                         >
-                          <span>Open Desk</span>
-                          <ExternalLink className="w-3 h-3" />
+                          <Ban className="w-3 h-3 text-amber-600" />
+                          <span>Suspend</span>
                         </button>
-                      )}
+
+                        {onSelectClinicAsStaff && (
+                          <button
+                            onClick={() => onSelectClinicAsStaff(clinic.id)}
+                            className="text-xs font-bold text-[#0284C7] hover:underline flex items-center space-x-1"
+                          >
+                            <span>Open Desk</span>
+                            <ExternalLink className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
@@ -989,7 +1187,34 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                   </div>
                 </div>
 
-                <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-end">
+                <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-end space-x-2">
+                  {sub.status === 'ACTIVE' && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const targetClinic = clinics.find(c => c.id === sub.clinicId);
+                        if (targetClinic) {
+                          setSuspendTarget(targetClinic);
+                        } else {
+                          setSuspendTarget({
+                            id: sub.clinicId,
+                            name: sub.clinicName || 'Clinic',
+                            slug: '',
+                            phoneNumber: '',
+                            isActive: true,
+                            createdAt: '',
+                            doctorsCount: sub.maxDoctors,
+                            servicesCount: 0,
+                          });
+                        }
+                      }}
+                      className="flex items-center space-x-1 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 px-2.5 py-1.5 rounded-xl transition"
+                      title="Suspend membership"
+                    >
+                      <Ban className="w-3.5 h-3.5 text-amber-600" />
+                      <span>Suspend</span>
+                    </button>
+                  )}
                   <button
                     onClick={() => {
                       setUpgradeTarget(sub);
@@ -1167,6 +1392,147 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                   </div>
                 </div>
               ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 5: SUSPENDED MEMBERSHIPS */}
+      {activeTab === 'SUSPENDED' && (
+        <div className="space-y-4">
+          {/* Header Banner */}
+          <div className="bg-gradient-to-r from-amber-50 to-rose-50 border border-amber-200/80 rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center space-x-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-amber-600 text-white flex items-center justify-center font-bold text-xl shadow-md">
+                <Ban className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center space-x-2">
+                  <h2 className="text-lg font-black text-slate-800 tracking-tight">Suspended Clinic Memberships</h2>
+                  <span className="bg-amber-100 text-amber-800 text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase border border-amber-300">
+                    Preserved Data
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 mt-0.5 font-medium">
+                  Clinics removed from active subscription. Doctors, services, patient queues, and appointments remain preserved. Reactivate subscription anytime or permanently delete forever with Super Admin verification.
+                </p>
+              </div>
+            </div>
+
+            <span className="text-xs font-bold text-amber-800 bg-amber-100/80 px-3.5 py-1.5 rounded-xl border border-amber-200 shrink-0">
+              {suspendedClinics.length} Suspended {suspendedClinics.length === 1 ? 'Clinic' : 'Clinics'}
+            </span>
+          </div>
+
+          {/* Suspended Clinics Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredSuspendedClinics.length === 0 ? (
+              <div className="col-span-full py-16 text-center text-xs text-[#64748B] bg-white rounded-2xl border border-slate-200 p-6">
+                <ShieldCheck className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
+                <p className="font-bold text-slate-700 text-sm">No Suspended Memberships</p>
+                <p className="text-slate-400 mt-1">
+                  All provisioned clinics currently have active subscription memberships.
+                </p>
+              </div>
+            ) : (
+              filteredSuspendedClinics.map((clinic) => {
+                const chain = clinic.chainId ? chains.find((c) => c.id === clinic.chainId) : null;
+                return (
+                  <div 
+                    key={clinic.id}
+                    className="bg-white border-2 border-amber-200/80 hover:border-amber-300 rounded-2xl p-5 shadow-sm flex flex-col justify-between hover:shadow-md transition-all"
+                  >
+                    <div>
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="font-extrabold text-[#1E293B] text-base">{clinic.name}</h3>
+                          <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                            <span className="text-[11px] font-mono text-[#0284C7] bg-[#E0F2FE] px-2 py-0.5 rounded-md font-semibold">
+                              /{clinic.slug}
+                            </span>
+                            {chain && (
+                              <span className="inline-flex items-center space-x-1 text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
+                                <Layers className="w-3 h-3 text-amber-600" />
+                                <span>{chain.name}</span>
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                          Suspended Membership
+                        </span>
+                      </div>
+
+                      <div className="mt-4 space-y-1.5 text-xs text-[#64748B]">
+                        {clinic.city && (
+                          <div className="flex items-center space-x-1.5 text-slate-700 font-semibold">
+                            <MapPin className="w-3.5 h-3.5 shrink-0 text-[#0284C7]" />
+                            <span>{clinic.city}</span>
+                          </div>
+                        )}
+                        {clinic.address && (
+                          <div className="flex items-center space-x-1.5">
+                            <span className="text-slate-400 text-xs shrink-0 pl-5 truncate">{clinic.address}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center space-x-1.5">
+                          <Phone className="w-3.5 h-3.5 shrink-0 text-slate-400" />
+                          <span>{clinic.phoneNumber}</span>
+                        </div>
+                      </div>
+
+                      {/* Preserved Data Notification Box */}
+                      <div className="mt-4 p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-[11px] text-slate-600 space-y-1">
+                        <div className="font-bold text-slate-700 flex items-center space-x-1">
+                          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                          <span>Preserved Database Records:</span>
+                        </div>
+                        <div className="flex items-center justify-between text-slate-500 pt-1 border-t border-slate-200/60">
+                          <span>Physicians: <b className="text-slate-700">{clinic.doctorsCount || 0}</b></span>
+                          <span>Services: <b className="text-slate-700">{clinic.servicesCount || 0}</b></span>
+                          <span>Queues: <b className="text-slate-700">{clinic.queuesCount || 0}</b></span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                      <span className="text-[10px] text-slate-400 font-mono">
+                        ID: {clinic.id.slice(0, 8)}...
+                      </span>
+
+                      <div className="flex items-center space-x-2">
+                        <button
+                          type="button"
+                          onClick={() => handleReactivateClinic(clinic.id, clinic.name)}
+                          className="text-xs font-bold text-white bg-[#0284C7] hover:bg-[#0369A1] px-3 py-1.5 rounded-xl shadow-sm transition active:scale-95 flex items-center space-x-1"
+                          title="Restore and reactivate clinic membership"
+                        >
+                          <Play className="w-3 h-3 fill-current" />
+                          <span>Reactivate</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDeleteForeverTarget(clinic);
+                            setDeleteAuthMethod('PASSWORD');
+                            setDeletePassword('');
+                            setDeleteOtp('');
+                            setDeleteOtpSent(false);
+                            setDeleteError('');
+                          }}
+                          className="text-xs font-bold text-rose-700 hover:text-white bg-rose-50 hover:bg-rose-600 border border-rose-200 hover:border-rose-600 px-2.5 py-1.5 rounded-xl transition flex items-center space-x-1"
+                          title="Delete clinic forever with authorization"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          <span>Delete Forever</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
             )}
           </div>
         </div>
@@ -2008,6 +2374,250 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                 className="px-5 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: SUSPEND CLINIC MEMBERSHIP WARNING */}
+      {suspendTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
+            <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center mb-4">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-black text-[#1E293B]">
+              Suspend Clinic Membership?
+            </h3>
+            <p className="text-xs text-[#64748B] mt-1 leading-relaxed">
+              You are removing <b className="text-slate-800">{suspendTarget.name}</b> from its active subscription.
+            </p>
+
+            <div className="mt-4 p-4 rounded-2xl bg-amber-50/80 border border-amber-200/80 text-xs text-amber-900 space-y-2">
+              <div className="font-bold flex items-center space-x-1.5 text-amber-800">
+                <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>All Clinic Data Will NOT Be Deleted</span>
+              </div>
+              <p className="text-amber-800/90 text-[11px] leading-relaxed">
+                • Doctor chambers, active services, appointment records, and historical patient queues are 100% preserved.
+              </p>
+              <p className="text-amber-800/90 text-[11px] leading-relaxed">
+                • The clinic will be moved to the <b>Suspended Memberships</b> tab.
+              </p>
+              <p className="text-amber-800/90 text-[11px] leading-relaxed">
+                • Public bookings and desk queue operations will be temporarily paused until membership is reactivated.
+              </p>
+            </div>
+
+            <div className="mt-6 flex items-center justify-end space-x-3">
+              <button
+                type="button"
+                onClick={() => setSuspendTarget(null)}
+                disabled={submittingSuspend}
+                className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-800 transition"
+              >
+                Cancel / Keep Active
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmSuspend}
+                disabled={submittingSuspend}
+                className="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white rounded-xl text-xs font-bold transition shadow-sm flex items-center space-x-1.5 disabled:opacity-50"
+              >
+                {submittingSuspend ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Ban className="w-3.5 h-3.5" />
+                )}
+                <span>{submittingSuspend ? 'Suspending...' : 'Suspend Membership'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: DELETE CLINIC FOREVER WITH VERIFICATION (PASSWORD OR OTP) */}
+      {deleteForeverTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border-2 border-rose-200">
+            <div className="flex items-start justify-between">
+              <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <button
+                onClick={() => {
+                  setDeleteForeverTarget(null);
+                  setDeletePassword('');
+                  setDeleteOtp('');
+                  setDeleteError('');
+                }}
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-100 transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <h3 className="text-lg font-black text-rose-700 mt-4 flex items-center space-x-2">
+              <span>Permanently Delete Clinic Forever</span>
+            </h3>
+
+            <div className="mt-3 p-3.5 rounded-2xl bg-rose-50 border border-rose-200/80 text-xs text-rose-900 space-y-1.5">
+              <p className="font-extrabold text-rose-800">
+                ⚠️ DANGER: PERMANENT & IRREVERSIBLE ACTION
+              </p>
+              <p className="text-rose-800/90 text-[11px] leading-relaxed">
+                You are about to permanently delete <b>{deleteForeverTarget.name}</b> (/{deleteForeverTarget.slug}) forever. All linked queues, tokens, physician records, staff assignments, and service configurations will be permanently purged from the database.
+              </p>
+            </div>
+
+            {/* Verification Method Selector */}
+            <div className="mt-5">
+              <label className="block text-xs font-bold text-slate-700 mb-2">
+                Required Super Admin Verification:
+              </label>
+              <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeleteAuthMethod('PASSWORD');
+                    setDeleteError('');
+                  }}
+                  className={`py-2 rounded-lg transition ${
+                    deleteAuthMethod === 'PASSWORD'
+                      ? 'bg-white text-slate-800 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  Enter Password
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeleteAuthMethod('OTP');
+                    setDeleteError('');
+                  }}
+                  className={`py-2 rounded-lg transition ${
+                    deleteAuthMethod === 'OTP'
+                      ? 'bg-white text-slate-800 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  Verify with OTP
+                </button>
+              </div>
+            </div>
+
+            {deleteError && (
+              <div className="mt-4 p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-center space-x-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{deleteError}</span>
+              </div>
+            )}
+
+            {/* Method 1: Password */}
+            {deleteAuthMethod === 'PASSWORD' && (
+              <div className="mt-4 space-y-2">
+                <label className="block text-xs font-bold text-slate-700">
+                  Super Admin Password
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  <input
+                    type={showDeletePassword ? 'text' : 'password'}
+                    value={deletePassword}
+                    onChange={(e) => setDeletePassword(e.target.value)}
+                    placeholder="Enter your Super Admin account password"
+                    className="w-full bg-[#F8FAFC] border border-slate-200 rounded-xl pl-10 pr-10 py-2.5 text-xs font-semibold text-[#1E293B] focus:ring-2 focus:ring-rose-500 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowDeletePassword(!showDeletePassword)}
+                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
+                  >
+                    {showDeletePassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                <p className="text-[11px] text-slate-400">
+                  Re-enter your Super Admin account password to authorize permanent deletion.
+                </p>
+              </div>
+            )}
+
+            {/* Method 2: OTP */}
+            {deleteAuthMethod === 'OTP' && (
+              <div className="mt-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-slate-700">
+                    One-Time Password (OTP)
+                  </label>
+                  <span className="text-[11px] text-slate-500 font-mono">
+                    To: {currentUser?.phoneNumber || 'Registered Phone'}
+                  </span>
+                </div>
+
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    maxLength={6}
+                    value={deleteOtp}
+                    onChange={(e) => setDeleteOtp(e.target.value.replace(/\D/g, ''))}
+                    placeholder="6-digit OTP code"
+                    className="flex-1 bg-[#F8FAFC] border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold tracking-widest text-[#1E293B] focus:ring-2 focus:ring-rose-500 focus:outline-none text-center"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSendDeleteOtp}
+                    disabled={deleteOtpSending || deleteOtpCountdown > 0}
+                    className="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition disabled:opacity-50 shrink-0"
+                  >
+                    {deleteOtpSending
+                      ? 'Sending...'
+                      : deleteOtpCountdown > 0
+                      ? `Resend (${deleteOtpCountdown}s)`
+                      : deleteOtpSent
+                      ? 'Resend OTP'
+                      : 'Send OTP'}
+                  </button>
+                </div>
+                {deleteOtpSent && (
+                  <p className="text-[11px] text-emerald-600 font-medium">
+                    ✓ OTP code dispatched to {currentUser?.phoneNumber || 'your registered phone number'}.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Footer Buttons */}
+            <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-end space-x-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setDeleteForeverTarget(null);
+                  setDeletePassword('');
+                  setDeleteOtp('');
+                  setDeleteError('');
+                }}
+                disabled={submittingDeleteForever}
+                className="px-4 py-2.5 text-xs font-bold text-slate-600 hover:text-slate-800 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteForever}
+                disabled={
+                  submittingDeleteForever ||
+                  (deleteAuthMethod === 'PASSWORD' ? !deletePassword.trim() : deleteOtp.length < 6)
+                }
+                className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white rounded-xl text-xs font-bold transition shadow-sm flex items-center space-x-1.5 disabled:opacity-40"
+              >
+                {submittingDeleteForever ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Trash2 className="w-3.5 h-3.5" />
+                )}
+                <span>{submittingDeleteForever ? 'Deleting Forever...' : 'Delete Clinic Forever'}</span>
               </button>
             </div>
           </div>

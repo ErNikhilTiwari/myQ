@@ -7,6 +7,7 @@ import {
   Param,
   Query,
   Body,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { ClinicsService } from './clinics.service';
@@ -19,6 +20,7 @@ import {
   UpdateClinicDto,
   RegisterReceptionistDto,
   UpdateReceptionistDto,
+  DeleteClinicForeverDto,
   UserRole,
   ApiResponse,
 } from '@queueapp/shared';
@@ -114,6 +116,48 @@ export class ClinicsController {
   @Roles(UserRole.SUPER_ADMIN)
   async createSuper(@Body() dto: CreateClinicDto): Promise<ApiResponse> {
     const data = await this.clinicsService.create(dto);
+    return { success: true, data };
+  }
+
+  @Get('super/clinics')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  async getSuperClinics(): Promise<ApiResponse> {
+    const data = await this.clinicsService.getAllSuperClinics();
+    return { success: true, data };
+  }
+
+  @Post('super/clinics/:clinicId/suspend')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  async suspendClinic(
+    @Param('clinicId') clinicId: string,
+    @Req() req: any,
+  ): Promise<ApiResponse> {
+    const data = await this.clinicsService.suspendClinicMembership(clinicId, req.user.id);
+    return { success: true, data };
+  }
+
+  @Post('super/clinics/:clinicId/reactivate')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  async reactivateClinic(
+    @Param('clinicId') clinicId: string,
+    @Req() req: any,
+  ): Promise<ApiResponse> {
+    const data = await this.clinicsService.reactivateClinicMembership(clinicId, req.user.id);
+    return { success: true, data };
+  }
+
+  @Delete('super/clinics/:clinicId/permanent')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  async deleteClinicPermanently(
+    @Param('clinicId') clinicId: string,
+    @Req() req: any,
+    @Body() dto: DeleteClinicForeverDto,
+  ): Promise<ApiResponse> {
+    const data = await this.clinicsService.permanentlyDeleteClinic(clinicId, req.user.id, dto);
     return { success: true, data };
   }
 

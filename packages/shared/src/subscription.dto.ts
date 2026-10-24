@@ -1,6 +1,6 @@
 export type SubscriptionPlanType = 'FREE' | 'BASIC' | 'PROFESSIONAL' | 'ENTERPRISE';
 
-export type SubscriptionStatusType = 'ACTIVE' | 'PAST_DUE' | 'CANCELLED' | 'EXPIRED';
+export type SubscriptionStatusType = 'ACTIVE' | 'PAST_DUE' | 'CANCELLED' | 'EXPIRED' | 'SUSPENDED';
 
 export interface PlanLimitsDto {
   maxDoctors: number;
