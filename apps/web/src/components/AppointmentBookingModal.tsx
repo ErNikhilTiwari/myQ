@@ -90,10 +90,12 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
   // Determine current active clinic & booking mode
   const activeClinic = clinics.find((c) => c.id === selectedClinicId);
   const isBookingTimeEnabled = (activeClinic as any)?.enableBookingTime !== false;
+  const isPriorityQueueEnabled = (activeClinic as any)?.enablePriorityQueue !== false;
   const inClinicFee = (activeClinic as any)?.inClinicPrice ?? 200;
   const remoteFee = (activeClinic as any)?.remotePrice ?? 250;
   const baseFee = bookingType === 'IN_CLINIC' ? inClinicFee : remoteFee;
-  const priorityFee = joinQueueImmediately ? 50 : 0;
+  const isPriorityActive = isPriorityQueueEnabled && joinQueueImmediately;
+  const priorityFee = isPriorityActive ? 50 : 0;
   const currentFee = baseFee + priorityFee;
 
   // Sync props when modal opens or query params arrive
@@ -260,7 +262,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
           slotTime: slotIso,
           bookingType: bookingType,
           qrToken: bookingType === 'IN_CLINIC' ? qrToken : undefined,
-          joinQueueImmediately: joinQueueImmediately,
+          joinQueueImmediately: isPriorityActive,
         }),
       });
 
@@ -526,47 +528,49 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                 </div>
               )}
 
-              {/* Extra ₹50 Priority Pass Option: Join Queue Right Away */}
-              <div
-                onClick={() => setJoinQueueImmediately(!joinQueueImmediately)}
-                className={`p-4 rounded-2xl border-2 transition-all cursor-pointer shadow-xs ${
-                  joinQueueImmediately
-                    ? 'border-amber-500 bg-amber-50/90 ring-2 ring-amber-400/30'
-                    : 'border-slate-200 bg-white hover:border-slate-300'
-                }`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start space-x-3">
-                    <input
-                      type="checkbox"
-                      checked={joinQueueImmediately}
-                      onChange={(e) => setJoinQueueImmediately(e.target.checked)}
-                      onClick={(e) => e.stopPropagation()}
-                      className="mt-1 w-4 h-4 text-amber-600 rounded border-slate-300 focus:ring-amber-500 cursor-pointer"
-                    />
-                    <div>
-                      <div className="flex items-center space-x-2">
-                        <span className="font-black text-xs text-[#1E293B] flex items-center space-x-1.5">
-                          <Zap className="w-3.5 h-3.5 text-amber-600 fill-amber-500" />
-                          <span>Join Queue Right Away (Priority Pass)</span>
-                        </span>
-                        <span className="bg-amber-100 border border-amber-300 text-amber-800 text-[10px] font-black px-2 py-0.5 rounded-full">
-                          +₹50 Extra
-                        </span>
+              {/* Extra ₹50 Priority Pass Option: Join Queue Right Away (Only when enabled for clinic) */}
+              {isPriorityQueueEnabled && (
+                <div
+                  onClick={() => setJoinQueueImmediately(!joinQueueImmediately)}
+                  className={`p-4 rounded-2xl border-2 transition-all cursor-pointer shadow-xs ${
+                    joinQueueImmediately
+                      ? 'border-amber-500 bg-amber-50/90 ring-2 ring-amber-400/30'
+                      : 'border-slate-200 bg-white hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start space-x-3">
+                      <input
+                        type="checkbox"
+                        checked={joinQueueImmediately}
+                        onChange={(e) => setJoinQueueImmediately(e.target.checked)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="mt-1 w-4 h-4 text-amber-600 rounded border-slate-300 focus:ring-amber-500 cursor-pointer"
+                      />
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <span className="font-black text-xs text-[#1E293B] flex items-center space-x-1.5">
+                            <Zap className="w-3.5 h-3.5 text-amber-600 fill-amber-500" />
+                            <span>Join Queue Right Away (Priority Pass)</span>
+                          </span>
+                          <span className="bg-amber-100 border border-amber-300 text-amber-800 text-[10px] font-black px-2 py-0.5 rounded-full">
+                            +₹50 Extra
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
+                          {joinQueueImmediately
+                            ? '✅ Priority active! You will join the doctor\'s live queue immediately with a priority token.'
+                            : 'Skip the booked appointment waitlist and join the live active queue immediately.'}
+                        </p>
                       </div>
-                      <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
-                        {joinQueueImmediately
-                          ? '✅ Priority active! You will join the doctor\'s live queue immediately with a priority token.'
-                          : 'Skip the booked appointment waitlist and join the live active queue immediately.'}
-                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-sm font-black font-mono text-amber-700">+₹50</div>
+                      <div className="text-[10px] text-slate-400 font-semibold">Instant Queue</div>
                     </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <div className="text-sm font-black font-mono text-amber-700">+₹50</div>
-                    <div className="text-[10px] text-slate-400 font-semibold">Instant Queue</div>
-                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Patient Profile / Authentication State */}
               {!token || !currentUser ? (
@@ -666,7 +670,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                   <span className="text-xs font-bold font-mono text-slate-700">₹{baseFee}</span>
                 </div>
 
-                {joinQueueImmediately && (
+                {isPriorityActive && (
                   <div className="flex items-center justify-between border-b border-slate-200 pb-2.5 text-amber-700">
                     <span className="text-xs font-bold flex items-center space-x-1">
                       <Zap className="w-3.5 h-3.5 text-amber-600" />
@@ -766,7 +770,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                   {confirmedTokenNumber}
                 </div>
                 <div className="text-xs font-bold text-[#0284C7] mt-2 flex items-center justify-center space-x-1">
-                  {joinQueueImmediately ? (
+                  {isPriorityActive ? (
                     <span className="text-amber-700 bg-amber-50 border border-amber-300 px-3 py-1 rounded-full flex items-center space-x-1">
                       <Zap className="w-3.5 h-3.5 text-amber-600 fill-amber-500" />
                       <span>⚡ Immediate Priority Token (Live in Queue)</span>
@@ -780,8 +784,8 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
               <div className="p-3 bg-slate-50 rounded-2xl text-xs text-slate-600 space-y-1 text-left">
                 <div><b>Clinic:</b> {activeClinic?.name}</div>
                 <div><b>Booking Mode:</b> {isBookingTimeEnabled ? `${selectedDate} at ${selectedTimeSlot}` : 'Immediate (Booked For Today)'}</div>
-                <div><b>Queue Status:</b> <span className={joinQueueImmediately ? 'text-amber-700 font-bold' : 'text-emerald-700 font-bold'}>{joinQueueImmediately ? '⚡ In Live Queue Right Away' : 'Registered in Clinic Queue'}</span></div>
-                <div><b>Total Paid:</b> ₹{currentFee} {joinQueueImmediately ? '(Includes ₹50 Priority Pass)' : ''}</div>
+                <div><b>Queue Status:</b> <span className={isPriorityActive ? 'text-amber-700 font-bold' : 'text-emerald-700 font-bold'}>{isPriorityActive ? '⚡ In Live Queue Right Away' : 'Registered in Clinic Queue'}</span></div>
+                <div><b>Total Paid:</b> ₹{currentFee} {isPriorityActive ? '(Includes ₹50 Priority Pass)' : ''}</div>
               </div>
 
               <div className="pt-2 flex flex-col sm:flex-row gap-3">

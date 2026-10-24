@@ -132,7 +132,8 @@ export class AppointmentsService {
     }
 
     // Optional Priority Pass / Join Queue Right Away (+₹50 extra fee)
-    const joinQueueImmediately = Boolean(dto.joinQueueImmediately);
+    const isPriorityAllowed = (clinic as any).enablePriorityQueue !== false;
+    const joinQueueImmediately = isPriorityAllowed && Boolean(dto.joinQueueImmediately);
     const priorityFee = joinQueueImmediately ? 50.0 : 0.0;
     calculatedFee += priorityFee;
 

@@ -19,6 +19,7 @@ interface ClinicPricingConfigProps {
   initialInClinicPrice?: number;
   initialRemotePrice?: number;
   initialEnableBookingTime?: boolean;
+  initialEnablePriorityQueue?: boolean;
   onUpdated?: () => void;
 }
 
@@ -28,12 +29,15 @@ export const ClinicPricingConfig: React.FC<ClinicPricingConfigProps> = ({
   initialInClinicPrice = 200,
   initialRemotePrice = 250,
   initialEnableBookingTime = true,
+  initialEnablePriorityQueue = true,
   onUpdated,
 }) => {
   const [inClinicPrice, setInClinicPrice] = useState<number>(initialInClinicPrice);
   const [remotePrice, setRemotePrice] = useState<number>(initialRemotePrice);
   const [enableBookingTime, setEnableBookingTime] = useState<boolean>(initialEnableBookingTime);
+  const [enablePriorityQueue, setEnablePriorityQueue] = useState<boolean>(initialEnablePriorityQueue);
   const [isTogglingBookingTime, setIsTogglingBookingTime] = useState(false);
+  const [isTogglingPriorityQueue, setIsTogglingPriorityQueue] = useState(false);
 
   // Target modal state: only 'IN_CLINIC' or 'REMOTE' at a time
   const [editingTarget, setEditingTarget] = useState<'IN_CLINIC' | 'REMOTE' | null>(null);
@@ -54,6 +58,44 @@ export const ClinicPricingConfig: React.FC<ClinicPricingConfigProps> = ({
   useEffect(() => {
     setEnableBookingTime(initialEnableBookingTime);
   }, [initialEnableBookingTime]);
+
+  useEffect(() => {
+    setEnablePriorityQueue(initialEnablePriorityQueue);
+  }, [initialEnablePriorityQueue]);
+
+  const handleTogglePriorityQueue = async () => {
+    if (!clinicId || !token) return;
+    setIsTogglingPriorityQueue(true);
+    const newSetting = !enablePriorityQueue;
+    try {
+      const res = await fetch(`/api/clinics/${clinicId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ enablePriorityQueue: newSetting }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setEnablePriorityQueue(newSetting);
+        setMessage({
+          type: 'success',
+          text: newSetting 
+            ? 'Instant priority queue enabled! Patients can choose the +₹50 pass to join queue right away.' 
+            : 'Instant priority queue turned OFF! Appointments will be simple plain bookings without priority pass.',
+        });
+        if (onUpdated) onUpdated();
+        setTimeout(() => setMessage(null), 4000);
+      } else {
+        setMessage({ type: 'error', text: json.error?.message || 'Failed to update priority queue mode.' });
+      }
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message || 'Error updating priority queue mode.' });
+    } finally {
+      setIsTogglingPriorityQueue(false);
+    }
+  };
 
   const handleToggleBookingTime = async () => {
     if (!clinicId || !token) return;
@@ -332,24 +374,54 @@ export const ClinicPricingConfig: React.FC<ClinicPricingConfigProps> = ({
           </button>
         </div>
 
-        {/* Priority Pass Explainer Card */}
-        <div className="bg-white border border-amber-200/80 rounded-xl p-3.5 flex items-start space-x-3 text-xs">
-          <div className="p-1.5 bg-amber-50 rounded-lg text-amber-600 shrink-0 mt-0.5">
-            <Zap className="w-4 h-4 fill-amber-500" />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center space-x-2">
-              <span className="font-black text-amber-900">
-                Instant Queue Right Away Pass (+₹50 Extra)
-              </span>
-              <span className="text-[10px] font-mono font-bold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">
-                Automatic Feature
-              </span>
+        {/* Instant Priority Queue Toggle Card */}
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+          <div className="flex items-start space-x-3">
+            <div className={`p-2.5 rounded-xl shrink-0 mt-0.5 ${
+              enablePriorityQueue ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'
+            }`}>
+              <Zap className={`w-5 h-5 ${enablePriorityQueue ? 'fill-amber-500' : ''}`} />
             </div>
-            <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
-              When booking time is turned OFF, patients cannot book at a specified time—they register for today. Patients who choose the <b>+₹50 option join the doctor\'s live queue right away</b> with an active priority token (<span className="font-mono font-bold text-amber-700">P01, P02...</span>).
-            </p>
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="font-extrabold text-sm text-[#1E293B]">
+                  Instant Priority Queue (+₹50 Option)
+                </span>
+                <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                  enablePriorityQueue
+                    ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                    : 'bg-slate-100 text-slate-600 border border-slate-200'
+                }`}>
+                  {enablePriorityQueue ? 'Priority Feature ON' : 'Turned OFF (Plain Appointments Only)'}
+                </span>
+              </div>
+              <p className="text-xs text-[#64748B] mt-1 leading-relaxed">
+                {enablePriorityQueue
+                  ? 'Patients can select the +₹50 Priority Pass to skip the standard waitlist and join the doctor\'s live queue right away (P-series token).'
+                  : 'Turned OFF: Patients cannot book with priority pass. All bookings are plain appointments without immediate live queue entry.'}
+              </p>
+            </div>
           </div>
+
+          <button
+            type="button"
+            onClick={handleTogglePriorityQueue}
+            disabled={isTogglingPriorityQueue}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-2 shadow-xs active:scale-95 disabled:opacity-60 shrink-0 ${
+              enablePriorityQueue
+                ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+            }`}
+          >
+            <Zap className="w-3.5 h-3.5" />
+            <span>
+              {isTogglingPriorityQueue
+                ? 'Saving...'
+                : enablePriorityQueue
+                ? 'Turn OFF Priority Queue'
+                : 'Turn ON Priority Queue'}
+            </span>
+          </button>
         </div>
       </div>
 

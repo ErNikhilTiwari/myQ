@@ -36,7 +36,8 @@ import {
   ShieldAlert,
   Key,
   Eye,
-  EyeOff
+  EyeOff,
+  Zap
 } from 'lucide-react';
 
 export interface ClinicReceptionistSummaryData {
@@ -68,6 +69,7 @@ interface ClinicData {
   subscriptionStatus?: string;
   plan?: string;
   enableBookingTime?: boolean;
+  enablePriorityQueue?: boolean;
   createdAt: string;
   doctorsCount: number;
   servicesCount: number;
@@ -112,6 +114,7 @@ export interface ChainClinicData {
   remotePrice?: number;
   voiceAnnouncementMode?: string;
   enableBookingTime?: boolean;
+  enablePriorityQueue?: boolean;
   isActive: boolean;
   createdAt?: string;
   doctorsCount?: number;
@@ -179,9 +182,11 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
   const [newClinicReceptionistPhone, setNewClinicReceptionistPhone] = useState('');
   const [newClinicReceptionistPassword, setNewClinicReceptionistPassword] = useState('');
   const [newClinicEnableBookingTime, setNewClinicEnableBookingTime] = useState(true);
+  const [newClinicEnablePriorityQueue, setNewClinicEnablePriorityQueue] = useState(true);
   const [clinicFormError, setClinicFormError] = useState('');
   const [submittingClinic, setSubmittingClinic] = useState(false);
   const [togglingBookingTimeClinicId, setTogglingBookingTimeClinicId] = useState<string | null>(null);
+  const [togglingPriorityQueueClinicId, setTogglingPriorityQueueClinicId] = useState<string | null>(null);
 
   // Super Admin Receptionist Management Modals
   const [assignClinic, setAssignClinic] = useState<{ id: string; name: string } | null>(null);
@@ -393,6 +398,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
           receptionistPhoneNumber: newClinicReceptionistPhone.trim() ? newClinicReceptionistPhone.replace(/\D/g, '').slice(-10) : undefined,
           receptionistPassword: newClinicReceptionistPassword.trim() || undefined,
           enableBookingTime: newClinicEnableBookingTime,
+          enablePriorityQueue: newClinicEnablePriorityQueue,
         }),
       });
 
@@ -413,6 +419,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
         setNewClinicReceptionistPhone('');
         setNewClinicReceptionistPassword('');
         setNewClinicEnableBookingTime(true);
+        setNewClinicEnablePriorityQueue(true);
         loadData();
       } else {
         setClinicFormError(json.error?.message || json.message || 'Failed to create clinic facility');
@@ -462,6 +469,47 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
       showToast('error', err.message || 'Error updating booking time preference.');
     } finally {
       setTogglingBookingTimeClinicId(null);
+    }
+  };
+
+  const handleTogglePriorityQueue = async (clinicId: string, currentVal?: boolean) => {
+    if (!token) return;
+    const newVal = currentVal === false ? true : false;
+    setTogglingPriorityQueueClinicId(clinicId);
+    try {
+      const res = await fetch(`/api/clinics/${clinicId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ enablePriorityQueue: newVal }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setClinics((prev) =>
+          prev.map((c) => (c.id === clinicId ? { ...c, enablePriorityQueue: newVal } : c))
+        );
+        setSelectedChain((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            clinics: (prev.clinics || []).map((c) =>
+              c.id === clinicId ? { ...c, enablePriorityQueue: newVal } : c
+            ),
+          };
+        });
+        showToast(
+          'success',
+          `Instant priority queue feature turned ${newVal ? 'ON (+₹50 Instant Queue)' : 'OFF (Plain Appointments Only)'} for this clinic.`
+        );
+      } else {
+        showToast('error', data.message || 'Failed to update priority queue preference.');
+      }
+    } catch (err: any) {
+      showToast('error', err.message || 'Error updating priority queue preference.');
+    } finally {
+      setTogglingPriorityQueueClinicId(null);
     }
   };
 
@@ -1317,6 +1365,43 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                           }`}
                         >
                           {togglingBookingTimeClinicId === clinic.id ? 'Updating...' : clinic.enableBookingTime !== false ? 'Turn OFF' : 'Turn ON'}
+                        </button>
+                      </div>
+
+                      {/* Instant Priority Queue (+₹50 Option) Toggle */}
+                      <div className="mt-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between gap-2">
+                        <div className="flex items-center space-x-2 min-w-0">
+                          <Zap className={`w-4 h-4 shrink-0 ${clinic.enablePriorityQueue !== false ? 'text-amber-600 fill-amber-500' : 'text-slate-400'}`} />
+                          <div className="truncate">
+                            <div className="text-[11px] font-bold text-slate-800 flex items-center space-x-1.5">
+                              <span>Priority Queue:</span>
+                              <span className={`text-[10px] font-extrabold px-1.5 py-0.2 rounded ${
+                                clinic.enablePriorityQueue !== false
+                                  ? 'bg-amber-100 text-amber-900'
+                                  : 'bg-slate-100 text-slate-600'
+                              }`}>
+                                {clinic.enablePriorityQueue !== false ? 'ENABLED (+₹50)' : 'DISABLED (Plain Only)'}
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-slate-500 truncate">
+                              {clinic.enablePriorityQueue !== false
+                                ? 'Patients can join live queue right away'
+                                : 'Plain appointments without live entry'}
+                            </div>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          disabled={togglingPriorityQueueClinicId === clinic.id}
+                          onClick={() => handleTogglePriorityQueue(clinic.id, clinic.enablePriorityQueue)}
+                          className={`shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition border shadow-xs active:scale-95 disabled:opacity-50 ${
+                            clinic.enablePriorityQueue !== false
+                              ? 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
+                              : 'bg-amber-600 text-white border-amber-600 hover:bg-amber-700'
+                          }`}
+                        >
+                          {togglingPriorityQueueClinicId === clinic.id ? 'Updating...' : clinic.enablePriorityQueue !== false ? 'Turn OFF' : 'Turn ON'}
                         </button>
                       </div>
                     </div>
@@ -2204,6 +2289,26 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                 </label>
               </div>
 
+              {/* Enable Instant Priority Queue Setting */}
+              <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-4 flex items-start space-x-3">
+                <input
+                  type="checkbox"
+                  id="newClinicEnablePriorityQueue"
+                  checked={newClinicEnablePriorityQueue}
+                  onChange={(e) => setNewClinicEnablePriorityQueue(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 text-amber-600 rounded border-slate-300 focus:ring-amber-500"
+                />
+                <label htmlFor="newClinicEnablePriorityQueue" className="text-xs cursor-pointer select-none">
+                  <span className="font-bold text-slate-800 flex items-center space-x-1.5">
+                    <Zap className="w-3.5 h-3.5 text-amber-600 fill-amber-500" />
+                    <span>Enable Instant Priority Queue (+₹50 Option)</span>
+                  </span>
+                  <span className="text-[11px] text-slate-500 block mt-0.5">
+                    When checked, patients can choose to pay +₹50 extra to join the doctor's live queue right away upon booking. When unchecked, all bookings are plain appointments.
+                  </span>
+                </label>
+              </div>
+
               <div className="pt-3 flex items-center justify-end space-x-2 border-t border-slate-100">
                 <button
                   type="button"
@@ -2920,6 +3025,38 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                               }`}
                             >
                               {togglingBookingTimeClinicId === clinic.id ? 'Updating...' : clinic.enableBookingTime !== false ? 'Turn OFF' : 'Turn ON'}
+                            </button>
+                          </div>
+
+                          {/* Instant Priority Queue Toggle */}
+                          <div className="mt-2 p-2 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between gap-2">
+                            <div className="flex items-center space-x-2 min-w-0">
+                              <Zap className={`w-3.5 h-3.5 shrink-0 ${clinic.enablePriorityQueue !== false ? 'text-amber-600 fill-amber-500' : 'text-slate-400'}`} />
+                              <div className="truncate">
+                                <div className="text-[11px] font-bold text-slate-800 flex items-center space-x-1.5">
+                                  <span>Priority:</span>
+                                  <span className={`text-[10px] font-extrabold px-1.5 py-0.2 rounded ${
+                                    clinic.enablePriorityQueue !== false
+                                      ? 'bg-amber-100 text-amber-900'
+                                      : 'bg-slate-100 text-slate-600'
+                                  }`}>
+                                    {clinic.enablePriorityQueue !== false ? 'ON (+₹50)' : 'OFF (Plain)'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              disabled={togglingPriorityQueueClinicId === clinic.id}
+                              onClick={() => handleTogglePriorityQueue(clinic.id, clinic.enablePriorityQueue)}
+                              className={`shrink-0 px-2 py-0.5 rounded-lg text-[10px] font-extrabold transition border shadow-xs active:scale-95 disabled:opacity-50 ${
+                                clinic.enablePriorityQueue !== false
+                                  ? 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
+                                  : 'bg-amber-600 text-white border-amber-600 hover:bg-amber-700'
+                              }`}
+                            >
+                              {togglingPriorityQueueClinicId === clinic.id ? 'Updating...' : clinic.enablePriorityQueue !== false ? 'Turn OFF' : 'Turn ON'}
                             </button>
                           </div>
                         </div>
