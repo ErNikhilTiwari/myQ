@@ -57,8 +57,25 @@ export class AuthService {
   async sendOtp(dto: SendOtpRequestDto): Promise<SendOtpResponseDto> {
     const phone = this.validatePhoneNumber(dto.phoneNumber);
 
-    // Rate-limiting: Check active unexpired OTP requests created in last 1 minute
-    const recentOtp = await this.prisma.oTPVerification.findFirst({
+    // 1. Minimum cooldown between consecutive OTP requests: 10 seconds (reduced from 60 seconds)
+    const recentOtpIn10s = await this.prisma.oTPVerification.findFirst({
+      where: {
+        phoneNumber: phone,
+        createdAt: {
+          gte: new Date(Date.now() - 10 * 1000), // within 10 seconds
+        },
+      },
+    });
+
+    if (recentOtpIn10s) {
+      throw new HttpException(
+        'Please wait at least 10 seconds before requesting a new OTP.',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+
+    // 2. Rate-limiting: Count OTP requests in a single minute (60 seconds)
+    const attemptsInLastMinute = await this.prisma.oTPVerification.count({
       where: {
         phoneNumber: phone,
         createdAt: {
@@ -67,9 +84,9 @@ export class AuthService {
       },
     });
 
-    if (recentOtp) {
+    if (attemptsInLastMinute >= 3) {
       throw new HttpException(
-        'Please wait at least 60 seconds before requesting a new OTP.',
+        'Too many OTP requests. Maximum 3 attempts allowed per minute. Please wait 60 seconds before trying again.',
         HttpStatus.TOO_MANY_REQUESTS,
       );
     }
@@ -92,12 +109,16 @@ export class AuthService {
     await this.otpProvider.sendOtp(phone, rawOtp);
 
     const botInfo = await this.telegramProvider.getBotInfo();
+    const currentAttempts = attemptsInLastMinute + 1;
+    const resendCooldownSeconds = currentAttempts >= 3 ? 60 : 10;
 
     return {
       success: true,
       message: 'OTP sent successfully to ' + phone,
       expiresInSeconds: this.OTP_EXPIRY_MINUTES * 60,
       telegramBotUsername: botInfo?.username || undefined,
+      resendCooldownSeconds,
+      attemptsInWindow: currentAttempts,
     };
   }
 

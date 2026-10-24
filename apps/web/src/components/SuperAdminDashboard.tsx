@@ -258,6 +258,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
   const [deleteOtpSent, setDeleteOtpSent] = useState(false);
   const [deleteOtpSending, setDeleteOtpSending] = useState(false);
   const [deleteOtpCountdown, setDeleteOtpCountdown] = useState(0);
+  const [deleteOtpAttempts, setDeleteOtpAttempts] = useState<number[]>([]);
   const [deleteError, setDeleteError] = useState('');
   const [submittingDeleteForever, setSubmittingDeleteForever] = useState(false);
 
@@ -813,6 +814,14 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
 
   const handleSendDeleteOtp = async () => {
     const phone = currentUser?.phoneNumber || '+919999999999';
+    const now = Date.now();
+    const recentAttempts = deleteOtpAttempts.filter((t) => now - t < 60000);
+    if (recentAttempts.length >= 3) {
+      setDeleteError('Too many OTP attempts (maximum 3 in 1 minute). Please wait 60 seconds.');
+      setDeleteOtpCountdown(60);
+      return;
+    }
+
     setDeleteOtpSending(true);
     setDeleteError('');
     try {
@@ -826,7 +835,12 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
         throw new Error(data.message || 'Failed to send OTP code');
       }
       setDeleteOtpSent(true);
-      setDeleteOtpCountdown(60);
+      const updatedAttempts = [...recentAttempts, now];
+      setDeleteOtpAttempts(updatedAttempts);
+
+      // Cooldown is 10s normally, but increases to 60s if 3 tries in single minute
+      const cooldown = data.data?.resendCooldownSeconds ?? (updatedAttempts.length >= 3 ? 60 : 10);
+      setDeleteOtpCountdown(cooldown);
       const interval = setInterval(() => {
         setDeleteOtpCountdown((prev) => {
           if (prev <= 1) {
@@ -839,6 +853,11 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
       showToast('success', `Authorization OTP sent to ${phone}`);
     } catch (err: any) {
       setDeleteError(err.message || 'Failed to send authorization OTP');
+      if (err.message?.includes('3 attempts') || err.message?.includes('60 seconds') || recentAttempts.length >= 2) {
+        setDeleteOtpCountdown(60);
+      } else if (err.message?.includes('10 seconds')) {
+        setDeleteOtpCountdown(10);
+      }
     } finally {
       setDeleteOtpSending(false);
     }
@@ -3304,6 +3323,11 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                 {deleteOtpSent && (
                   <p className="text-[11px] text-emerald-600 font-medium">
                     ✓ OTP code dispatched to {currentUser?.phoneNumber || 'your registered phone number'}.
+                  </p>
+                )}
+                {deleteOtpCountdown > 10 && (
+                  <p className="text-[11px] text-amber-700 font-medium bg-amber-50 border border-amber-200 p-2 rounded-lg text-center">
+                    ⚠️ 3 attempts reached within 1 minute. Please wait 60 seconds before resending.
                   </p>
                 )}
               </div>

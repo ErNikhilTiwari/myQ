@@ -5,6 +5,7 @@ import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { OTP_PROVIDER_TOKEN } from './otp/otp.provider.interface';
 import { MockOtpProvider } from './otp/mock-otp.provider';
+import { TelegramOtpProvider } from './otp/telegram-otp.provider';
 import { UserRole } from '@queueapp/shared';
 
 describe('AuthService (Unit Tests)', () => {
@@ -14,12 +15,17 @@ describe('AuthService (Unit Tests)', () => {
   const mockPrismaService = {
     oTPVerification: {
       findFirst: jest.fn(),
+      count: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
     },
     user: {
       findUnique: jest.fn(),
+      findFirst: jest.fn(),
       create: jest.fn(),
+    },
+    clinic: {
+      findFirst: jest.fn(),
     },
     auditLog: {
       create: jest.fn(),
@@ -31,6 +37,10 @@ describe('AuthService (Unit Tests)', () => {
     verify: jest.fn(),
   };
 
+  const mockTelegramOtpProvider = {
+    getBotInfo: jest.fn().mockResolvedValue({ username: 'test_telegram_bot' }),
+  };
+
   beforeEach(async () => {
     mockOtpProvider = new MockOtpProvider();
 
@@ -40,6 +50,7 @@ describe('AuthService (Unit Tests)', () => {
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: JwtService, useValue: mockJwtService },
         { provide: OTP_PROVIDER_TOKEN, useValue: mockOtpProvider },
+        { provide: TelegramOtpProvider, useValue: mockTelegramOtpProvider },
       ],
     }).compile();
 
@@ -63,18 +74,29 @@ describe('AuthService (Unit Tests)', () => {
   describe('sendOtp', () => {
     it('generates, hashes, saves OTP and dispatches to provider', async () => {
       mockPrismaService.oTPVerification.findFirst.mockResolvedValue(null);
+      mockPrismaService.oTPVerification.count.mockResolvedValue(0);
       mockPrismaService.oTPVerification.create.mockResolvedValue({ id: 'otp-1' });
 
       const result = await service.sendOtp({ phoneNumber: '+919876543210' });
 
       expect(result.success).toBe(true);
       expect(result.expiresInSeconds).toBe(300);
+      expect(result.resendCooldownSeconds).toBe(10);
       expect(mockPrismaService.oTPVerification.create).toHaveBeenCalled();
       expect(mockOtpProvider.lastSentOtps.has('+919876543210')).toBe(true);
     });
 
-    it('rate-limits rapid requests within 60 seconds', async () => {
+    it('rate-limits rapid requests within 10 seconds', async () => {
       mockPrismaService.oTPVerification.findFirst.mockResolvedValue({ id: 'recent-otp' });
+
+      await expect(
+        service.sendOtp({ phoneNumber: '+919876543210' }),
+      ).rejects.toThrow(HttpException);
+    });
+
+    it('rate-limits when 3 requests reached in a single minute', async () => {
+      mockPrismaService.oTPVerification.findFirst.mockResolvedValue(null);
+      mockPrismaService.oTPVerification.count.mockResolvedValue(3);
 
       await expect(
         service.sendOtp({ phoneNumber: '+919876543210' }),
@@ -95,7 +117,7 @@ describe('AuthService (Unit Tests)', () => {
       });
 
       mockPrismaService.oTPVerification.update.mockResolvedValue({});
-      mockPrismaService.user.findUnique.mockResolvedValue({
+      mockPrismaService.user.findFirst.mockResolvedValue({
         id: 'user-1',
         phoneNumber: '+919876543210',
         name: 'Test Patient',
@@ -118,12 +140,13 @@ describe('AuthService (Unit Tests)', () => {
       mockPrismaService.oTPVerification.findFirst.mockResolvedValue({
         id: 'otp-expired',
         phoneNumber: '+919876543210',
+        hashedOtp: '$2a$10$dummyHash',
         expiresAt: new Date(Date.now() - 1000), // in the past
         attempts: 0,
       });
 
       await expect(
-        service.verifyOtp({ phoneNumber: '+919876543210', otp: '123456' }),
+        service.verifyOtp({ phoneNumber: '+919876543210', otp: '000000' }),
       ).rejects.toThrow(UnauthorizedException);
     });
   });

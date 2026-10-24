@@ -9,6 +9,8 @@ export interface SendOtpResponseDto {
   message: string;
   expiresInSeconds: number;
   telegramBotUsername?: string;
+  resendCooldownSeconds?: number;
+  attemptsInWindow?: number;
 }
 
 export interface VerifyOtpRequestDto {

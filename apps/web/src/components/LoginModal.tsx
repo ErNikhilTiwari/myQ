@@ -34,6 +34,17 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [telegramBotUsername, setTelegramBotUsername] = useState<string | null>(null);
+  const [resendCountdown, setResendCountdown] = useState<number>(0);
+  const [otpAttemptsInMinute, setOtpAttemptsInMinute] = useState<number[]>([]);
+
+  // 1-second countdown ticker for OTP resend cooldown
+  useEffect(() => {
+    if (resendCountdown <= 0) return;
+    const interval = setInterval(() => {
+      setResendCountdown((prev) => (prev <= 1 ? 0 : prev - 1));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [resendCountdown]);
 
   useEffect(() => {
     if (isOpen) {
@@ -142,13 +153,21 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
   const headerInfo = getHeaderInfo();
 
-  const handleSendOtp = async (e?: React.FormEvent) => {
+  const handleSendOtp = async (e?: React.FormEvent, isResend = false) => {
     if (e) e.preventDefault();
     setErrorMsg(null);
 
     const clean10 = phone10.replace(/\D/g, '').slice(0, 10);
     if (clean10.length !== 10) {
       setErrorMsg('Please enter a valid 10-digit Indian phone number.');
+      return;
+    }
+
+    const now = Date.now();
+    const recentAttempts = otpAttemptsInMinute.filter((t) => now - t < 60000);
+    if (recentAttempts.length >= 3) {
+      setErrorMsg('Too many OTP attempts (maximum 3 in 1 minute). Please wait 60 seconds.');
+      setResendCountdown(60);
       return;
     }
 
@@ -179,8 +198,20 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           setTelegramBotUsername(data.data?.telegramBotUsername || data.telegramBotUsername);
         }
         setStep('OTP');
+        const updatedAttempts = [...recentAttempts, now];
+        setOtpAttemptsInMinute(updatedAttempts);
+
+        // Resend cooldown is 10s normally, but increases to 60s if 3 tries occurred in a single minute
+        const cooldown = data.data?.resendCooldownSeconds ?? (updatedAttempts.length >= 3 ? 60 : 10);
+        setResendCountdown(cooldown);
       } else {
-        setErrorMsg(data.error?.message || data.message || 'Failed to send OTP.');
+        const errorText = data.error?.message || data.message || 'Failed to send OTP.';
+        setErrorMsg(errorText);
+        if (errorText.includes('3 attempts') || errorText.includes('60 seconds') || recentAttempts.length >= 2) {
+          setResendCountdown(60);
+        } else if (errorText.includes('10 seconds')) {
+          setResendCountdown(10);
+        }
       }
     } catch (err: any) {
       setErrorMsg(err.message || 'Error communicating with auth server.');
@@ -678,6 +709,28 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                     <span>Open Bot</span>
                     <span>↗</span>
                   </a>
+                </div>
+              )}
+
+              {/* Resend OTP Row with 10s cooldown and 3-tries rate limit */}
+              <div className="flex items-center justify-between text-xs pt-2">
+                <span className="text-slate-500 font-medium">Didn't receive the OTP?</span>
+                <button
+                  type="button"
+                  disabled={loading || resendCountdown > 0}
+                  onClick={() => handleSendOtp(undefined, true)}
+                  className="font-bold text-[#0284C7] hover:underline disabled:text-slate-400 disabled:no-underline transition cursor-pointer disabled:cursor-not-allowed"
+                >
+                  {resendCountdown > 0
+                    ? `Resend in ${resendCountdown}s`
+                    : 'Resend OTP'}
+                </button>
+              </div>
+
+              {/* Rate limit warning message: shown when 3 tries reached within single minute */}
+              {resendCountdown > 10 && (
+                <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-800 text-center font-medium">
+                  ⚠️ 3 attempts reached within 1 minute. Please wait 60 seconds before resending.
                 </div>
               )}
             </div>
