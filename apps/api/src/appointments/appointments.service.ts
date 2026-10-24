@@ -159,21 +159,56 @@ export class AppointmentsService {
       }
     }
 
-    // Fail-Closed Slot Check (only enforced if booking time slots are enabled):
-    if (dto.doctorId && clinic.enableBookingTime !== false) {
-      const existing = await this.prisma.appointment.findFirst({
+    // Slot validations (enforced when booking time slots are enabled):
+    if (clinic.enableBookingTime !== false) {
+      const tz = 'Asia/Kolkata';
+      const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: tz });
+      const slotDateStr = slotDate.toLocaleDateString('en-CA', { timeZone: tz });
+      const [tY, tM, tD] = todayStr.split('-').map(Number);
+      const [sY, sM, sD] = slotDateStr.split('-').map(Number);
+      const todayMidnight = new Date(Date.UTC(tY, tM - 1, tD));
+      const slotMidnight = new Date(Date.UTC(sY, sM - 1, sD));
+      const diffDays = Math.round((slotMidnight.getTime() - todayMidnight.getTime()) / (24 * 60 * 60 * 1000));
+
+      if (slotDate.getTime() < Date.now() - 2 * 60 * 1000 || diffDays < 0) {
+        throw new BadRequestException('Cannot book an appointment for a past date or time.');
+      }
+
+      if (diffDays > 2) {
+        throw new BadRequestException('Appointments can only be booked for today or up to 2 days in advance.');
+      }
+
+      // Check 1: Patient must not have overlapping appointment for this exact slot
+      const patientConflict = await this.prisma.appointment.findFirst({
         where: {
-          clinicId: dto.clinicId,
-          doctorId: dto.doctorId,
+          userId,
           slotTime: slotDate,
           status: { in: ['CONFIRMED', 'PENDING'] },
         },
       });
 
-      if (existing) {
+      if (patientConflict) {
         throw new ConflictException(
-          `The selected slot ${slotDate.toISOString()} for this doctor is already booked. Please choose another slot.`,
+          'You already have an appointment booked for this time slot. The selected slot is already booked. Please choose another slot.',
         );
+      }
+
+      // Check 2: Doctor must not have overlapping appointment for this slot in the same clinic
+      if (dto.doctorId) {
+        const doctorConflict = await this.prisma.appointment.findFirst({
+          where: {
+            clinicId: dto.clinicId,
+            doctorId: dto.doctorId,
+            slotTime: slotDate,
+            status: { in: ['CONFIRMED', 'PENDING'] },
+          },
+        });
+
+        if (doctorConflict) {
+          throw new ConflictException(
+            `The selected slot for this doctor is already booked. Please choose another slot.`,
+          );
+        }
       }
     }
 
@@ -254,6 +289,7 @@ export class AppointmentsService {
   ): Promise<AppointmentDto> {
     const appt = await this.prisma.appointment.findUnique({
       where: { id: appointmentId },
+      include: { clinic: true },
     });
 
     if (!appt) {
@@ -278,20 +314,53 @@ export class AppointmentsService {
       throw new BadRequestException('Invalid slotTime format.');
     }
 
-    // Slot collision check if doctor assigned
-    if (appt.doctorId) {
-      const conflict = await this.prisma.appointment.findFirst({
+    if ((appt.clinic as any)?.enableBookingTime !== false) {
+      const tz = 'Asia/Kolkata';
+      const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: tz });
+      const slotDateStr = newSlot.toLocaleDateString('en-CA', { timeZone: tz });
+      const [tY, tM, tD] = todayStr.split('-').map(Number);
+      const [sY, sM, sD] = slotDateStr.split('-').map(Number);
+      const todayMidnight = new Date(Date.UTC(tY, tM - 1, tD));
+      const slotMidnight = new Date(Date.UTC(sY, sM - 1, sD));
+      const diffDays = Math.round((slotMidnight.getTime() - todayMidnight.getTime()) / (24 * 60 * 60 * 1000));
+
+      if (newSlot.getTime() < Date.now() - 2 * 60 * 1000 || diffDays < 0) {
+        throw new BadRequestException('Cannot reschedule to a past date or time.');
+      }
+
+      if (diffDays > 2) {
+        throw new BadRequestException('Appointments can only be scheduled for today or up to 2 days in advance.');
+      }
+
+      // Check patient's other appointments for overlap
+      const patientConflict = await this.prisma.appointment.findFirst({
         where: {
           id: { not: appointmentId },
-          clinicId: appt.clinicId,
-          doctorId: appt.doctorId,
+          userId: appt.userId,
           slotTime: newSlot,
           status: { in: ['CONFIRMED', 'PENDING'] },
         },
       });
 
-      if (conflict) {
-        throw new ConflictException('The requested reschedule slot is already occupied.');
+      if (patientConflict) {
+        throw new ConflictException('You already have another appointment booked for this time slot.');
+      }
+
+      // Slot collision check if doctor assigned
+      if (appt.doctorId) {
+        const conflict = await this.prisma.appointment.findFirst({
+          where: {
+            id: { not: appointmentId },
+            clinicId: appt.clinicId,
+            doctorId: appt.doctorId,
+            slotTime: newSlot,
+            status: { in: ['CONFIRMED', 'PENDING'] },
+          },
+        });
+
+        if (conflict) {
+          throw new ConflictException('The requested reschedule slot is already occupied.');
+        }
       }
     }
 
