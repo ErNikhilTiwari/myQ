@@ -30,8 +30,11 @@ export class ClinicsController {
   constructor(private readonly clinicsService: ClinicsService) {}
 
   @Get('clinics')
-  async findAll(@Query('search') search?: string): Promise<ApiResponse> {
-    const data = await this.clinicsService.findAll(search);
+  async findAll(
+    @Query('search') search?: string,
+    @Query('all') all?: string,
+  ): Promise<ApiResponse> {
+    const data = await this.clinicsService.findAll(search, all === 'true');
     return { success: true, data };
   }
 

@@ -17,8 +17,8 @@ export class ClinicsService {
   /**
    * Public clinic discovery / search
    */
-  async findAll(search?: string) {
-    const where: any = { isActive: true };
+  async findAll(search?: string, includeAll: boolean = false) {
+    const where: any = includeAll ? {} : { isActive: true };
 
     if (search) {
       where.OR = [
@@ -31,33 +31,45 @@ export class ClinicsService {
     const clinics = await this.prisma.clinic.findMany({
       where,
       include: {
+        subscriptions: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
         _count: {
           select: {
             doctors: true,
             services: true,
+            queues: true,
           },
         },
       },
       orderBy: { name: 'asc' },
     });
 
-    return clinics.map((c) => ({
-      id: c.id,
-      chainId: c.chainId || null,
-      name: c.name,
-      slug: c.slug,
-      phoneNumber: c.phoneNumber,
-      email: c.email,
-      address: c.address,
-      city: c.city || null,
-      inClinicPrice: c.inClinicPrice ?? 200,
-      remotePrice: c.remotePrice ?? 250,
-      voiceAnnouncementMode: (c as any).voiceAnnouncementMode ?? 'TOKEN_PATIENT_DOCTOR_ROOM',
-      isActive: c.isActive,
-      createdAt: c.createdAt.toISOString(),
-      doctorsCount: c._count.doctors,
-      servicesCount: c._count.services,
-    }));
+    return clinics.map((c) => {
+      const latestSub = c.subscriptions?.[0];
+      const subscriptionStatus = latestSub?.status || (c.isActive ? 'ACTIVE' : 'SUSPENDED');
+      return {
+        id: c.id,
+        chainId: c.chainId || null,
+        name: c.name,
+        slug: c.slug,
+        phoneNumber: c.phoneNumber,
+        email: c.email,
+        address: c.address,
+        city: c.city || null,
+        inClinicPrice: c.inClinicPrice ?? 200,
+        remotePrice: c.remotePrice ?? 250,
+        voiceAnnouncementMode: (c as any).voiceAnnouncementMode ?? 'TOKEN_PATIENT_DOCTOR_ROOM',
+        isActive: c.isActive,
+        subscriptionStatus,
+        plan: latestSub?.plan || 'FREE',
+        createdAt: c.createdAt.toISOString(),
+        doctorsCount: c._count.doctors,
+        servicesCount: c._count.services,
+        queuesCount: c._count.queues,
+      };
+    });
   }
 
   /**

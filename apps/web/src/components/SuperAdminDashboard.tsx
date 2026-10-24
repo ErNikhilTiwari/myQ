@@ -240,14 +240,48 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     const headers = { 'Authorization': `Bearer ${token}` };
 
     try {
+      // Robust clinic fetcher: tries /api/super/clinics, then /api/clinics?all=true, then /api/clinics
+      const fetchClinics = async () => {
+        try {
+          const res = await fetch('/api/super/clinics', { headers });
+          if (res.ok) {
+            const json = await res.json();
+            if (json?.success && Array.isArray(json.data) && json.data.length > 0) {
+              return json;
+            }
+          }
+        } catch {
+          // ignore error and try fallback
+        }
+
+        try {
+          const res2 = await fetch('/api/clinics?all=true', { headers });
+          if (res2.ok) {
+            const json2 = await res2.json();
+            if (json2?.success && Array.isArray(json2.data) && json2.data.length > 0) {
+              return json2;
+            }
+          }
+        } catch {
+          // ignore error and try fallback
+        }
+
+        const res3 = await fetch('/api/clinics');
+        return res3.json();
+      };
+
       const [cRes, chainRes, subRes, recRes] = await Promise.all([
-        fetch('/api/super/clinics', { headers }).then(r => r.json()).catch(() => fetch('/api/clinics').then(r => r.json())),
+        fetchClinics(),
         fetch('/api/hospital-chains').then(r => r.json()).catch(() => ({ success: false })),
         fetch('/api/super/subscriptions', { headers }).then(r => r.json()).catch(() => ({ success: false })),
         fetch('/api/super/receptionists', { headers }).then(r => r.json()).catch(() => ({ success: false })),
       ]);
 
-      if (cRes?.success && Array.isArray(cRes.data)) setClinics(cRes.data);
+      if (cRes?.success && Array.isArray(cRes.data)) {
+        setClinics(cRes.data);
+      } else if (Array.isArray(cRes)) {
+        setClinics(cRes);
+      }
       if (chainRes?.success && Array.isArray(chainRes.data)) setChains(chainRes.data);
       if (subRes?.success && Array.isArray(subRes.data)) setSubscriptions(subRes.data);
       if (recRes?.success && Array.isArray(recRes.data)) setReceptionists(recRes.data);
@@ -539,16 +573,29 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     if (!suspendTarget || !token) return;
     setSubmittingSuspend(true);
     try {
-      const res = await fetch(`/api/super/clinics/${suspendTarget.id}/suspend`, {
+      let res = await fetch(`/api/super/clinics/${suspendTarget.id}/suspend`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
+
+      // Fallback: If super suspend endpoint is 404, use PATCH /api/clinics/:id
+      if (res.status === 404) {
+        res = await fetch(`/api/clinics/${suspendTarget.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ isActive: false }),
+        });
+      }
+
       const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || 'Failed to suspend clinic membership');
+      if (!res.ok || (data.success === false)) {
+        throw new Error(data.message || data.error?.message || 'Failed to suspend clinic membership');
       }
       showToast('success', `Membership for "${suspendTarget.name}" suspended. All data preserved in Suspended Memberships.`);
       setSuspendTarget(null);
@@ -563,16 +610,29 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
   const handleReactivateClinic = async (clinicId: string, clinicName: string) => {
     if (!token) return;
     try {
-      const res = await fetch(`/api/super/clinics/${clinicId}/reactivate`, {
+      let res = await fetch(`/api/super/clinics/${clinicId}/reactivate`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
+
+      // Fallback: If super reactivate endpoint is 404, use PATCH /api/clinics/:id
+      if (res.status === 404) {
+        res = await fetch(`/api/clinics/${clinicId}`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ isActive: true }),
+        });
+      }
+
       const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || 'Failed to reactivate clinic membership');
+      if (!res.ok || (data.success === false)) {
+        throw new Error(data.message || data.error?.message || 'Failed to reactivate clinic membership');
       }
       showToast('success', `Membership for "${clinicName}" reactivated successfully!`);
       await loadData();
@@ -649,8 +709,21 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     }
   };
 
-  const activeClinics = clinics.filter(c => c.isActive !== false && c.subscriptionStatus !== 'SUSPENDED');
-  const suspendedClinics = clinics.filter(c => c.isActive === false || c.subscriptionStatus === 'SUSPENDED');
+  // Enrich clinics with matching subscription data if not already present
+  const enrichedClinics = clinics.map((c) => {
+    const matchingSub = subscriptions.find(s => s.clinicId === c.id);
+    const subStatus = c.subscriptionStatus || matchingSub?.status || (c.isActive !== false ? 'ACTIVE' : 'SUSPENDED');
+    const isSuspended = c.isActive === false || subStatus === 'SUSPENDED';
+    return {
+      ...c,
+      isActive: !isSuspended,
+      subscriptionStatus: subStatus,
+      plan: c.plan || matchingSub?.plan || 'FREE',
+    };
+  });
+
+  const activeClinics = enrichedClinics.filter(c => c.isActive !== false && c.subscriptionStatus !== 'SUSPENDED');
+  const suspendedClinics = enrichedClinics.filter(c => c.isActive === false || c.subscriptionStatus === 'SUSPENDED');
 
   const uniqueCities = Array.from(
     new Set(activeClinics.map((c) => c.city).filter((city): city is string => Boolean(city && city.trim())))
