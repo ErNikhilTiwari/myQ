@@ -321,11 +321,11 @@ export const MobileTokenTracker: React.FC<MobileTokenTrackerProps> = ({
                   </div>
                   <div className="text-left">
                     <div className="font-extrabold text-xs">Book Doctor Appointment</div>
-                    <div className="text-[10px] text-emerald-100 font-normal">Dual pricing &bull; Auto token assignment</div>
+                    <div className="text-[10px] text-emerald-100 font-normal">Fixed ₹200 fee &bull; Optional +₹50 Live Queue</div>
                   </div>
                 </div>
                 <div className="flex items-center space-x-1.5 text-[10px] font-mono bg-white/20 px-2 py-1 rounded-lg font-black">
-                  <span>₹200 / ₹250</span>
+                  <span>From ₹200</span>
                   <ArrowRight className="w-3 h-3" />
                 </div>
               </button>

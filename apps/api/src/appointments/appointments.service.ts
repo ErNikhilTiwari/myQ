@@ -127,8 +127,8 @@ export class AppointmentsService {
       }
       calculatedFee = qrValidation.price || clinic.inClinicPrice || 200;
     } else {
-      // Remote booking (default ₹250 or clinic's configured remotePrice)
-      calculatedFee = clinic.remotePrice ?? 250;
+      // Remote booking (fixed price for appointment: ₹200)
+      calculatedFee = clinic.remotePrice ?? 200;
     }
 
     // Optional Priority Pass / Join Queue Right Away (+₹50 extra fee)

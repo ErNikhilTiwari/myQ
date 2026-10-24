@@ -849,7 +849,7 @@ export default function App() {
         profileType={loginProfile}
       />
 
-      {/* Patient Appointment Booking Modal (Dual Pricing: In-Clinic ₹200 vs Remote ₹250) */}
+      {/* Patient Appointment Booking Modal (Fixed ₹200 Base + Optional ₹50 Live Queue Checkbox) */}
       <AppointmentBookingModal
         isOpen={isBookingOpen}
         onClose={() => setIsBookingOpen(false)}

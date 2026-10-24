@@ -623,7 +623,7 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
           clinicId={clinicId} 
           token={token} 
           initialInClinicPrice={(activeClinicObj as any)?.inClinicPrice || 200}
-          initialRemotePrice={(activeClinicObj as any)?.remotePrice || 250}
+          initialRemotePrice={(activeClinicObj as any)?.remotePrice || 200}
           initialEnableBookingTime={(activeClinicObj as any)?.enableBookingTime !== false}
           initialEnablePriorityQueue={(activeClinicObj as any)?.enablePriorityQueue !== false}
           onUpdated={() => {

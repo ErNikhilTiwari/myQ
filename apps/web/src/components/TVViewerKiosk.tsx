@@ -698,9 +698,8 @@ export const TVViewerKiosk: React.FC<TVViewerProps> = ({
                 </div>
                 <div className="text-3xl sm:text-4xl font-black text-emerald-400 mt-0.5 flex items-center justify-center space-x-2">
                   <span>₹{qrData?.price || 200}</span>
-                  <span className="text-sm text-slate-400 line-through font-normal">₹250</span>
-                  <span className="text-[10px] font-bold uppercase tracking-wide bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full">
-                    ₹50 OFF
+                  <span className="text-[10px] font-bold uppercase tracking-wide bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-full">
+                    Fixed Fee
                   </span>
                 </div>
               </div>

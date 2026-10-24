@@ -2959,7 +2959,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                             </div>
                             <div className="col-span-2 pt-1 border-t border-slate-200/60 flex items-center justify-between text-[11px] text-slate-500">
                               <span>In-Clinic: <b className="text-emerald-700">₹{clinic.inClinicPrice ?? 200}</b></span>
-                              <span>Remote: <b className="text-emerald-700">₹{clinic.remotePrice ?? 250}</b></span>
+                              <span>Remote: <b className="text-emerald-700">₹{clinic.remotePrice ?? 200}</b></span>
                             </div>
                           </div>
 

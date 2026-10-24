@@ -27,7 +27,7 @@ export const ClinicPricingConfig: React.FC<ClinicPricingConfigProps> = ({
   clinicId,
   token,
   initialInClinicPrice = 200,
-  initialRemotePrice = 250,
+  initialRemotePrice = 200,
   initialEnableBookingTime = true,
   initialEnablePriorityQueue = true,
   onUpdated,
