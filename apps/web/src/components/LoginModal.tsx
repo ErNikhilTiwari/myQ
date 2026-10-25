@@ -20,9 +20,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const getDefaultPhone10 = () => {
     if (profileType === 'CLINIC_ADMIN') return '9876500002';
     if (profileType === 'RECEPTIONIST' || profileType === 'TV_VIEWER') return '9876500001';
-    if (profileType === 'PATIENT') return '9876511111';
+    if (profileType === 'PATIENT') return '';
     if (profileType === 'SUPER_ADMIN') return '9999999999';
-    return '9876511111';
+    return '';
   };
 
   const [phone10, setPhone10] = useState(getDefaultPhone10());
@@ -50,6 +50,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     if (isOpen) {
       setPhone10(getDefaultPhone10());
       setOtp('');
+      setStep('INPUT');
       setErrorMsg(null);
     }
   }, [isOpen, profileType]);
@@ -382,8 +383,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
   const handleInstantDemoLogin = async (phone: string) => {
     setErrorMsg(null);
-    setLoading(true);
     const clean10 = phone.replace('+91', '').replace(/\D/g, '').slice(0, 10);
+    if (clean10.length !== 10) {
+      setErrorMsg('Please enter a valid 10-digit mobile number before signing in.');
+      return;
+    }
+    setLoading(true);
     setPhone10(clean10);
     setOtp('123456');
     const validPhone = `+91${clean10}`;
@@ -501,7 +506,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                   inputMode="numeric"
                   required
                   maxLength={10}
-                  placeholder="9876500001"
+                  placeholder={profileType === 'PATIENT' || profileType === 'GENERAL' ? 'Enter 10-digit mobile number' : '9876500001'}
                   value={phone10}
                   onChange={(e) => {
                     const digits = e.target.value.replace(/\D/g, '').slice(0, 10);

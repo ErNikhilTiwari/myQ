@@ -158,29 +158,42 @@ export const PatientPortalView: React.FC<PatientPortalViewProps> = ({
     })
       .then((res) => res.json())
       .then((data) => {
-        if (data.success && data.data) {
+        if (data.success && Array.isArray(data.data)) {
           setMyAppointments(data.data);
-          // If patient has an active appointment with token, auto-track if not tracking
-          if (!tokenData && data.data.length > 0) {
-            const active = data.data.find((a: any) => a.tokenNumber && a.status !== 'COMPLETED' && a.status !== 'CANCELLED');
-            if (active && active.tokenNumber) {
-              setTokenInput(active.tokenNumber);
-              if (active.clinicSlug) {
-                lookupTokenBySlug(active.clinicSlug, active.tokenNumber);
-              }
+          // If patient has an active appointment with token, auto-track
+          const active = data.data.find((a: any) => a.tokenNumber && a.status !== 'COMPLETED' && a.status !== 'CANCELLED');
+          if (active && active.tokenNumber) {
+            setTokenInput(active.tokenNumber);
+            if (active.clinicSlug) {
+              lookupTokenBySlug(active.clinicSlug, active.tokenNumber);
             }
+          } else {
+            // Patient has no active tokens; clear any stale token state
+            setTokenData(null);
+            setTokenInput('');
           }
+        } else {
+          setMyAppointments([]);
+          setTokenData(null);
+          setTokenInput('');
         }
       })
-      .catch(() => {})
+      .catch(() => {
+        setMyAppointments([]);
+      })
       .finally(() => setIsLoadingMyAppts(false));
   };
 
   useEffect(() => {
-    if (isPatientLoggedIn) {
+    // Immediate wipe of state when logging out or switching to another user account
+    setMyAppointments([]);
+    setTokenData(null);
+    setTokenInput('');
+
+    if (isPatientLoggedIn && currentUser?.id && token) {
       fetchMyAppointments();
     }
-  }, [isPatientLoggedIn, token]);
+  }, [isPatientLoggedIn, currentUser?.id, token]);
 
   // 3. Sync active tracking token prop
   useEffect(() => {

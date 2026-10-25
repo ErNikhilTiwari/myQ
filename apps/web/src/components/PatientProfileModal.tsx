@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserCheck, AlertTriangle, X, CheckCircle, Lock, ShieldAlert } from 'lucide-react';
 
 interface PatientProfileModalProps {
@@ -32,6 +32,18 @@ export const PatientProfileModal: React.FC<PatientProfileModalProps> = ({
   const [gender, setGender] = useState<'Male' | 'Female' | 'Other'>(initialGender as any);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      const currentName = currentUser?.name && !currentUser.name.startsWith('Patient ') ? currentUser.name : '';
+      const currentAge = currentUser?.age ? String(currentUser.age) : '';
+      const currentGender = currentUser?.gender || 'Male';
+      setName(currentName);
+      setAge(currentAge);
+      setGender(currentGender as any);
+      setErrorMsg(null);
+    }
+  }, [isOpen, currentUser?.id]);
 
   if (!isOpen) return null;
 

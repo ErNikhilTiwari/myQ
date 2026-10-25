@@ -24,6 +24,7 @@ import {
   Calendar,
   Menu,
   X,
+  User,
   UserCheck,
   Shield,
   Layers,
@@ -218,9 +219,43 @@ export default function App() {
     setToken(null);
     setCurrentUser(null);
     setSelectedClinicId('');
+    setActiveTrackingToken('');
+    setPendingBookingAfterLogin(false);
+    setPendingActionAfterProfile(null);
+    setIsProfileModalOpen(false);
     setIsMenuOpen(false);
     setActiveTab('PATIENT');
   };
+
+  // Validate saved authentication session against /api/auth/me on mount
+  useEffect(() => {
+    const savedToken = localStorage.getItem('token');
+    if (savedToken) {
+      fetch('/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${savedToken}`,
+          'Bypass-Tunnel-Reminder': 'true',
+        },
+      })
+        .then((res) => {
+          if (!res.ok) {
+            handleLogout();
+            return null;
+          }
+          return res.json();
+        })
+        .then((data) => {
+          if (data && data.success && data.data) {
+            setCurrentUser(data.data);
+            localStorage.setItem('user', JSON.stringify(data.data));
+            localStorage.setItem('queueapp_user', JSON.stringify(data.data));
+          } else if (data && !data.success) {
+            handleLogout();
+          }
+        })
+        .catch(() => {});
+    }
+  }, []);
 
   const currentClinic = clinics.find((c: ClinicItem) => c.id === selectedClinicId);
 
@@ -475,8 +510,8 @@ export default function App() {
                 <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2.5 px-1">
                   Patient Portal
                 </p>
-                <div>
-                  {/* Login as Patient */}
+                <div className="space-y-2">
+                  {/* View Patient Portal */}
                   <button
                     onClick={() => {
                       setIsMenuOpen(false);
@@ -502,7 +537,9 @@ export default function App() {
                       </div>
                       <div className="text-left">
                         <div className="flex items-center space-x-2">
-                          <span className="font-bold text-xs text-white">Login as Patient</span>
+                          <span className="font-bold text-xs text-white">
+                            {currentUser?.role === 'PATIENT' ? 'Patient Portal' : 'Login as Patient'}
+                          </span>
                           {currentUser?.role === 'PATIENT' && (
                             <span className="text-[9px] bg-emerald-500/20 text-emerald-300 font-bold px-1.5 py-0.5 rounded-full border border-emerald-400/30">
                               Active
@@ -520,6 +557,23 @@ export default function App() {
                     </div>
                     <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-white group-hover:translate-x-1 transition-transform" />
                   </button>
+
+                  {/* Switch / Log In to Another Patient Account */}
+                  {currentUser?.role === 'PATIENT' && (
+                    <button
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        openPatientLogin();
+                      }}
+                      className="w-full flex items-center justify-between p-2.5 px-3 rounded-xl text-left border border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-300 hover:text-white transition group text-xs"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <User className="w-3.5 h-3.5 text-sky-400" />
+                        <span className="font-semibold text-[11px]">Switch / Log in to Another Patient Account</span>
+                      </div>
+                      <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-white transition-transform" />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

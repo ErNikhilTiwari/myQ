@@ -261,10 +261,17 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
 
       const verifyData = await verifyRes.json();
       if (verifyData.success && verifyData.data) {
-        const { user, accessToken } = verifyData.data;
-        localStorage.setItem('token', accessToken);
-        localStorage.setItem('user', JSON.stringify(user));
-        if (onLoginSuccess) {
+        const user = verifyData.data.user;
+        const accessToken = verifyData.data.tokens?.accessToken || verifyData.data.accessToken || verifyData.data.token;
+        if (accessToken) {
+          localStorage.setItem('token', accessToken);
+          localStorage.setItem('queueapp_token', accessToken);
+        }
+        if (user) {
+          localStorage.setItem('user', JSON.stringify(user));
+          localStorage.setItem('queueapp_user', JSON.stringify(user));
+        }
+        if (onLoginSuccess && accessToken) {
           onLoginSuccess(user, accessToken);
         }
         setPhoneStep('PHONE');
