@@ -16,18 +16,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   onLoginSuccess,
   profileType = 'GENERAL'
 }) => {
-  // Set default 10-digit phone according to selected profile
-  const getDefaultPhone10 = () => {
-    if (profileType === 'CLINIC_ADMIN') return '9876500002';
-    if (profileType === 'RECEPTIONIST' || profileType === 'TV_VIEWER') return '9876500001';
-    if (profileType === 'PATIENT') return '';
-    if (profileType === 'SUPER_ADMIN') return '9999999999';
-    return '';
-  };
-
-  const [phone10, setPhone10] = useState(getDefaultPhone10());
+  const [phone10, setPhone10] = useState('');
   const [authMethod, setAuthMethod] = useState<'OTP' | 'PASSWORD'>('OTP');
-  const [password, setPassword] = useState('Password@123');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [otp, setOtp] = useState('');
   const [step, setStep] = useState<'INPUT' | 'OTP'>('INPUT');
@@ -48,7 +39,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setPhone10(getDefaultPhone10());
+      setPhone10('');
+      setPassword('');
       setOtp('');
       setStep('INPUT');
       setErrorMsg(null);
@@ -123,34 +115,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         };
     }
   };
-
-  // Preset quick-test accounts (including Super Admin for demo purposes)
-  const allQuickAccounts = [
-    { label: 'Clinic Owner / Doctor', phone: '+919876500002', role: 'CLINIC_ADMIN', clinic: 'ABC Health Clinic' },
-    { label: 'Receptionist Desk', phone: '+919876500001', role: 'RECEPTIONIST', clinic: 'ABC Health Clinic' },
-    { label: 'Patient (Rahul)', phone: '+919876511111', role: 'PATIENT', clinic: 'Patient Account' },
-    { label: 'Platform Super Admin', phone: '+919999999999', role: 'SUPER_ADMIN', clinic: 'System Root' },
-  ];
-
-  // Present relevant profile accounts at top
-  const quickAccounts = [
-    ...(profileType === 'CLINIC_ADMIN'
-      ? allQuickAccounts.filter((a) => a.role === 'CLINIC_ADMIN')
-      : profileType === 'RECEPTIONIST' || profileType === 'TV_VIEWER'
-      ? allQuickAccounts.filter((a) => a.role === 'RECEPTIONIST')
-      : profileType === 'PATIENT'
-      ? allQuickAccounts.filter((a) => a.role === 'PATIENT')
-      : profileType === 'SUPER_ADMIN'
-      ? allQuickAccounts.filter((a) => a.role === 'SUPER_ADMIN')
-      : []),
-    ...allQuickAccounts.filter((a) => {
-      if (profileType === 'CLINIC_ADMIN') return a.role !== 'CLINIC_ADMIN';
-      if (profileType === 'RECEPTIONIST' || profileType === 'TV_VIEWER') return a.role !== 'RECEPTIONIST';
-      if (profileType === 'PATIENT') return a.role !== 'PATIENT';
-      if (profileType === 'SUPER_ADMIN') return a.role !== 'SUPER_ADMIN';
-      return true;
-    }),
-  ];
 
   const headerInfo = getHeaderInfo();
 
@@ -381,69 +345,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     }
   };
 
-  const handleInstantDemoLogin = async (phone: string) => {
-    setErrorMsg(null);
-    const clean10 = phone.replace('+91', '').replace(/\D/g, '').slice(0, 10);
-    if (clean10.length !== 10) {
-      setErrorMsg('Please enter a valid 10-digit mobile number before signing in.');
-      return;
-    }
-    setLoading(true);
-    setPhone10(clean10);
-    setOtp('123456');
-    const validPhone = `+91${clean10}`;
-
-    try {
-      const res = await fetch('/api/auth/verify-otp', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Bypass-Tunnel-Reminder': 'true',
-        },
-        body: JSON.stringify({
-          phoneNumber: validPhone,
-          otp: '123456',
-        }),
-      });
-
-      const rawText = await res.text();
-      let data: any;
-      try {
-        data = JSON.parse(rawText);
-      } catch {
-        throw new Error(`Server returned non-JSON response (${res.status}). Ensure port 4000 is running.`);
-      }
-
-      const accessToken = data.data?.tokens?.accessToken || data.data?.token;
-
-      if (data.success && accessToken) {
-        const user = { ...data.data.user, isNewUser: Boolean(data.data.isNewUser) };
-        const isClinicStaff = user.role === 'RECEPTIONIST' || user.role === 'CLINIC_ADMIN' || user.role === 'SUPER_ADMIN';
-
-        if ((profileType === 'RECEPTIONIST' || profileType === 'TV_VIEWER') && !isClinicStaff) {
-          setErrorMsg(
-            'This phone number is registered as a Patient, not a Clinic account. Clinics can log in only with credentials provisioned by Super Admin. Please switch to Patient Login.'
-          );
-          setLoading(false);
-          return;
-        }
-
-        localStorage.setItem('token', accessToken);
-        localStorage.setItem('user', JSON.stringify(user));
-        localStorage.setItem('queueapp_token', accessToken);
-        localStorage.setItem('queueapp_user', JSON.stringify(user));
-        onLoginSuccess(user, accessToken);
-        onClose();
-      } else {
-        const msg = data.error?.message || data.message || 'Quick login failed. Make sure API backend is running on port 4000.';
-        setErrorMsg(msg);
-      }
-    } catch (err: any) {
-      setErrorMsg('Cannot reach backend on port 4000. Please ensure API server is started.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -586,29 +487,16 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
-                  <p className="text-[10px] text-[#64748B] mt-1">
-                    Demo accounts use default password: <span className="font-mono font-bold text-slate-700">Password@123</span> (or 123456)
-                  </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="bg-[#0284C7] hover:bg-[#0369A1] text-white py-2.5 rounded-xl font-bold text-xs transition shadow-sm flex items-center justify-center space-x-1"
-                  >
-                    <Lock className="w-3.5 h-3.5" />
-                    <span>{loading ? 'Logging in...' : 'Login with Password'}</span>
-                  </button>
-                  <button
-                    type="button"
-                    disabled={loading}
-                    onClick={() => handleInstantDemoLogin(phone10)}
-                    className="bg-[#16A34A] hover:bg-[#15803D] text-white py-2.5 rounded-xl font-bold text-xs transition shadow-sm flex items-center justify-center space-x-1"
-                  >
-                    <span>⚡ Instant Sign In</span>
-                  </button>
-                </div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-[#0284C7] hover:bg-[#0369A1] text-white py-2.5 rounded-xl font-bold text-xs transition shadow-sm flex items-center justify-center space-x-1"
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>{loading ? 'Logging in...' : 'Login with Password'}</span>
+                </button>
               </form>
             )}
 
@@ -618,73 +506,19 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 <div className="p-3 bg-sky-50 border border-sky-100 rounded-xl text-sky-900 text-[11px] flex items-center space-x-2">
                   <KeyRound className="w-4 h-4 text-sky-600 shrink-0" />
                   <span>
-                    Passwordless sign in: We will generate a one-time 6-digit verification code for your phone number.
+                    Passwordless sign in: A 6-digit one-time verification code will be sent to your mobile number.
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="bg-[#0284C7] hover:bg-[#0369A1] text-white py-2.5 rounded-xl font-bold text-xs transition shadow-sm flex items-center justify-center space-x-1"
-                  >
-                    <span>{loading ? 'Sending...' : 'Send OTP & Login'}</span>
-                  </button>
-                  <button
-                    type="button"
-                    disabled={loading}
-                    onClick={() => handleInstantDemoLogin(phone10)}
-                    className="bg-[#16A34A] hover:bg-[#15803D] text-white py-2.5 rounded-xl font-bold text-xs transition shadow-sm flex items-center justify-center space-x-1"
-                  >
-                    <span>⚡ Instant Sign In</span>
-                  </button>
-                </div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-[#0284C7] hover:bg-[#0369A1] text-white py-2.5 rounded-xl font-bold text-xs transition shadow-sm flex items-center justify-center space-x-1"
+                >
+                  <span>{loading ? 'Sending...' : 'Send OTP & Login'}</span>
+                </button>
               </form>
             )}
-
-            {/* Quick-test Presets for Solo Dev / Reviewer */}
-            <div className="pt-3 mt-4 border-t border-slate-100">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider flex items-center space-x-1">
-                  <Sparkles className="w-3 h-3 text-[#D97706]" />
-                  <span>Instant Demo Accounts:</span>
-                </span>
-                <span className="text-[10px] text-[#0284C7] font-semibold">1-Click Sign In</span>
-              </div>
-              <div className="grid grid-cols-1 gap-2">
-                {quickAccounts.map((acc, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between p-2.5 rounded-xl border border-slate-200 bg-[#F8FAFC] hover:border-[#0284C7] hover:bg-sky-50/50 transition group"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const cleanDigits = acc.phone.replace('+91', '').replace(/\D/g, '').slice(0, 10);
-                        setPhone10(cleanDigits);
-                        setPassword('Password@123');
-                      }}
-                      className="text-left flex-1"
-                    >
-                      <div className="font-bold text-xs text-[#1E293B] group-hover:text-[#0284C7] transition">
-                        {acc.label}
-                      </div>
-                      <div className="text-[10px] font-mono text-[#64748B]">
-                        {acc.phone} • {acc.clinic}
-                      </div>
-                    </button>
-                    <button
-                      type="button"
-                      disabled={loading}
-                      onClick={() => handleInstantDemoLogin(acc.phone)}
-                      className="ml-2 px-3 py-1.5 bg-[#0284C7] hover:bg-[#0369A1] text-white text-[11px] font-bold rounded-lg shadow-sm shrink-0 transition flex items-center space-x-1"
-                    >
-                      <span>⚡ Sign In</span>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
         ) : (
           /* STEP 2: Enter OTP Code Screen */
@@ -711,23 +545,17 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 maxLength={6}
                 value={otp}
                 onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                placeholder="123456"
+                placeholder="------"
                 className="w-full bg-[#F8FAFC] border border-slate-300 rounded-xl px-4 py-2.5 text-center text-lg tracking-widest text-[#0284C7] font-mono font-bold focus:outline-none focus:border-[#0284C7] focus:bg-white placeholder:text-slate-400 placeholder:font-normal placeholder:opacity-50"
               />
-              <div className="bg-[#E0F2FE] border border-[#0284C7]/20 rounded-xl p-2.5 mt-2 text-center text-[11px] text-[#0284C7]">
-                <p className="font-semibold">Local Dev Testing:</p>
-                <p className="text-[10px] text-[#64748B] mt-0.5">
-                  Enter the code from your backend terminal (or use mock bypass <span className="font-mono font-bold text-[#0284C7]">123456</span>).
-                </p>
-              </div>
 
               {telegramBotUsername && (
                 <div className="bg-sky-50 border border-sky-200 rounded-xl p-2.5 mt-2.5 text-xs text-sky-900 flex items-center justify-between shadow-xs">
                   <div className="flex items-center space-x-2">
                     <span className="text-base shrink-0">🤖</span>
                     <div className="text-left">
-                      <p className="font-bold text-[11px] text-sky-950">Receive OTP on Your Telegram</p>
-                      <p className="text-[10px] text-sky-700">Link your phone once to get OTP directly:</p>
+                      <p className="font-bold text-[11px] text-sky-950">Receive OTP on Telegram</p>
+                      <p className="text-[10px] text-sky-700">Get OTP directly in Telegram:</p>
                     </div>
                   </div>
                   <a

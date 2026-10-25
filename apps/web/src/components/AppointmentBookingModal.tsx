@@ -134,13 +134,6 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
   });
   const [joinQueueImmediately, setJoinQueueImmediately] = useState<boolean>(false);
 
-  // Patient Info State (if not logged in)
-  const [patientName, setPatientName] = useState('');
-  const [patientPhone10, setPatientPhone10] = useState('');
-  const [otpCode, setOtpCode] = useState('');
-  const [isVerifyingPhone, setIsVerifyingPhone] = useState(false);
-  const [phoneStep, setPhoneStep] = useState<'PHONE' | 'OTP'>('PHONE');
-
   // Pricing & Execution State
   const [isLoadingDoctors, setIsLoadingDoctors] = useState(false);
   const [isProcessingBooking, setIsProcessingBooking] = useState(false);
@@ -235,56 +228,6 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
       return slotDate.toISOString();
     } catch {
       return new Date().toISOString();
-    }
-  };
-
-  // Inline OTP login for patients if not logged in
-  const handleQuickPatientLogin = async () => {
-    const clean10 = patientPhone10.replace(/\D/g, '').slice(0, 10);
-    if (clean10.length !== 10) {
-      setErrorMsg('Please enter a valid 10-digit Indian phone number.');
-      return;
-    }
-
-    setIsVerifyingPhone(true);
-    setErrorMsg(null);
-
-    try {
-      const verifyRes = await fetch('/api/auth/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phoneNumber: `+91${clean10}`,
-          otp: otpCode || '123456',
-        }),
-      });
-
-      const verifyData = await verifyRes.json();
-      if (verifyData.success && verifyData.data) {
-        const user = verifyData.data.user;
-        const accessToken = verifyData.data.tokens?.accessToken || verifyData.data.accessToken || verifyData.data.token;
-        if (accessToken) {
-          localStorage.setItem('token', accessToken);
-          localStorage.setItem('queueapp_token', accessToken);
-        }
-        if (user) {
-          localStorage.setItem('user', JSON.stringify(user));
-          localStorage.setItem('queueapp_user', JSON.stringify(user));
-        }
-        if (onLoginSuccess && accessToken) {
-          onLoginSuccess(user, accessToken);
-        }
-        setPhoneStep('PHONE');
-        return accessToken;
-      } else {
-        setErrorMsg(verifyData.error?.message || 'Verification failed. Try OTP 123456.');
-        return null;
-      }
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Error verifying phone number.');
-      return null;
-    } finally {
-      setIsVerifyingPhone(false);
     }
   };
 
@@ -742,7 +685,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
               <div className="pt-2">
                 <button
                   type="submit"
-                  disabled={isVerifyingPhone}
+                  disabled={isProcessingBooking}
                   className="w-full bg-[#0284C7] hover:bg-[#0369A1] text-white py-3.5 rounded-2xl font-bold text-sm shadow-md transition flex items-center justify-center space-x-2 active:scale-95 disabled:opacity-50"
                 >
                   <span>Proceed to Payment</span>
