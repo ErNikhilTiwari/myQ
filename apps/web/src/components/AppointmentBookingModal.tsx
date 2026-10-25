@@ -97,6 +97,46 @@ const getFirstAvailableSlot = (dateStr: string): string | null => {
   return null;
 };
 
+export const isClinicClosedOnDate = (
+  clinic: any,
+  dateStr: string
+): { isClosed: boolean; reason?: string } => {
+  if (!clinic) return { isClosed: false };
+  if (clinic.holidays) {
+    try {
+      const holidays: string[] =
+        typeof clinic.holidays === 'string' ? JSON.parse(clinic.holidays) : clinic.holidays;
+      if (Array.isArray(holidays) && holidays.includes(dateStr)) {
+        return { isClosed: true, reason: `Clinic is closed on ${dateStr} due to a marked holiday.` };
+      }
+    } catch {}
+  }
+  if (clinic.workingDays) {
+    const dayNames = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dayIndex = new Date(y, m - 1, d).getDay();
+    const dayName = dayNames[dayIndex];
+    const activeDays = clinic.workingDays.toUpperCase().split(',').map((s: string) => s.trim());
+    if (!activeDays.includes(dayName)) {
+      return { isClosed: true, reason: `Clinic is closed on ${dayName}s. Please choose an active working day.` };
+    }
+  }
+  return { isClosed: false };
+};
+
+export const getFirstOpenDate = (clinic: any): string => {
+  const minD = getMinDateStr();
+  for (let i = 0; i <= 2; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+    const dStr = formatLocalDate(d);
+    if (!isClinicClosedOnDate(clinic, dStr).isClosed) {
+      return dStr;
+    }
+  }
+  return minD;
+};
+
 export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = ({
   isOpen,
   onClose,
@@ -170,11 +210,19 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
     setErrorMsg(null);
   }, [isOpen, preselectedClinicId, initialBookingType, initialQrToken, clinics]);
 
-  // Ensure selectedDate and selectedTimeSlot stay within [today, today+2] and not in the past
+  // Ensure selectedDate and selectedTimeSlot stay within [today, today+2], not in the past, and on open working days
   useEffect(() => {
     if (!isOpen) return;
     const minD = getMinDateStr();
     const maxD = getMaxDateStr();
+
+    if (activeClinic && isClinicClosedOnDate(activeClinic, selectedDate).isClosed) {
+      const openD = getFirstOpenDate(activeClinic);
+      if (openD !== selectedDate) {
+        setSelectedDate(openD);
+        return;
+      }
+    }
 
     if (selectedDate < minD) {
       setSelectedDate(minD);
@@ -191,7 +239,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
         setSelectedTimeSlot(nextSlot);
       }
     }
-  }, [selectedDate, isOpen, selectedTimeSlot]);
+  }, [selectedDate, isOpen, selectedTimeSlot, activeClinic]);
 
   // Fetch doctors for current clinic
   useEffect(() => {
@@ -214,6 +262,8 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
   }, [selectedClinicId]);
 
   if (!isOpen) return null;
+
+  const clinicClosedInfo = isClinicClosedOnDate(activeClinic, selectedDate);
 
   // Time slot options
   const timeSlots = TIME_SLOTS;
@@ -259,6 +309,12 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
         setErrorMsg('Appointments can only be booked for today or up to 2 days in advance.');
         return;
       }
+
+      if (clinicClosedInfo.isClosed) {
+        setErrorMsg(clinicClosedInfo.reason || 'The clinic is closed on the selected date. Please choose an active working day.');
+        return;
+      }
+
       if (isSlotInPast(selectedDate, selectedTimeSlot)) {
         setErrorMsg('The selected consultation time slot has already passed. Please choose an upcoming time slot.');
         return;
@@ -523,8 +579,19 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                     </div>
                   </div>
 
+                  {/* Warning banner if selected date is closed/holiday */}
+                  {clinicClosedInfo.isClosed && (
+                    <div className="bg-amber-50 border border-amber-300 rounded-xl p-2.5 text-xs text-amber-900 flex items-start space-x-2">
+                      <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-bold">Clinic Closed on this Date</span>
+                        <p className="mt-0.5 text-amber-800">{clinicClosedInfo.reason}</p>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Warning banner if all slots today have already passed */}
-                  {selectedDate === getMinDateStr() && !getFirstAvailableSlot(selectedDate) && (
+                  {selectedDate === getMinDateStr() && !clinicClosedInfo.isClosed && !getFirstAvailableSlot(selectedDate) && (
                     <div className="bg-amber-50 border border-amber-200 rounded-xl p-2.5 text-xs text-amber-800 flex items-center space-x-2">
                       <span>⚠️ All consultation slots for today have passed. Please select tomorrow or day after tomorrow.</span>
                     </div>
@@ -685,7 +752,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
               <div className="pt-2">
                 <button
                   type="submit"
-                  disabled={isProcessingBooking}
+                  disabled={isProcessingBooking || (isBookingTimeEnabled && clinicClosedInfo.isClosed)}
                   className="w-full bg-[#0284C7] hover:bg-[#0369A1] text-white py-3.5 rounded-2xl font-bold text-sm shadow-md transition flex items-center justify-center space-x-2 active:scale-95 disabled:opacity-50"
                 >
                   <span>Proceed to Payment</span>
