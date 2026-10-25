@@ -20,7 +20,8 @@ import {
   RefreshCw,
   QrCode,
   Globe,
-  AlertTriangle
+  AlertTriangle,
+  CalendarPlus
 } from 'lucide-react';
 import { ClinicSearchSelect, ClinicItem } from './ClinicSearchSelect';
 
@@ -409,10 +410,19 @@ export const PatientPortalView: React.FC<PatientPortalViewProps> = ({
             {isPatientLoggedIn ? (
               <button
                 onClick={() => handleBookingClick('REMOTE')}
-                className="flex items-center space-x-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-md transition active:scale-95"
+                className="flex items-center space-x-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-md transition active:scale-95 cursor-pointer"
               >
-                <Calendar className="w-4 h-4" />
-                <span>Book Consultation</span>
+                {myAppointments.length > 0 ? (
+                  <>
+                    <CalendarPlus className="w-4 h-4" />
+                    <span>+ Book Another Appointment</span>
+                  </>
+                ) : (
+                  <>
+                    <Calendar className="w-4 h-4" />
+                    <span>Book Consultation</span>
+                  </>
+                )}
               </button>
             ) : (
               <button
@@ -695,10 +705,10 @@ export const PatientPortalView: React.FC<PatientPortalViewProps> = ({
 
               <button
                 onClick={() => handleBookingClick('REMOTE')}
-                className="bg-[#0284C7] hover:bg-[#0369A1] text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-sm active:scale-95"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-sm active:scale-95 cursor-pointer"
               >
-                <Calendar className="w-3.5 h-3.5" />
-                <span>Book Appointment</span>
+                <CalendarPlus className="w-3.5 h-3.5" />
+                <span>+ Book Another Consultation</span>
               </button>
             </div>
 

@@ -8,798 +8,826 @@
       "method": "GET",
       "url": "http://localhost:4000/api/auth/telegram/info",
       "postData": null,
-      "time": "2026-10-25T08:26:52.032Z"
+      "time": "2026-10-25T09:01:07.590Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/clinics",
       "postData": null,
-      "time": "2026-10-25T08:26:52.034Z"
-    },
-    {
-      "type": "RESPONSE",
-      "status": 200,
-      "url": "http://localhost:4000/api/auth/telegram/info",
-      "body": "{\"success\":true,\"data\":{\"username\":null,\"isConfigured\":false,\"hasGateway\":false,\"hasFallbackChatId\":false},\"meta\":{\"timestamp\":\"2026-10-25T08:26:52.031Z\"}}",
-      "time": "2026-10-25T08:26:52.039Z"
+      "time": "2026-10-25T09:01:07.590Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/clinics/202c97b8-377f-42cb-9015-f4686d3db29e/doctors",
       "postData": null,
-      "time": "2026-10-25T08:26:52.045Z"
+      "time": "2026-10-25T09:01:07.609Z"
+    },
+    {
+      "type": "RESPONSE",
+      "status": 200,
+      "url": "http://localhost:4000/api/auth/telegram/info",
+      "body": "{\"success\":true,\"data\":{\"username\":null,\"isConfigured\":false,\"hasGateway\":false,\"hasFallbackChatId\":false},\"meta\":{\"timestamp\":\"2026-10-25T09:01:07.590Z\"}}",
+      "time": "2026-10-25T09:01:07.610Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/clinics",
       "body": "{\"success\":true,\"data\":[{\"id\":\"202c97b8-377f-42cb-9015-f4686d3db29e\",\"chainId\":null,\"name\":\"CareWell Family Clinic\",\"slug\":\"carewell-family\",\"phoneNumber\":\"+919876500002\",\"email\":\"contact@carewellfamily.com\",\"address\":\"45 Greenfield Avenue, Koramangala 4th Block, Bengaluru\",\"city\":null,\"inClinicPrice\":200,\"remotePrice\":200,\"voiceAnnouncementMode\":\"TOKEN_PATIENT_DOCTOR_ROOM\",\"enableBookingTime\":true,\"enablePriorityQueue\":true,\"workingDays\":\"MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY,SATURDAY\",\"openTime\":\"10:00 AM\",\"closeTime\":\"07:00 PM\",\"lunchStartTime\":\"01:00 PM\",\"lunchEndTime\":\"02:00 PM\",\"enableLunchBreak\":true,\"slotDurationMinutes\":15,\"holidays\":\"[]\",\"isActive\":true,\"subscriptionStatus\":\"ACTIVE\",\"plan\":\"BASIC\",\"createdAt\":\"2026-10-25T07:23:24.344Z\",\"doctorsCount\":1,\"servicesCount\":1,\"queuesCount\":1},{\"id\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"chainId\":null,\"name\":\"City Health Multispecialty Clinic\",\"slug\":\"city-health\",\"phoneNumber\":\"+919876500001\",\"email\":\"care@cityhealth.com\",\"addr",
-      "time": "2026-10-25T08:26:52.046Z"
+      "time": "2026-10-25T09:01:07.610Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/clinics/202c97b8-377f-42cb-9015-f4686d3db29e/doctors",
       "body": "{\"success\":true,\"data\":[{\"id\":\"4361d094-c34f-4a0b-b645-b27b649e023d\",\"clinicId\":\"202c97b8-377f-42cb-9015-f4686d3db29e\",\"name\":\"Dr. Ananya Singh\",\"specialization\":\"Family Physician & Pediatrician\",\"roomNumber\":\"Suite A\",\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.368Z\",\"updatedAt\":\"2026-10-25T07:23:24.368Z\"}]}",
-      "time": "2026-10-25T08:26:52.053Z"
+      "time": "2026-10-25T09:01:07.623Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/auth/telegram/info",
       "postData": null,
-      "time": "2026-10-25T08:26:52.634Z"
+      "time": "2026-10-25T09:01:08.210Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/clinics",
       "postData": null,
-      "time": "2026-10-25T08:26:52.635Z"
+      "time": "2026-10-25T09:01:08.210Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/clinics/202c97b8-377f-42cb-9015-f4686d3db29e/doctors",
       "postData": null,
-      "time": "2026-10-25T08:26:52.647Z"
+      "time": "2026-10-25T09:01:08.223Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/auth/telegram/info",
-      "body": "{\"success\":true,\"data\":{\"username\":null,\"isConfigured\":false,\"hasGateway\":false,\"hasFallbackChatId\":false},\"meta\":{\"timestamp\":\"2026-10-25T08:26:52.635Z\"}}",
-      "time": "2026-10-25T08:26:52.647Z"
+      "body": "{\"success\":true,\"data\":{\"username\":null,\"isConfigured\":false,\"hasGateway\":false,\"hasFallbackChatId\":false},\"meta\":{\"timestamp\":\"2026-10-25T09:01:08.208Z\"}}",
+      "time": "2026-10-25T09:01:08.225Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/clinics",
       "body": "{\"success\":true,\"data\":[{\"id\":\"202c97b8-377f-42cb-9015-f4686d3db29e\",\"chainId\":null,\"name\":\"CareWell Family Clinic\",\"slug\":\"carewell-family\",\"phoneNumber\":\"+919876500002\",\"email\":\"contact@carewellfamily.com\",\"address\":\"45 Greenfield Avenue, Koramangala 4th Block, Bengaluru\",\"city\":null,\"inClinicPrice\":200,\"remotePrice\":200,\"voiceAnnouncementMode\":\"TOKEN_PATIENT_DOCTOR_ROOM\",\"enableBookingTime\":true,\"enablePriorityQueue\":true,\"workingDays\":\"MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY,SATURDAY\",\"openTime\":\"10:00 AM\",\"closeTime\":\"07:00 PM\",\"lunchStartTime\":\"01:00 PM\",\"lunchEndTime\":\"02:00 PM\",\"enableLunchBreak\":true,\"slotDurationMinutes\":15,\"holidays\":\"[]\",\"isActive\":true,\"subscriptionStatus\":\"ACTIVE\",\"plan\":\"BASIC\",\"createdAt\":\"2026-10-25T07:23:24.344Z\",\"doctorsCount\":1,\"servicesCount\":1,\"queuesCount\":1},{\"id\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"chainId\":null,\"name\":\"City Health Multispecialty Clinic\",\"slug\":\"city-health\",\"phoneNumber\":\"+919876500001\",\"email\":\"care@cityhealth.com\",\"addr",
-      "time": "2026-10-25T08:26:52.648Z"
+      "time": "2026-10-25T09:01:08.225Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/clinics/202c97b8-377f-42cb-9015-f4686d3db29e/doctors",
       "body": "{\"success\":true,\"data\":[{\"id\":\"4361d094-c34f-4a0b-b645-b27b649e023d\",\"clinicId\":\"202c97b8-377f-42cb-9015-f4686d3db29e\",\"name\":\"Dr. Ananya Singh\",\"specialization\":\"Family Physician & Pediatrician\",\"roomNumber\":\"Suite A\",\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.368Z\",\"updatedAt\":\"2026-10-25T07:23:24.368Z\"}]}",
-      "time": "2026-10-25T08:26:52.652Z"
+      "time": "2026-10-25T09:01:08.232Z"
     },
     {
       "type": "REQUEST",
       "method": "POST",
       "url": "http://localhost:4000/api/auth/send-otp",
       "postData": "{\"phoneNumber\":\"+919876510001\"}",
-      "time": "2026-10-25T08:26:53.668Z"
+      "time": "2026-10-25T09:01:09.062Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/auth/send-otp",
-      "body": "{\"success\":true,\"data\":{\"success\":true,\"message\":\"OTP sent successfully to +919876510001\",\"expiresInSeconds\":300,\"resendCooldownSeconds\":10,\"attemptsInWindow\":3},\"meta\":{\"timestamp\":\"2026-10-25T08:26:53.811Z\"}}",
-      "time": "2026-10-25T08:26:53.850Z"
+      "body": "{\"success\":true,\"data\":{\"success\":true,\"message\":\"OTP sent successfully to +919876510001\",\"expiresInSeconds\":300,\"resendCooldownSeconds\":0,\"attemptsInWindow\":2},\"meta\":{\"timestamp\":\"2026-10-25T09:01:09.154Z\"}}",
+      "time": "2026-10-25T09:01:09.189Z"
     },
     {
       "type": "REQUEST",
       "method": "POST",
       "url": "http://localhost:4000/api/auth/verify-otp",
       "postData": "{\"phoneNumber\":\"+919876510001\",\"otp\":\"123456\"}",
-      "time": "2026-10-25T08:26:53.901Z"
+      "time": "2026-10-25T09:01:09.244Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/appointments/my",
       "postData": null,
-      "time": "2026-10-25T08:26:54.027Z"
+      "time": "2026-10-25T09:01:09.367Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/auth/verify-otp",
-      "body": "{\"success\":true,\"data\":{\"user\":{\"id\":\"4f8fdbf8-c9b9-4754-b642-c59625b5bf4a\",\"phoneNumber\":\"+919876510001\",\"name\":\"Rahul Verma\",\"role\":\"PATIENT\",\"age\":29,\"gender\":\"MALE\",\"isProfileComplete\":true},\"tokens\":{\"accessToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0ZjhmZGJmOC1jOWI5LTQ3NTQtYjY0Mi1jNTk2MjViNWJmNGEiLCJyb2xlIjoiUEFUSUVOVCIsImlhdCI6MTc5MjkxNjgxNCwiZXhwIjoxNzkyOTE3NzE0fQ.vr2xkYusi0a51vx1TwE2OvTYD8O7P7NyMp4VOx1IS0s\",\"refreshToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0ZjhmZGJmOC1jOWI5LTQ3NTQtYjY0Mi1jNTk2MjViNWJmNGEiLCJyb2xlIjoiUEFUSUVOVCIsImlhdCI6MTc5MjkxNjgxNCwiZXhwIjoxNzkzNTIxNjE0fQ.CaE033pVhvamr4ZlPWhWVXTQDuy-YTjuZynjSzEylGg\",\"expiresIn\":\"15m\"},\"isNewUser\":false},\"meta\":{\"timestamp\":\"2026-10-25T08:26:54.018Z\"}}",
-      "time": "2026-10-25T08:26:54.038Z"
+      "body": "{\"success\":true,\"data\":{\"user\":{\"id\":\"4f8fdbf8-c9b9-4754-b642-c59625b5bf4a\",\"phoneNumber\":\"+919876510001\",\"name\":\"Rahul Verma\",\"role\":\"PATIENT\",\"age\":29,\"gender\":\"MALE\",\"isProfileComplete\":true},\"tokens\":{\"accessToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0ZjhmZGJmOC1jOWI5LTQ3NTQtYjY0Mi1jNTk2MjViNWJmNGEiLCJyb2xlIjoiUEFUSUVOVCIsImlhdCI6MTc5MjkxODg2OSwiZXhwIjoxNzkyOTE5NzY5fQ.NaOTs81Fe_LOsDpNoe7a5uaUHT5HDO61ay_QPfKLtbI\",\"refreshToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0ZjhmZGJmOC1jOWI5LTQ3NTQtYjY0Mi1jNTk2MjViNWJmNGEiLCJyb2xlIjoiUEFUSUVOVCIsImlhdCI6MTc5MjkxODg2OSwiZXhwIjoxNzkzNTIzNjY5fQ.zMa_m5Hz2iUWglqx9SkGEw2Ijp92ZNPWWS0OKZFLN4Y\",\"expiresIn\":\"15m\"},\"isNewUser\":false},\"meta\":{\"timestamp\":\"2026-10-25T09:01:09.355Z\"}}",
+      "time": "2026-10-25T09:01:09.367Z"
+    },
+    {
+      "type": "REQUEST",
+      "method": "GET",
+      "url": "http://localhost:4000/api/queue/lookup?clinicSlug=carewell-family&tokenNumber=A06",
+      "postData": null,
+      "time": "2026-10-25T09:01:09.385Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/appointments/my",
-      "body": "{\"success\":true,\"data\":[]}",
-      "time": "2026-10-25T08:26:54.044Z"
+      "body": "{\"success\":true,\"data\":[{\"id\":\"62d481bf-250e-4cf4-a8d6-31a0a758301d\",\"clinicId\":\"202c97b8-377f-42cb-9015-f4686d3db29e\",\"userId\":\"4f8fdbf8-c9b9-4754-b642-c59625b5bf4a\",\"patientName\":\"Rahul Verma\",\"patientPhone\":\"+919876510001\",\"doctorId\":\"4361d094-c34f-4a0b-b645-b27b649e023d\",\"doctorName\":\"Dr. Ananya Singh\",\"serviceId\":null,\"serviceName\":null,\"slotTime\":\"2026-10-26T05:15:00.000Z\",\"bookingType\":\"REMOTE\",\"isPriority\":false,\"priorityFee\":0,\"status\":\"CONFIRMED\",\"bookingFee\":200,\"paymentStatus\":\"SUCCESS\",\"queueEntryId\":\"2440f961-48df-4738-b70d-c9530c902151\",\"tokenNumber\":\"A06\",\"createdAt\":\"2026-10-25T09:00:10.369Z\",\"updatedAt\":\"2026-10-25T09:00:10.418Z\",\"clinicName\":\"CareWell Family Clinic\",\"clinicSlug\":\"carewell-family\",\"clinicAddress\":\"45 Greenfield Avenue, Koramangala 4th Block, Bengaluru\"},{\"id\":\"4aab159f-84fe-4fee-922d-67199f3287fc\",\"clinicId\":\"202c97b8-377f-42cb-9015-f4686d3db29e\",\"userId\":\"4f8fdbf8-c9b9-4754-b642-c59625b5bf4a\",\"patientName\":\"Rahul Verma\",\"patientPhone\":\"+919876510001\"",
+      "time": "2026-10-25T09:01:09.389Z"
+    },
+    {
+      "type": "RESPONSE",
+      "status": 200,
+      "url": "http://localhost:4000/api/queue/lookup?clinicSlug=carewell-family&tokenNumber=A06",
+      "body": "{\"success\":true,\"data\":{\"tokenNumber\":\"A06\",\"status\":\"WAITING\",\"clinicName\":\"CareWell Family Clinic\",\"queueName\":\"Dr. Ananya Singh - Family OPD\",\"doctorName\":\"Dr. Ananya Singh\",\"currentServingToken\":null,\"positionAhead\":5,\"estimatedWaitMinutes\":75,\"holdReason\":null,\"calledAt\":null,\"lastUpdated\":\"2026-10-25T09:01:09.401Z\"}}",
+      "time": "2026-10-25T09:01:09.428Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/auth/telegram/info",
       "postData": null,
-      "time": "2026-10-25T08:26:55.111Z"
+      "time": "2026-10-25T09:01:10.455Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/clinics",
       "postData": null,
-      "time": "2026-10-25T08:26:55.111Z"
+      "time": "2026-10-25T09:01:10.455Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/clinics/202c97b8-377f-42cb-9015-f4686d3db29e/doctors",
       "postData": null,
-      "time": "2026-10-25T08:26:55.123Z"
+      "time": "2026-10-25T09:01:10.468Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/auth/telegram/info",
-      "body": "{\"success\":true,\"data\":{\"username\":null,\"isConfigured\":false,\"hasGateway\":false,\"hasFallbackChatId\":false},\"meta\":{\"timestamp\":\"2026-10-25T08:26:55.112Z\"}}",
-      "time": "2026-10-25T08:26:55.123Z"
+      "body": "{\"success\":true,\"data\":{\"username\":null,\"isConfigured\":false,\"hasGateway\":false,\"hasFallbackChatId\":false},\"meta\":{\"timestamp\":\"2026-10-25T09:01:10.453Z\"}}",
+      "time": "2026-10-25T09:01:10.469Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/clinics",
       "body": "{\"success\":true,\"data\":[{\"id\":\"202c97b8-377f-42cb-9015-f4686d3db29e\",\"chainId\":null,\"name\":\"CareWell Family Clinic\",\"slug\":\"carewell-family\",\"phoneNumber\":\"+919876500002\",\"email\":\"contact@carewellfamily.com\",\"address\":\"45 Greenfield Avenue, Koramangala 4th Block, Bengaluru\",\"city\":null,\"inClinicPrice\":200,\"remotePrice\":200,\"voiceAnnouncementMode\":\"TOKEN_PATIENT_DOCTOR_ROOM\",\"enableBookingTime\":true,\"enablePriorityQueue\":true,\"workingDays\":\"MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY,SATURDAY\",\"openTime\":\"10:00 AM\",\"closeTime\":\"07:00 PM\",\"lunchStartTime\":\"01:00 PM\",\"lunchEndTime\":\"02:00 PM\",\"enableLunchBreak\":true,\"slotDurationMinutes\":15,\"holidays\":\"[]\",\"isActive\":true,\"subscriptionStatus\":\"ACTIVE\",\"plan\":\"BASIC\",\"createdAt\":\"2026-10-25T07:23:24.344Z\",\"doctorsCount\":1,\"servicesCount\":1,\"queuesCount\":1},{\"id\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"chainId\":null,\"name\":\"City Health Multispecialty Clinic\",\"slug\":\"city-health\",\"phoneNumber\":\"+919876500001\",\"email\":\"care@cityhealth.com\",\"addr",
-      "time": "2026-10-25T08:26:55.124Z"
+      "time": "2026-10-25T09:01:10.469Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/clinics/202c97b8-377f-42cb-9015-f4686d3db29e/doctors",
       "body": "{\"success\":true,\"data\":[{\"id\":\"4361d094-c34f-4a0b-b645-b27b649e023d\",\"clinicId\":\"202c97b8-377f-42cb-9015-f4686d3db29e\",\"name\":\"Dr. Ananya Singh\",\"specialization\":\"Family Physician & Pediatrician\",\"roomNumber\":\"Suite A\",\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.368Z\",\"updatedAt\":\"2026-10-25T07:23:24.368Z\"}]}",
-      "time": "2026-10-25T08:26:55.131Z"
+      "time": "2026-10-25T09:01:10.478Z"
     },
     {
       "type": "REQUEST",
       "method": "POST",
       "url": "http://localhost:4000/api/auth/login-password",
       "postData": "{\"phoneNumber\":\"+919876500011\",\"password\":\"Password@123\"}",
-      "time": "2026-10-25T08:26:55.829Z"
+      "time": "2026-10-25T09:01:11.175Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/auth/login-password",
-      "body": "{\"success\":true,\"data\":{\"user\":{\"id\":\"aa6f0aa0-cc49-4f65-9d6e-d1c1d63fbc1a\",\"phoneNumber\":\"+919876500011\",\"name\":\"Dr. Ramesh Sharma\",\"role\":\"CLINIC_ADMIN\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"age\":null,\"gender\":null,\"isProfileComplete\":true},\"tokens\":{\"accessToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYTZmMGFhMC1jYzQ5LTRmNjUtOWQ2ZS1kMWMxZDYzZmJjMWEiLCJyb2xlIjoiQ0xJTklDX0FETUlOIiwiY2xpbmljSWQiOiIwN2UwNjAzNi05ZDg1LTRhNzEtYWY1Ni0yZjUyYjliZmU0ZWEiLCJpYXQiOjE3OTI5MTY4MTUsImV4cCI6MTc5MjkxNzcxNX0.jxYR2ghWtugyyIt8tIKObLhUAID9ZGqFXjE8k1lvLPk\",\"refreshToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYTZmMGFhMC1jYzQ5LTRmNjUtOWQ2ZS1kMWMxZDYzZmJjMWEiLCJyb2xlIjoiQ0xJTklDX0FETUlOIiwiY2xpbmljSWQiOiIwN2UwNjAzNi05ZDg1LTRhNzEtYWY1Ni0yZjUyYjliZmU0ZWEiLCJpYXQiOjE3OTI5MTY4MTUsImV4cCI6MTc5MzUyMTYxNX0.Lm-bM8B_gsjg2fwbC-a5fAJOoAegarMBb06A3f5sSos\",\"expiresIn\":\"15m\"},\"isNewUser\":false},\"meta\":{\"timestamp\":\"2026-10-25T08:26:55.940Z\"}}",
-      "time": "2026-10-25T08:26:55.963Z"
+      "body": "{\"success\":true,\"data\":{\"user\":{\"id\":\"aa6f0aa0-cc49-4f65-9d6e-d1c1d63fbc1a\",\"phoneNumber\":\"+919876500011\",\"name\":\"Dr. Ramesh Sharma\",\"role\":\"CLINIC_ADMIN\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"age\":null,\"gender\":null,\"isProfileComplete\":true},\"tokens\":{\"accessToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYTZmMGFhMC1jYzQ5LTRmNjUtOWQ2ZS1kMWMxZDYzZmJjMWEiLCJyb2xlIjoiQ0xJTklDX0FETUlOIiwiY2xpbmljSWQiOiIwN2UwNjAzNi05ZDg1LTRhNzEtYWY1Ni0yZjUyYjliZmU0ZWEiLCJpYXQiOjE3OTI5MTg4NzEsImV4cCI6MTc5MjkxOTc3MX0.DZoLHhUSLk1jXId0-kQQf8YeZ0EhLFh9BNt8Tmzc-2I\",\"refreshToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYTZmMGFhMC1jYzQ5LTRmNjUtOWQ2ZS1kMWMxZDYzZmJjMWEiLCJyb2xlIjoiQ0xJTklDX0FETUlOIiwiY2xpbmljSWQiOiIwN2UwNjAzNi05ZDg1LTRhNzEtYWY1Ni0yZjUyYjliZmU0ZWEiLCJpYXQiOjE3OTI5MTg4NzEsImV4cCI6MTc5MzUyMzY3MX0.avnccLbtKYHW_GV8YsseHIgCA0WEiZ25jugAU-Az_jk\",\"expiresIn\":\"15m\"},\"isNewUser\":false},\"meta\":{\"timestamp\":\"2026-10-25T09:01:11.276Z\"}}",
+      "time": "2026-10-25T09:01:11.289Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea/queues",
       "postData": null,
-      "time": "2026-10-25T08:26:56.009Z"
+      "time": "2026-10-25T09:01:11.311Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea/subscription",
       "postData": null,
-      "time": "2026-10-25T08:26:56.009Z"
+      "time": "2026-10-25T09:01:11.311Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea/doctors",
       "postData": null,
-      "time": "2026-10-25T08:26:56.010Z"
+      "time": "2026-10-25T09:01:11.311Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea/queues/8eedc70f-dbff-4013-964b-fb80e5501bd4?date=2026-10-25",
       "postData": null,
-      "time": "2026-10-25T08:26:56.023Z"
-    },
-    {
-      "type": "RESPONSE",
-      "status": 200,
-      "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea/queues",
-      "body": "{\"success\":true,\"data\":[{\"id\":\"8eedc70f-dbff-4013-964b-fb80e5501bd4\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"Dr. Ramesh Sharma - General OPD\",\"doctorId\":\"73ade60d-ee58-44c7-8326-cd0263e0ba1f\",\"doctorName\":\"Dr. Ramesh Sharma\",\"serviceId\":\"34c1fdca-260d-488f-9732-d68813120e7a\",\"serviceName\":\"General Consultation\",\"isPaused\":false,\"currentSeq\":3,\"waitingCount\":0,\"activeCount\":0,\"currentServingToken\":null,\"createdAt\":\"2026-10-25T07:23:24.330Z\"},{\"id\":\"d9cfb84a-982f-4a71-b870-a749ee4acdcd\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"Dr. Meera Rao - Cardiology OPD\",\"doctorId\":\"563d1b04-9823-4c71-9f7b-818e28902317\",\"doctorName\":\"Dr. Meera Rao\",\"serviceId\":\"5c8d09e1-57fd-4390-88e1-77de1b47925b\",\"serviceName\":\"Cardiology Consultation\",\"isPaused\":false,\"currentSeq\":0,\"waitingCount\":0,\"activeCount\":0,\"currentServingToken\":null,\"createdAt\":\"2026-10-25T07:23:24.337Z\"}]}",
-      "time": "2026-10-25T08:26:56.023Z"
+      "time": "2026-10-25T09:01:11.319Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea/doctors",
       "body": "{\"success\":true,\"data\":[{\"id\":\"563d1b04-9823-4c71-9f7b-818e28902317\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"Dr. Meera Rao\",\"specialization\":\"Consultant Cardiologist\",\"roomNumber\":\"Room 102\",\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.312Z\",\"updatedAt\":\"2026-10-25T07:23:24.312Z\"},{\"id\":\"73ade60d-ee58-44c7-8326-cd0263e0ba1f\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"Dr. Ramesh Sharma\",\"specialization\":\"General Physician & Internal Medicine\",\"roomNumber\":\"Room 101\",\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.306Z\",\"updatedAt\":\"2026-10-25T07:23:24.306Z\"},{\"id\":\"e8111dfa-2a36-449d-b7aa-e353fc5b3d45\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"Dr. Vikram Patel\",\"specialization\":\"Cardiologist\",\"roomNumber\":\"Room 105\",\"isActive\":true,\"createdAt\":\"2026-10-25T08:26:27.517Z\",\"updatedAt\":\"2026-10-25T08:26:27.517Z\"}]}",
-      "time": "2026-10-25T08:26:56.052Z"
+      "time": "2026-10-25T09:01:11.319Z"
+    },
+    {
+      "type": "RESPONSE",
+      "status": 200,
+      "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea/queues",
+      "body": "{\"success\":true,\"data\":[{\"id\":\"8eedc70f-dbff-4013-964b-fb80e5501bd4\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"Dr. Ramesh Sharma - General OPD\",\"doctorId\":\"73ade60d-ee58-44c7-8326-cd0263e0ba1f\",\"doctorName\":\"Dr. Ramesh Sharma\",\"serviceId\":\"34c1fdca-260d-488f-9732-d68813120e7a\",\"serviceName\":\"General Consultation\",\"isPaused\":false,\"currentSeq\":5,\"waitingCount\":1,\"activeCount\":2,\"currentServingToken\":\"P04\",\"createdAt\":\"2026-10-25T07:23:24.330Z\"},{\"id\":\"d9cfb84a-982f-4a71-b870-a749ee4acdcd\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"Dr. Meera Rao - Cardiology OPD\",\"doctorId\":\"563d1b04-9823-4c71-9f7b-818e28902317\",\"doctorName\":\"Dr. Meera Rao\",\"serviceId\":\"5c8d09e1-57fd-4390-88e1-77de1b47925b\",\"serviceName\":\"Cardiology Consultation\",\"isPaused\":false,\"currentSeq\":2,\"waitingCount\":2,\"activeCount\":2,\"currentServingToken\":null,\"createdAt\":\"2026-10-25T07:23:24.337Z\"}]}",
+      "time": "2026-10-25T09:01:11.319Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea/subscription",
       "body": "{\"success\":true,\"data\":{\"id\":\"0ab7108d-49fa-41e1-b90f-b99532417fcd\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"clinicName\":\"City Health Multispecialty Clinic\",\"clinicSlug\":\"city-health\",\"plan\":\"PROFESSIONAL\",\"status\":\"ACTIVE\",\"billingCycle\":\"MONTHLY\",\"amountPaid\":2499,\"startDate\":\"2026-10-25T07:23:24.276Z\",\"endDate\":null,\"maxDoctors\":5,\"maxStaff\":10,\"maxDisplays\":3,\"hasAds\":false,\"daysRemaining\":999,\"isExpiringSoon\":false,\"isExpired\":false,\"doctorsUsed\":3,\"staffUsed\":3,\"displaysUsed\":0,\"invoices\":[]}}",
-      "time": "2026-10-25T08:26:56.052Z"
+      "time": "2026-10-25T09:01:11.338Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea/queues/8eedc70f-dbff-4013-964b-fb80e5501bd4?date=2026-10-25",
-      "body": "{\"success\":true,\"data\":{\"queue\":{\"id\":\"8eedc70f-dbff-4013-964b-fb80e5501bd4\",\"name\":\"Dr. Ramesh Sharma - General OPD\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"isPaused\":false,\"currentSeq\":3,\"doctor\":{\"id\":\"73ade60d-ee58-44c7-8326-cd0263e0ba1f\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"Dr. Ramesh Sharma\",\"specialization\":\"General Physician & Internal Medicine\",\"roomNumber\":\"Room 101\",\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.306Z\",\"updatedAt\":\"2026-10-25T07:23:24.306Z\"},\"service\":{\"id\":\"34c1fdca-260d-488f-9732-d68813120e7a\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"General Consultation\",\"description\":null,\"durationMinutes\":20,\"priceAmount\":200,\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.319Z\",\"updatedAt\":\"2026-10-25T07:23:24.319Z\"}},\"selectedDate\":\"2026-10-25\",\"currentServing\":null,\"waiting\":[],\"booked\":[],\"onHold\":[],\"skipped\":[],\"completed\":[],\"completedCount\":0,\"totalToday\":0}}",
-      "time": "2026-10-25T08:26:56.053Z"
+      "body": "{\"success\":true,\"data\":{\"queue\":{\"id\":\"8eedc70f-dbff-4013-964b-fb80e5501bd4\",\"name\":\"Dr. Ramesh Sharma - General OPD\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"isPaused\":false,\"currentSeq\":5,\"doctor\":{\"id\":\"73ade60d-ee58-44c7-8326-cd0263e0ba1f\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"Dr. Ramesh Sharma\",\"specialization\":\"General Physician & Internal Medicine\",\"roomNumber\":\"Room 101\",\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.306Z\",\"updatedAt\":\"2026-10-25T07:23:24.306Z\"},\"service\":{\"id\":\"34c1fdca-260d-488f-9732-d68813120e7a\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"General Consultation\",\"description\":null,\"durationMinutes\":20,\"priceAmount\":200,\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.319Z\",\"updatedAt\":\"2026-10-25T07:23:24.319Z\"}},\"selectedDate\":\"2026-10-25\",\"currentServing\":null,\"waiting\":[{\"id\":\"8d22d25a-de02-41ce-ad79-17e24dca35fa\",\"queueId\":\"8eedc70f-dbff-4013-964b-fb80e5501bd4\",\"userId\":\"3dae9a2a-01dd-45da-852e-2adb1c3512e5\",\"",
+      "time": "2026-10-25T09:01:11.341Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/auth/telegram/info",
       "postData": null,
-      "time": "2026-10-25T08:26:57.549Z"
+      "time": "2026-10-25T09:01:12.864Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/clinics",
       "postData": null,
-      "time": "2026-10-25T08:26:57.550Z"
-    },
-    {
-      "type": "RESPONSE",
-      "status": 200,
-      "url": "http://localhost:4000/api/auth/telegram/info",
-      "body": "{\"success\":true,\"data\":{\"username\":null,\"isConfigured\":false,\"hasGateway\":false,\"hasFallbackChatId\":false},\"meta\":{\"timestamp\":\"2026-10-25T08:26:57.552Z\"}}",
-      "time": "2026-10-25T08:26:57.563Z"
+      "time": "2026-10-25T09:01:12.864Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/clinics/202c97b8-377f-42cb-9015-f4686d3db29e/doctors",
       "postData": null,
-      "time": "2026-10-25T08:26:57.565Z"
+      "time": "2026-10-25T09:01:12.880Z"
+    },
+    {
+      "type": "RESPONSE",
+      "status": 200,
+      "url": "http://localhost:4000/api/auth/telegram/info",
+      "body": "{\"success\":true,\"data\":{\"username\":null,\"isConfigured\":false,\"hasGateway\":false,\"hasFallbackChatId\":false},\"meta\":{\"timestamp\":\"2026-10-25T09:01:12.863Z\"}}",
+      "time": "2026-10-25T09:01:12.880Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/clinics",
       "body": "{\"success\":true,\"data\":[{\"id\":\"202c97b8-377f-42cb-9015-f4686d3db29e\",\"chainId\":null,\"name\":\"CareWell Family Clinic\",\"slug\":\"carewell-family\",\"phoneNumber\":\"+919876500002\",\"email\":\"contact@carewellfamily.com\",\"address\":\"45 Greenfield Avenue, Koramangala 4th Block, Bengaluru\",\"city\":null,\"inClinicPrice\":200,\"remotePrice\":200,\"voiceAnnouncementMode\":\"TOKEN_PATIENT_DOCTOR_ROOM\",\"enableBookingTime\":true,\"enablePriorityQueue\":true,\"workingDays\":\"MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY,SATURDAY\",\"openTime\":\"10:00 AM\",\"closeTime\":\"07:00 PM\",\"lunchStartTime\":\"01:00 PM\",\"lunchEndTime\":\"02:00 PM\",\"enableLunchBreak\":true,\"slotDurationMinutes\":15,\"holidays\":\"[]\",\"isActive\":true,\"subscriptionStatus\":\"ACTIVE\",\"plan\":\"BASIC\",\"createdAt\":\"2026-10-25T07:23:24.344Z\",\"doctorsCount\":1,\"servicesCount\":1,\"queuesCount\":1},{\"id\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"chainId\":null,\"name\":\"City Health Multispecialty Clinic\",\"slug\":\"city-health\",\"phoneNumber\":\"+919876500001\",\"email\":\"care@cityhealth.com\",\"addr",
-      "time": "2026-10-25T08:26:57.566Z"
+      "time": "2026-10-25T09:01:12.881Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/clinics/202c97b8-377f-42cb-9015-f4686d3db29e/doctors",
       "body": "{\"success\":true,\"data\":[{\"id\":\"4361d094-c34f-4a0b-b645-b27b649e023d\",\"clinicId\":\"202c97b8-377f-42cb-9015-f4686d3db29e\",\"name\":\"Dr. Ananya Singh\",\"specialization\":\"Family Physician & Pediatrician\",\"roomNumber\":\"Suite A\",\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.368Z\",\"updatedAt\":\"2026-10-25T07:23:24.368Z\"}]}",
-      "time": "2026-10-25T08:26:57.578Z"
+      "time": "2026-10-25T09:01:12.886Z"
     },
     {
       "type": "REQUEST",
       "method": "POST",
       "url": "http://localhost:4000/api/auth/login-password",
       "postData": "{\"phoneNumber\":\"+919999999999\",\"password\":\"Password@123\"}",
-      "time": "2026-10-25T08:26:58.242Z"
+      "time": "2026-10-25T09:01:13.579Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/auth/login-password",
-      "body": "{\"success\":true,\"data\":{\"user\":{\"id\":\"68d92c78-5b0e-4f80-9d6c-2ffe25237f32\",\"phoneNumber\":\"+919999999999\",\"name\":\"System Super Admin\",\"role\":\"SUPER_ADMIN\",\"age\":null,\"gender\":null,\"isProfileComplete\":true},\"tokens\":{\"accessToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OGQ5MmM3OC01YjBlLTRmODAtOWQ2Yy0yZmZlMjUyMzdmMzIiLCJyb2xlIjoiU1VQRVJfQURNSU4iLCJpYXQiOjE3OTI5MTY4MTgsImV4cCI6MTc5MjkxNzcxOH0.RdfV_1Qp_JttadnVQnaZJda3IX1O38XvI24tNBIjE_c\",\"refreshToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OGQ5MmM3OC01YjBlLTRmODAtOWQ2Yy0yZmZlMjUyMzdmMzIiLCJyb2xlIjoiU1VQRVJfQURNSU4iLCJpYXQiOjE3OTI5MTY4MTgsImV4cCI6MTc5MzUyMTYxOH0.Siie4Mzq7qFJ9VtmrFJBAFbEPu_LXyzNiitrC1hjlgg\",\"expiresIn\":\"15m\"},\"isNewUser\":false},\"meta\":{\"timestamp\":\"2026-10-25T08:26:58.341Z\"}}",
-      "time": "2026-10-25T08:26:58.377Z"
+      "body": "{\"success\":true,\"data\":{\"user\":{\"id\":\"68d92c78-5b0e-4f80-9d6c-2ffe25237f32\",\"phoneNumber\":\"+919999999999\",\"name\":\"System Super Admin\",\"role\":\"SUPER_ADMIN\",\"age\":null,\"gender\":null,\"isProfileComplete\":true},\"tokens\":{\"accessToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OGQ5MmM3OC01YjBlLTRmODAtOWQ2Yy0yZmZlMjUyMzdmMzIiLCJyb2xlIjoiU1VQRVJfQURNSU4iLCJpYXQiOjE3OTI5MTg4NzMsImV4cCI6MTc5MjkxOTc3M30.tS3fgSnacSTm1ee8s5wrPsnbNlxxKPztgSkl1XuBBHw\",\"refreshToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OGQ5MmM3OC01YjBlLTRmODAtOWQ2Yy0yZmZlMjUyMzdmMzIiLCJyb2xlIjoiU1VQRVJfQURNSU4iLCJpYXQiOjE3OTI5MTg4NzMsImV4cCI6MTc5MzUyMzY3M30.6kRpZ6uglrzvENHcnkNExN5MBkO8zfGdUoiI4w7dXQc\",\"expiresIn\":\"15m\"},\"isNewUser\":false},\"meta\":{\"timestamp\":\"2026-10-25T09:01:13.690Z\"}}",
+      "time": "2026-10-25T09:01:13.725Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/super/clinics",
       "postData": null,
-      "time": "2026-10-25T08:26:58.384Z"
+      "time": "2026-10-25T09:01:13.732Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/hospital-chains",
       "postData": null,
-      "time": "2026-10-25T08:26:58.384Z"
+      "time": "2026-10-25T09:01:13.732Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/super/subscriptions",
       "postData": null,
-      "time": "2026-10-25T08:26:58.384Z"
+      "time": "2026-10-25T09:01:13.732Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/super/receptionists",
       "postData": null,
-      "time": "2026-10-25T08:26:58.384Z"
+      "time": "2026-10-25T09:01:13.732Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/hospital-chains",
       "body": "{\"success\":true,\"data\":[{\"id\":\"74096931-b234-4402-8a3e-800b7b10b28e\",\"name\":\"Apollo Health City Network\",\"code\":\"APOLLO_1791746495725\",\"headquarters\":\"Hyderabad, India\",\"isActive\":true,\"createdAt\":\"2026-10-11T19:21:35.737Z\",\"clinicsCount\":0,\"clinics\":[]},{\"id\":\"521a4f44-51f6-415e-a192-7c6c879ac9a3\",\"name\":\"Apollo Health City Network\",\"code\":\"APOLLO_1792867927594\",\"headquarters\":\"Hyderabad, India\",\"isActive\":true,\"createdAt\":\"2026-10-24T18:52:07.606Z\",\"clinicsCount\":0,\"clinics\":[]},{\"id\":\"c8ae74e9-4cbe-4261-921e-3ac9027a5073\",\"name\":\"Apollo Health City Network\",\"code\":\"APOLLO_1792916782514\",\"headquarters\":\"Hyderabad, India\",\"isActive\":true,\"createdAt\":\"2026-10-25T08:26:22.534Z\",\"clinicsCount\":0,\"clinics\":[]},{\"id\":\"957f4e5f-311b-41eb-9610-c27104ba1db0\",\"name\":\"Max Healthcare Network\",\"code\":\"MAX_1791746495743\",\"headquarters\":\"New Delhi, India\",\"isActive\":true,\"createdAt\":\"2026-10-11T19:21:35.744Z\",\"clinicsCount\":0,\"clinics\":[]},{\"id\":\"889af1a7-a381-45e1-95e5-7d0e54476147\",\"name\":\"Max He",
-      "time": "2026-10-25T08:26:58.400Z"
+      "time": "2026-10-25T09:01:13.776Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/super/clinics",
       "body": "{\"success\":true,\"data\":[{\"id\":\"1ae6a33a-3bd8-4a9c-9cf4-2e99c9dd4fc3\",\"chainId\":null,\"name\":\"Green Valley Clinic\",\"slug\":\"green-valley-1792916787587\",\"phoneNumber\":\"+919876543300\",\"email\":null,\"address\":null,\"city\":null,\"inClinicPrice\":200,\"remotePrice\":200,\"voiceAnnouncementMode\":\"TOKEN_PATIENT_DOCTOR_ROOM\",\"enableBookingTime\":true,\"enablePriorityQueue\":true,\"isActive\":true,\"subscriptionStatus\":\"ACTIVE\",\"plan\":\"FREE\",\"createdAt\":\"2026-10-25T08:26:27.594Z\",\"doctorsCount\":0,\"servicesCount\":0,\"queuesCount\":0,\"staffCount\":1},{\"id\":\"202c97b8-377f-42cb-9015-f4686d3db29e\",\"chainId\":null,\"name\":\"CareWell Family Clinic\",\"slug\":\"carewell-family\",\"phoneNumber\":\"+919876500002\",\"email\":\"contact@carewellfamily.com\",\"address\":\"45 Greenfield Avenue, Koramangala 4th Block, Bengaluru\",\"city\":null,\"inClinicPrice\":200,\"remotePrice\":200,\"voiceAnnouncementMode\":\"TOKEN_PATIENT_DOCTOR_ROOM\",\"enableBookingTime\":true,\"enablePriorityQueue\":true,\"isActive\":true,\"subscriptionStatus\":\"ACTIVE\",\"plan\":\"BASIC\",\"create",
-      "time": "2026-10-25T08:26:58.404Z"
-    },
-    {
-      "type": "RESPONSE",
-      "status": 200,
-      "url": "http://localhost:4000/api/super/subscriptions",
-      "body": "{\"success\":true,\"data\":[{\"id\":\"13903019-272f-42cf-b73f-a2df4d9b52ba\",\"clinicId\":\"202c97b8-377f-42cb-9015-f4686d3db29e\",\"clinicName\":\"CareWell Family Clinic\",\"clinicSlug\":\"carewell-family\",\"plan\":\"BASIC\",\"status\":\"ACTIVE\",\"billingCycle\":\"MONTHLY\",\"amountPaid\":999,\"startDate\":\"2026-10-25T07:23:24.351Z\",\"endDate\":null,\"maxDoctors\":2,\"maxStaff\":3,\"maxDisplays\":1,\"hasAds\":true,\"daysRemaining\":999,\"isExpiringSoon\":false,\"isExpired\":false,\"doctorsUsed\":1,\"staffUsed\":2,\"displaysUsed\":0,\"invoices\":[]},{\"id\":\"0ab7108d-49fa-41e1-b90f-b99532417fcd\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"clinicName\":\"City Health Multispecialty Clinic\",\"clinicSlug\":\"city-health\",\"plan\":\"PROFESSIONAL\",\"status\":\"ACTIVE\",\"billingCycle\":\"MONTHLY\",\"amountPaid\":2499,\"startDate\":\"2026-10-25T07:23:24.276Z\",\"endDate\":null,\"maxDoctors\":5,\"maxStaff\":10,\"maxDisplays\":3,\"hasAds\":false,\"daysRemaining\":999,\"isExpiringSoon\":false,\"isExpired\":false,\"doctorsUsed\":3,\"staffUsed\":3,\"displaysUsed\":0,\"invoices\":[]},{\"id\":\"virt",
-      "time": "2026-10-25T08:26:58.420Z"
+      "time": "2026-10-25T09:01:13.777Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/super/receptionists",
       "body": "{\"success\":true,\"data\":[{\"clinicId\":\"202c97b8-377f-42cb-9015-f4686d3db29e\",\"clinicName\":\"CareWell Family Clinic\",\"clinicSlug\":\"carewell-family\",\"clinicPhone\":\"+919876500002\",\"receptionist\":{\"id\":\"3186ecd2-e95b-44bf-96a8-7870e31fc1aa\",\"userId\":\"3dae9a2a-01dd-45da-852e-2adb1c3512e5\",\"name\":\"Walkin Patient Test\",\"phoneNumber\":\"+919876500099\",\"email\":null,\"isActive\":true,\"createdAt\":\"2026-10-25T08:26:27.390Z\"}},{\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"clinicName\":\"City Health Multispecialty Clinic\",\"clinicSlug\":\"city-health\",\"clinicPhone\":\"+919876500001\",\"receptionist\":{\"id\":\"6c687f39-7631-4956-a26f-847c84a53b7c\",\"userId\":\"f6c4d663-bc59-40ee-a545-966ac6b678ca\",\"name\":\"Priya Verma\",\"phoneNumber\":\"+919876500012\",\"email\":\"reception@cityhealth.com\",\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.300Z\"}},{\"clinicId\":\"1ae6a33a-3bd8-4a9c-9cf4-2e99c9dd4fc3\",\"clinicName\":\"Green Valley Clinic\",\"clinicSlug\":\"green-valley-1792916787587\",\"clinicPhone\":\"+919876543300\",\"receptionist\":null}]}",
-      "time": "2026-10-25T08:26:58.420Z"
+      "time": "2026-10-25T09:01:13.777Z"
+    },
+    {
+      "type": "RESPONSE",
+      "status": 200,
+      "url": "http://localhost:4000/api/super/subscriptions",
+      "body": "{\"success\":true,\"data\":[{\"id\":\"13903019-272f-42cf-b73f-a2df4d9b52ba\",\"clinicId\":\"202c97b8-377f-42cb-9015-f4686d3db29e\",\"clinicName\":\"CareWell Family Clinic\",\"clinicSlug\":\"carewell-family\",\"plan\":\"BASIC\",\"status\":\"ACTIVE\",\"billingCycle\":\"MONTHLY\",\"amountPaid\":999,\"startDate\":\"2026-10-25T07:23:24.351Z\",\"endDate\":null,\"maxDoctors\":2,\"maxStaff\":3,\"maxDisplays\":1,\"hasAds\":true,\"daysRemaining\":999,\"isExpiringSoon\":false,\"isExpired\":false,\"doctorsUsed\":1,\"staffUsed\":2,\"displaysUsed\":0,\"invoices\":[]},{\"id\":\"0ab7108d-49fa-41e1-b90f-b99532417fcd\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"clinicName\":\"City Health Multispecialty Clinic\",\"clinicSlug\":\"city-health\",\"plan\":\"PROFESSIONAL\",\"status\":\"ACTIVE\",\"billingCycle\":\"MONTHLY\",\"amountPaid\":2499,\"startDate\":\"2026-10-25T07:23:24.276Z\",\"endDate\":null,\"maxDoctors\":5,\"maxStaff\":10,\"maxDisplays\":3,\"hasAds\":false,\"daysRemaining\":999,\"isExpiringSoon\":false,\"isExpired\":false,\"doctorsUsed\":3,\"staffUsed\":3,\"displaysUsed\":0,\"invoices\":[]},{\"id\":\"0a76",
+      "time": "2026-10-25T09:01:13.777Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/auth/telegram/info",
       "postData": null,
-      "time": "2026-10-25T08:26:59.965Z"
+      "time": "2026-10-25T09:01:15.293Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/clinics",
       "postData": null,
-      "time": "2026-10-25T08:26:59.965Z"
-    },
-    {
-      "type": "RESPONSE",
-      "status": 200,
-      "url": "http://localhost:4000/api/auth/telegram/info",
-      "body": "{\"success\":true,\"data\":{\"username\":null,\"isConfigured\":false,\"hasGateway\":false,\"hasFallbackChatId\":false},\"meta\":{\"timestamp\":\"2026-10-25T08:26:59.967Z\"}}",
-      "time": "2026-10-25T08:26:59.980Z"
+      "time": "2026-10-25T09:01:15.293Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/clinics/202c97b8-377f-42cb-9015-f4686d3db29e/doctors",
       "postData": null,
-      "time": "2026-10-25T08:26:59.981Z"
+      "time": "2026-10-25T09:01:15.303Z"
+    },
+    {
+      "type": "RESPONSE",
+      "status": 200,
+      "url": "http://localhost:4000/api/auth/telegram/info",
+      "body": "{\"success\":true,\"data\":{\"username\":null,\"isConfigured\":false,\"hasGateway\":false,\"hasFallbackChatId\":false},\"meta\":{\"timestamp\":\"2026-10-25T09:01:15.291Z\"}}",
+      "time": "2026-10-25T09:01:15.303Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/clinics",
       "body": "{\"success\":true,\"data\":[{\"id\":\"202c97b8-377f-42cb-9015-f4686d3db29e\",\"chainId\":null,\"name\":\"CareWell Family Clinic\",\"slug\":\"carewell-family\",\"phoneNumber\":\"+919876500002\",\"email\":\"contact@carewellfamily.com\",\"address\":\"45 Greenfield Avenue, Koramangala 4th Block, Bengaluru\",\"city\":null,\"inClinicPrice\":200,\"remotePrice\":200,\"voiceAnnouncementMode\":\"TOKEN_PATIENT_DOCTOR_ROOM\",\"enableBookingTime\":true,\"enablePriorityQueue\":true,\"workingDays\":\"MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY,SATURDAY\",\"openTime\":\"10:00 AM\",\"closeTime\":\"07:00 PM\",\"lunchStartTime\":\"01:00 PM\",\"lunchEndTime\":\"02:00 PM\",\"enableLunchBreak\":true,\"slotDurationMinutes\":15,\"holidays\":\"[]\",\"isActive\":true,\"subscriptionStatus\":\"ACTIVE\",\"plan\":\"BASIC\",\"createdAt\":\"2026-10-25T07:23:24.344Z\",\"doctorsCount\":1,\"servicesCount\":1,\"queuesCount\":1},{\"id\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"chainId\":null,\"name\":\"City Health Multispecialty Clinic\",\"slug\":\"city-health\",\"phoneNumber\":\"+919876500001\",\"email\":\"care@cityhealth.com\",\"addr",
-      "time": "2026-10-25T08:26:59.982Z"
+      "time": "2026-10-25T09:01:15.304Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/clinics/202c97b8-377f-42cb-9015-f4686d3db29e/doctors",
       "body": "{\"success\":true,\"data\":[{\"id\":\"4361d094-c34f-4a0b-b645-b27b649e023d\",\"clinicId\":\"202c97b8-377f-42cb-9015-f4686d3db29e\",\"name\":\"Dr. Ananya Singh\",\"specialization\":\"Family Physician & Pediatrician\",\"roomNumber\":\"Suite A\",\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.368Z\",\"updatedAt\":\"2026-10-25T07:23:24.368Z\"}]}",
-      "time": "2026-10-25T08:26:59.999Z"
+      "time": "2026-10-25T09:01:15.311Z"
     },
     {
       "type": "REQUEST",
       "method": "POST",
       "url": "http://localhost:4000/api/auth/login-password",
       "postData": "{\"phoneNumber\":\"+919876510001\",\"password\":\"Password@123\"}",
-      "time": "2026-10-25T08:27:00.692Z"
+      "time": "2026-10-25T09:01:16.009Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/appointments/my",
       "postData": null,
-      "time": "2026-10-25T08:27:00.808Z"
+      "time": "2026-10-25T09:01:16.132Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/auth/login-password",
-      "body": "{\"success\":true,\"data\":{\"user\":{\"id\":\"4f8fdbf8-c9b9-4754-b642-c59625b5bf4a\",\"phoneNumber\":\"+919876510001\",\"name\":\"Rahul Verma\",\"role\":\"PATIENT\",\"age\":29,\"gender\":\"MALE\",\"isProfileComplete\":true},\"tokens\":{\"accessToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0ZjhmZGJmOC1jOWI5LTQ3NTQtYjY0Mi1jNTk2MjViNWJmNGEiLCJyb2xlIjoiUEFUSUVOVCIsImlhdCI6MTc5MjkxNjgyMCwiZXhwIjoxNzkyOTE3NzIwfQ.BI7MSoT08Rt7kydby9wghbhDvzdUoDAfWhqR7DgM74o\",\"refreshToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0ZjhmZGJmOC1jOWI5LTQ3NTQtYjY0Mi1jNTk2MjViNWJmNGEiLCJyb2xlIjoiUEFUSUVOVCIsImlhdCI6MTc5MjkxNjgyMCwiZXhwIjoxNzkzNTIxNjIwfQ.oqmX2-PvA-WRuMRDLtfoC6Xo0LpFbbEG5XR2ezlXVOE\",\"expiresIn\":\"15m\"},\"isNewUser\":false},\"meta\":{\"timestamp\":\"2026-10-25T08:27:00.802Z\"}}",
-      "time": "2026-10-25T08:27:00.811Z"
+      "body": "{\"success\":true,\"data\":{\"user\":{\"id\":\"4f8fdbf8-c9b9-4754-b642-c59625b5bf4a\",\"phoneNumber\":\"+919876510001\",\"name\":\"Rahul Verma\",\"role\":\"PATIENT\",\"age\":29,\"gender\":\"MALE\",\"isProfileComplete\":true},\"tokens\":{\"accessToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0ZjhmZGJmOC1jOWI5LTQ3NTQtYjY0Mi1jNTk2MjViNWJmNGEiLCJyb2xlIjoiUEFUSUVOVCIsImlhdCI6MTc5MjkxODg3NiwiZXhwIjoxNzkyOTE5Nzc2fQ.QU3lhaVwTL1dl64vYFii17y74dgn913Ig2C0x2-16RU\",\"refreshToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0ZjhmZGJmOC1jOWI5LTQ3NTQtYjY0Mi1jNTk2MjViNWJmNGEiLCJyb2xlIjoiUEFUSUVOVCIsImlhdCI6MTc5MjkxODg3NiwiZXhwIjoxNzkzNTIzNjc2fQ.zGNUG5kbgwrBmlFDfogQNE2hoaDpU2Vmx0zf86NWFFo\",\"expiresIn\":\"15m\"},\"isNewUser\":false},\"meta\":{\"timestamp\":\"2026-10-25T09:01:16.122Z\"}}",
+      "time": "2026-10-25T09:01:16.132Z"
+    },
+    {
+      "type": "REQUEST",
+      "method": "GET",
+      "url": "http://localhost:4000/api/queue/lookup?clinicSlug=carewell-family&tokenNumber=A06",
+      "postData": null,
+      "time": "2026-10-25T09:01:16.144Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/appointments/my",
-      "body": "{\"success\":true,\"data\":[]}",
-      "time": "2026-10-25T08:27:00.820Z"
+      "body": "{\"success\":true,\"data\":[{\"id\":\"62d481bf-250e-4cf4-a8d6-31a0a758301d\",\"clinicId\":\"202c97b8-377f-42cb-9015-f4686d3db29e\",\"userId\":\"4f8fdbf8-c9b9-4754-b642-c59625b5bf4a\",\"patientName\":\"Rahul Verma\",\"patientPhone\":\"+919876510001\",\"doctorId\":\"4361d094-c34f-4a0b-b645-b27b649e023d\",\"doctorName\":\"Dr. Ananya Singh\",\"serviceId\":null,\"serviceName\":null,\"slotTime\":\"2026-10-26T05:15:00.000Z\",\"bookingType\":\"REMOTE\",\"isPriority\":false,\"priorityFee\":0,\"status\":\"CONFIRMED\",\"bookingFee\":200,\"paymentStatus\":\"SUCCESS\",\"queueEntryId\":\"2440f961-48df-4738-b70d-c9530c902151\",\"tokenNumber\":\"A06\",\"createdAt\":\"2026-10-25T09:00:10.369Z\",\"updatedAt\":\"2026-10-25T09:00:10.418Z\",\"clinicName\":\"CareWell Family Clinic\",\"clinicSlug\":\"carewell-family\",\"clinicAddress\":\"45 Greenfield Avenue, Koramangala 4th Block, Bengaluru\"},{\"id\":\"4aab159f-84fe-4fee-922d-67199f3287fc\",\"clinicId\":\"202c97b8-377f-42cb-9015-f4686d3db29e\",\"userId\":\"4f8fdbf8-c9b9-4754-b642-c59625b5bf4a\",\"patientName\":\"Rahul Verma\",\"patientPhone\":\"+919876510001\"",
+      "time": "2026-10-25T09:01:16.145Z"
+    },
+    {
+      "type": "RESPONSE",
+      "status": 200,
+      "url": "http://localhost:4000/api/queue/lookup?clinicSlug=carewell-family&tokenNumber=A06",
+      "body": "{\"success\":true,\"data\":{\"tokenNumber\":\"A06\",\"status\":\"WAITING\",\"clinicName\":\"CareWell Family Clinic\",\"queueName\":\"Dr. Ananya Singh - Family OPD\",\"doctorName\":\"Dr. Ananya Singh\",\"currentServingToken\":null,\"positionAhead\":5,\"estimatedWaitMinutes\":75,\"holdReason\":null,\"calledAt\":null,\"lastUpdated\":\"2026-10-25T09:01:16.158Z\"}}",
+      "time": "2026-10-25T09:01:16.165Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/appointments/booked-slots?clinicId=202c97b8-377f-42cb-9015-f4686d3db29e&date=2026-10-25&doctorId=4361d094-c34f-4a0b-b645-b27b649e023d",
       "postData": null,
-      "time": "2026-10-25T08:27:01.863Z"
+      "time": "2026-10-25T09:01:17.197Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/appointments/booked-slots?clinicId=202c97b8-377f-42cb-9015-f4686d3db29e&date=2026-10-26&doctorId=4361d094-c34f-4a0b-b645-b27b649e023d",
       "postData": null,
-      "time": "2026-10-25T08:27:01.869Z"
+      "time": "2026-10-25T09:01:17.202Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/appointments/booked-slots?clinicId=202c97b8-377f-42cb-9015-f4686d3db29e&date=2026-10-25&doctorId=4361d094-c34f-4a0b-b645-b27b649e023d",
       "body": "{\"success\":true,\"data\":{\"bookedSlots\":[],\"bookedIsoTimes\":[]}}",
-      "time": "2026-10-25T08:27:01.879Z"
+      "time": "2026-10-25T09:01:17.212Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/appointments/booked-slots?clinicId=202c97b8-377f-42cb-9015-f4686d3db29e&date=2026-10-26&doctorId=4361d094-c34f-4a0b-b645-b27b649e023d",
-      "body": "{\"success\":true,\"data\":{\"bookedSlots\":[],\"bookedIsoTimes\":[]}}",
-      "time": "2026-10-25T08:27:01.881Z"
+      "body": "{\"success\":true,\"data\":{\"bookedSlots\":[\"10:00 AM\",\"10:15 AM\",\"10:30 AM\",\"10:45 AM\",\"02:15 PM\",\"02:30 PM\"],\"bookedIsoTimes\":[\"2026-10-26T04:30:00.000Z\",\"2026-10-26T04:45:00.000Z\",\"2026-10-26T05:00:00.000Z\",\"2026-10-26T05:15:00.000Z\",\"2026-10-26T08:45:00.000Z\",\"2026-10-26T09:00:00.000Z\"]}}",
+      "time": "2026-10-25T09:01:17.219Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea/doctors",
       "postData": null,
-      "time": "2026-10-25T08:27:02.412Z"
+      "time": "2026-10-25T09:01:17.785Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/appointments/booked-slots?clinicId=07e06036-9d85-4a71-af56-2f52b9bfe4ea&date=2026-10-26&doctorId=4361d094-c34f-4a0b-b645-b27b649e023d",
       "postData": null,
-      "time": "2026-10-25T08:27:02.413Z"
+      "time": "2026-10-25T09:01:17.786Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/appointments/booked-slots?clinicId=07e06036-9d85-4a71-af56-2f52b9bfe4ea&date=2026-10-26&doctorId=563d1b04-9823-4c71-9f7b-818e28902317",
       "postData": null,
-      "time": "2026-10-25T08:27:02.426Z"
+      "time": "2026-10-25T09:01:17.799Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea/doctors",
       "body": "{\"success\":true,\"data\":[{\"id\":\"563d1b04-9823-4c71-9f7b-818e28902317\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"Dr. Meera Rao\",\"specialization\":\"Consultant Cardiologist\",\"roomNumber\":\"Room 102\",\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.312Z\",\"updatedAt\":\"2026-10-25T07:23:24.312Z\"},{\"id\":\"73ade60d-ee58-44c7-8326-cd0263e0ba1f\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"Dr. Ramesh Sharma\",\"specialization\":\"General Physician & Internal Medicine\",\"roomNumber\":\"Room 101\",\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.306Z\",\"updatedAt\":\"2026-10-25T07:23:24.306Z\"},{\"id\":\"e8111dfa-2a36-449d-b7aa-e353fc5b3d45\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"Dr. Vikram Patel\",\"specialization\":\"Cardiologist\",\"roomNumber\":\"Room 105\",\"isActive\":true,\"createdAt\":\"2026-10-25T08:26:27.517Z\",\"updatedAt\":\"2026-10-25T08:26:27.517Z\"}]}",
-      "time": "2026-10-25T08:27:02.428Z"
+      "time": "2026-10-25T09:01:17.804Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/appointments/booked-slots?clinicId=07e06036-9d85-4a71-af56-2f52b9bfe4ea&date=2026-10-26&doctorId=4361d094-c34f-4a0b-b645-b27b649e023d",
       "body": "{\"success\":true,\"data\":{\"bookedSlots\":[],\"bookedIsoTimes\":[]}}",
-      "time": "2026-10-25T08:27:02.428Z"
+      "time": "2026-10-25T09:01:17.804Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/appointments/booked-slots?clinicId=07e06036-9d85-4a71-af56-2f52b9bfe4ea&date=2026-10-26&doctorId=563d1b04-9823-4c71-9f7b-818e28902317",
-      "body": "{\"success\":true,\"data\":{\"bookedSlots\":[],\"bookedIsoTimes\":[]}}",
-      "time": "2026-10-25T08:27:02.436Z"
+      "body": "{\"success\":true,\"data\":{\"bookedSlots\":[\"02:00 PM\"],\"bookedIsoTimes\":[\"2026-10-26T08:30:00.000Z\"]}}",
+      "time": "2026-10-25T09:01:17.815Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/appointments/booked-slots?clinicId=07e06036-9d85-4a71-af56-2f52b9bfe4ea&date=2026-10-26&doctorId=73ade60d-ee58-44c7-8326-cd0263e0ba1f",
       "postData": null,
-      "time": "2026-10-25T08:27:03.245Z"
+      "time": "2026-10-25T09:01:18.633Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/appointments/booked-slots?clinicId=07e06036-9d85-4a71-af56-2f52b9bfe4ea&date=2026-10-26&doctorId=73ade60d-ee58-44c7-8326-cd0263e0ba1f",
-      "body": "{\"success\":true,\"data\":{\"bookedSlots\":[\"10:30 AM\",\"11:30 AM\"],\"bookedIsoTimes\":[\"2026-10-26T05:00:00.000Z\",\"2026-10-26T06:00:00.000Z\"]}}",
-      "time": "2026-10-25T08:27:03.255Z"
+      "body": "{\"success\":true,\"data\":{\"bookedSlots\":[\"08:30 AM\",\"10:30 AM\",\"11:30 AM\"],\"bookedIsoTimes\":[\"2026-10-26T03:00:00.000Z\",\"2026-10-26T05:00:00.000Z\",\"2026-10-26T06:00:00.000Z\"]}}",
+      "time": "2026-10-25T09:01:18.648Z"
     },
     {
       "type": "REQUEST",
       "method": "POST",
       "url": "http://localhost:4000/api/appointments",
-      "postData": "{\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"doctorId\":\"73ade60d-ee58-44c7-8326-cd0263e0ba1f\",\"slotTime\":\"2026-10-26T03:00:00.000Z\",\"bookingType\":\"REMOTE\",\"joinQueueImmediately\":true}",
-      "time": "2026-10-25T08:27:04.626Z"
+      "postData": "{\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"doctorId\":\"73ade60d-ee58-44c7-8326-cd0263e0ba1f\",\"slotTime\":\"2026-10-26T03:15:00.000Z\",\"bookingType\":\"REMOTE\",\"joinQueueImmediately\":true}",
+      "time": "2026-10-25T09:01:20.014Z"
     },
     {
       "type": "REQUEST",
       "method": "POST",
       "url": "http://localhost:4000/api/payments/create-order",
-      "postData": "{\"appointmentId\":\"2705a14f-fb89-4180-b922-0f939b8d4750\",\"amount\":250,\"currency\":\"INR\",\"provider\":\"RAZORPAY\"}",
-      "time": "2026-10-25T08:27:04.663Z"
+      "postData": "{\"appointmentId\":\"5aea13c1-860a-4d0d-9f69-c662ccef7cc3\",\"amount\":250,\"currency\":\"INR\",\"provider\":\"RAZORPAY\"}",
+      "time": "2026-10-25T09:01:20.033Z"
     },
     {
       "type": "RESPONSE",
       "status": 201,
       "url": "http://localhost:4000/api/appointments",
-      "body": "{\"success\":true,\"data\":{\"id\":\"2705a14f-fb89-4180-b922-0f939b8d4750\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"userId\":\"4f8fdbf8-c9b9-4754-b642-c59625b5bf4a\",\"patientName\":\"Rahul Verma\",\"patientPhone\":\"+919876510001\",\"doctorId\":\"73ade60d-ee58-44c7-8326-cd0263e0ba1f\",\"doctorName\":\"Dr. Ramesh Sharma\",\"serviceId\":null,\"serviceName\":null,\"slotTime\":\"2026-10-26T03:00:00.000Z\",\"bookingType\":\"REMOTE\",\"isPriority\":true,\"priorityFee\":50,\"status\":\"PENDING\",\"bookingFee\":250,\"paymentStatus\":\"PENDING\",\"queueEntryId\":null,\"tokenNumber\":null,\"createdAt\":\"2026-10-25T08:27:04.636Z\",\"updatedAt\":\"2026-10-25T08:27:04.636Z\"}}",
-      "time": "2026-10-25T08:27:04.664Z"
+      "body": "{\"success\":true,\"data\":{\"id\":\"5aea13c1-860a-4d0d-9f69-c662ccef7cc3\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"userId\":\"4f8fdbf8-c9b9-4754-b642-c59625b5bf4a\",\"patientName\":\"Rahul Verma\",\"patientPhone\":\"+919876510001\",\"doctorId\":\"73ade60d-ee58-44c7-8326-cd0263e0ba1f\",\"doctorName\":\"Dr. Ramesh Sharma\",\"serviceId\":null,\"serviceName\":null,\"slotTime\":\"2026-10-26T03:15:00.000Z\",\"bookingType\":\"REMOTE\",\"isPriority\":true,\"priorityFee\":50,\"status\":\"PENDING\",\"bookingFee\":250,\"paymentStatus\":\"PENDING\",\"queueEntryId\":null,\"tokenNumber\":null,\"createdAt\":\"2026-10-25T09:01:20.022Z\",\"updatedAt\":\"2026-10-25T09:01:20.022Z\"}}",
+      "time": "2026-10-25T09:01:20.034Z"
     },
     {
       "type": "REQUEST",
       "method": "POST",
       "url": "http://localhost:4000/api/payments/verify",
-      "postData": "{\"paymentId\":\"f49277f6-2e12-4d67-a0d0-f71b05974e5e\",\"razorpayOrderId\":\"razorpay_order_jjeajzq6fcju\",\"razorpayPaymentId\":\"pay_mock_1792916824680\",\"razorpaySignature\":\"mock_paid_signature\"}",
-      "time": "2026-10-25T08:27:04.681Z"
+      "postData": "{\"paymentId\":\"0c456820-9771-4cbc-a27e-8416c523f7ae\",\"razorpayOrderId\":\"razorpay_order_8ws2yqi1u7ry\",\"razorpayPaymentId\":\"pay_mock_1792918880051\",\"razorpaySignature\":\"mock_paid_signature\"}",
+      "time": "2026-10-25T09:01:20.054Z"
     },
     {
       "type": "RESPONSE",
       "status": 201,
       "url": "http://localhost:4000/api/payments/create-order",
-      "body": "{\"success\":true,\"data\":{\"paymentId\":\"f49277f6-2e12-4d67-a0d0-f71b05974e5e\",\"orderId\":\"razorpay_order_jjeajzq6fcju\",\"amount\":250,\"currency\":\"INR\",\"provider\":\"RAZORPAY\",\"keyId\":\"razorpay_key_test\",\"status\":\"CREATED\"}}",
-      "time": "2026-10-25T08:27:04.682Z"
+      "body": "{\"success\":true,\"data\":{\"paymentId\":\"0c456820-9771-4cbc-a27e-8416c523f7ae\",\"orderId\":\"razorpay_order_8ws2yqi1u7ry\",\"amount\":250,\"currency\":\"INR\",\"provider\":\"RAZORPAY\",\"keyId\":\"razorpay_key_test\",\"status\":\"CREATED\"}}",
+      "time": "2026-10-25T09:01:20.055Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
-      "url": "http://localhost:4000/api/queue/lookup?clinicSlug=city-health&tokenNumber=P04",
+      "url": "http://localhost:4000/api/queue/lookup?clinicSlug=city-health&tokenNumber=P06",
       "postData": null,
-      "time": "2026-10-25T08:27:04.718Z"
+      "time": "2026-10-25T09:01:20.097Z"
     },
     {
       "type": "RESPONSE",
       "status": 201,
       "url": "http://localhost:4000/api/payments/verify",
-      "body": "{\"success\":true,\"data\":{\"success\":true,\"message\":\"Payment verified and appointment token confirmed.\",\"tokenNumber\":\"P04\"}}",
-      "time": "2026-10-25T08:27:04.718Z"
+      "body": "{\"success\":true,\"data\":{\"success\":true,\"message\":\"Payment verified and appointment token confirmed.\",\"tokenNumber\":\"P06\"}}",
+      "time": "2026-10-25T09:01:20.109Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
-      "url": "http://localhost:4000/api/queue/lookup?clinicSlug=city-health&tokenNumber=P04",
-      "body": "{\"success\":true,\"data\":{\"tokenNumber\":\"P04\",\"status\":\"WAITING\",\"clinicName\":\"City Health Multispecialty Clinic\",\"queueName\":\"Dr. Ramesh Sharma - General OPD\",\"doctorName\":\"Dr. Ramesh Sharma\",\"currentServingToken\":null,\"positionAhead\":0,\"estimatedWaitMinutes\":0,\"holdReason\":null,\"calledAt\":null,\"lastUpdated\":\"2026-10-25T08:27:04.737Z\"}}",
-      "time": "2026-10-25T08:27:04.743Z"
+      "url": "http://localhost:4000/api/queue/lookup?clinicSlug=city-health&tokenNumber=P06",
+      "body": "{\"success\":true,\"data\":{\"tokenNumber\":\"P06\",\"status\":\"WAITING\",\"clinicName\":\"City Health Multispecialty Clinic\",\"queueName\":\"Dr. Ramesh Sharma - General OPD\",\"doctorName\":\"Dr. Ramesh Sharma\",\"currentServingToken\":\"P04\",\"positionAhead\":1,\"estimatedWaitMinutes\":15,\"holdReason\":null,\"calledAt\":null,\"lastUpdated\":\"2026-10-25T09:01:20.115Z\"}}",
+      "time": "2026-10-25T09:01:20.125Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/auth/telegram/info",
       "postData": null,
-      "time": "2026-10-25T08:27:06.300Z"
+      "time": "2026-10-25T09:01:21.708Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/clinics",
       "postData": null,
-      "time": "2026-10-25T08:27:06.300Z"
+      "time": "2026-10-25T09:01:21.708Z"
+    },
+    {
+      "type": "RESPONSE",
+      "status": 200,
+      "url": "http://localhost:4000/api/auth/telegram/info",
+      "body": "{\"success\":true,\"data\":{\"username\":null,\"isConfigured\":false,\"hasGateway\":false,\"hasFallbackChatId\":false},\"meta\":{\"timestamp\":\"2026-10-25T09:01:21.707Z\"}}",
+      "time": "2026-10-25T09:01:21.716Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/clinics/202c97b8-377f-42cb-9015-f4686d3db29e/doctors",
       "postData": null,
-      "time": "2026-10-25T08:27:06.316Z"
-    },
-    {
-      "type": "RESPONSE",
-      "status": 200,
-      "url": "http://localhost:4000/api/auth/telegram/info",
-      "body": "{\"success\":true,\"data\":{\"username\":null,\"isConfigured\":false,\"hasGateway\":false,\"hasFallbackChatId\":false},\"meta\":{\"timestamp\":\"2026-10-25T08:27:06.302Z\"}}",
-      "time": "2026-10-25T08:27:06.316Z"
+      "time": "2026-10-25T09:01:21.721Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/clinics",
       "body": "{\"success\":true,\"data\":[{\"id\":\"202c97b8-377f-42cb-9015-f4686d3db29e\",\"chainId\":null,\"name\":\"CareWell Family Clinic\",\"slug\":\"carewell-family\",\"phoneNumber\":\"+919876500002\",\"email\":\"contact@carewellfamily.com\",\"address\":\"45 Greenfield Avenue, Koramangala 4th Block, Bengaluru\",\"city\":null,\"inClinicPrice\":200,\"remotePrice\":200,\"voiceAnnouncementMode\":\"TOKEN_PATIENT_DOCTOR_ROOM\",\"enableBookingTime\":true,\"enablePriorityQueue\":true,\"workingDays\":\"MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY,SATURDAY\",\"openTime\":\"10:00 AM\",\"closeTime\":\"07:00 PM\",\"lunchStartTime\":\"01:00 PM\",\"lunchEndTime\":\"02:00 PM\",\"enableLunchBreak\":true,\"slotDurationMinutes\":15,\"holidays\":\"[]\",\"isActive\":true,\"subscriptionStatus\":\"ACTIVE\",\"plan\":\"BASIC\",\"createdAt\":\"2026-10-25T07:23:24.344Z\",\"doctorsCount\":1,\"servicesCount\":1,\"queuesCount\":1},{\"id\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"chainId\":null,\"name\":\"City Health Multispecialty Clinic\",\"slug\":\"city-health\",\"phoneNumber\":\"+919876500001\",\"email\":\"care@cityhealth.com\",\"addr",
-      "time": "2026-10-25T08:27:06.317Z"
+      "time": "2026-10-25T09:01:21.721Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/clinics/202c97b8-377f-42cb-9015-f4686d3db29e/doctors",
       "body": "{\"success\":true,\"data\":[{\"id\":\"4361d094-c34f-4a0b-b645-b27b649e023d\",\"clinicId\":\"202c97b8-377f-42cb-9015-f4686d3db29e\",\"name\":\"Dr. Ananya Singh\",\"specialization\":\"Family Physician & Pediatrician\",\"roomNumber\":\"Suite A\",\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.368Z\",\"updatedAt\":\"2026-10-25T07:23:24.368Z\"}]}",
-      "time": "2026-10-25T08:27:06.322Z"
+      "time": "2026-10-25T09:01:21.729Z"
     },
     {
       "type": "REQUEST",
       "method": "POST",
       "url": "http://localhost:4000/api/auth/login-password",
       "postData": "{\"phoneNumber\":\"+919876500011\",\"password\":\"Password@123\"}",
-      "time": "2026-10-25T08:27:06.974Z"
+      "time": "2026-10-25T09:01:22.455Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea/queues",
       "postData": null,
-      "time": "2026-10-25T08:27:07.092Z"
+      "time": "2026-10-25T09:01:22.577Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea/subscription",
       "postData": null,
-      "time": "2026-10-25T08:27:07.092Z"
+      "time": "2026-10-25T09:01:22.577Z"
+    },
+    {
+      "type": "RESPONSE",
+      "status": 200,
+      "url": "http://localhost:4000/api/auth/login-password",
+      "body": "{\"success\":true,\"data\":{\"user\":{\"id\":\"aa6f0aa0-cc49-4f65-9d6e-d1c1d63fbc1a\",\"phoneNumber\":\"+919876500011\",\"name\":\"Dr. Ramesh Sharma\",\"role\":\"CLINIC_ADMIN\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"age\":null,\"gender\":null,\"isProfileComplete\":true},\"tokens\":{\"accessToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYTZmMGFhMC1jYzQ5LTRmNjUtOWQ2ZS1kMWMxZDYzZmJjMWEiLCJyb2xlIjoiQ0xJTklDX0FETUlOIiwiY2xpbmljSWQiOiIwN2UwNjAzNi05ZDg1LTRhNzEtYWY1Ni0yZjUyYjliZmU0ZWEiLCJpYXQiOjE3OTI5MTg4ODIsImV4cCI6MTc5MjkxOTc4Mn0.m2gN87sAxis93BMSG87-fDaAEj3U9Q2fFgkHlje4Q_8\",\"refreshToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYTZmMGFhMC1jYzQ5LTRmNjUtOWQ2ZS1kMWMxZDYzZmJjMWEiLCJyb2xlIjoiQ0xJTklDX0FETUlOIiwiY2xpbmljSWQiOiIwN2UwNjAzNi05ZDg1LTRhNzEtYWY1Ni0yZjUyYjliZmU0ZWEiLCJpYXQiOjE3OTI5MTg4ODIsImV4cCI6MTc5MzUyMzY4Mn0.Osn7Kys_v_QCYylaL4kQM3Uo98u6uDn4BGNn4IUOtc8\",\"expiresIn\":\"15m\"},\"isNewUser\":false},\"meta\":{\"timestamp\":\"2026-10-25T09:01:22.566Z\"}}",
+      "time": "2026-10-25T09:01:22.578Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea/doctors",
       "postData": null,
-      "time": "2026-10-25T08:27:07.093Z"
-    },
-    {
-      "type": "RESPONSE",
-      "status": 200,
-      "url": "http://localhost:4000/api/auth/login-password",
-      "body": "{\"success\":true,\"data\":{\"user\":{\"id\":\"aa6f0aa0-cc49-4f65-9d6e-d1c1d63fbc1a\",\"phoneNumber\":\"+919876500011\",\"name\":\"Dr. Ramesh Sharma\",\"role\":\"CLINIC_ADMIN\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"age\":null,\"gender\":null,\"isProfileComplete\":true},\"tokens\":{\"accessToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYTZmMGFhMC1jYzQ5LTRmNjUtOWQ2ZS1kMWMxZDYzZmJjMWEiLCJyb2xlIjoiQ0xJTklDX0FETUlOIiwiY2xpbmljSWQiOiIwN2UwNjAzNi05ZDg1LTRhNzEtYWY1Ni0yZjUyYjliZmU0ZWEiLCJpYXQiOjE3OTI5MTY4MjcsImV4cCI6MTc5MjkxNzcyN30.7nQqUVrZjdF7si9PyzQZfBhYqXWQDZVsu9LvZ8Rpf2o\",\"refreshToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYTZmMGFhMC1jYzQ5LTRmNjUtOWQ2ZS1kMWMxZDYzZmJjMWEiLCJyb2xlIjoiQ0xJTklDX0FETUlOIiwiY2xpbmljSWQiOiIwN2UwNjAzNi05ZDg1LTRhNzEtYWY1Ni0yZjUyYjliZmU0ZWEiLCJpYXQiOjE3OTI5MTY4MjcsImV4cCI6MTc5MzUyMTYyN30.CLGbrlxcfZ1uFd3cFvN_AkKbgXOPyUb9nqKTpuvr6yc\",\"expiresIn\":\"15m\"},\"isNewUser\":false},\"meta\":{\"timestamp\":\"2026-10-25T08:27:07.086Z\"}}",
-      "time": "2026-10-25T08:27:07.093Z"
+      "time": "2026-10-25T09:01:22.586Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea/queues/8eedc70f-dbff-4013-964b-fb80e5501bd4?date=2026-10-25",
       "postData": null,
-      "time": "2026-10-25T08:27:07.105Z"
+      "time": "2026-10-25T09:01:22.593Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea/queues",
-      "body": "{\"success\":true,\"data\":[{\"id\":\"8eedc70f-dbff-4013-964b-fb80e5501bd4\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"Dr. Ramesh Sharma - General OPD\",\"doctorId\":\"73ade60d-ee58-44c7-8326-cd0263e0ba1f\",\"doctorName\":\"Dr. Ramesh Sharma\",\"serviceId\":\"34c1fdca-260d-488f-9732-d68813120e7a\",\"serviceName\":\"General Consultation\",\"isPaused\":false,\"currentSeq\":4,\"waitingCount\":1,\"activeCount\":1,\"currentServingToken\":null,\"createdAt\":\"2026-10-25T07:23:24.330Z\"},{\"id\":\"d9cfb84a-982f-4a71-b870-a749ee4acdcd\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"Dr. Meera Rao - Cardiology OPD\",\"doctorId\":\"563d1b04-9823-4c71-9f7b-818e28902317\",\"doctorName\":\"Dr. Meera Rao\",\"serviceId\":\"5c8d09e1-57fd-4390-88e1-77de1b47925b\",\"serviceName\":\"Cardiology Consultation\",\"isPaused\":false,\"currentSeq\":0,\"waitingCount\":0,\"activeCount\":0,\"currentServingToken\":null,\"createdAt\":\"2026-10-25T07:23:24.337Z\"}]}",
-      "time": "2026-10-25T08:27:07.105Z"
+      "body": "{\"success\":true,\"data\":[{\"id\":\"8eedc70f-dbff-4013-964b-fb80e5501bd4\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"Dr. Ramesh Sharma - General OPD\",\"doctorId\":\"73ade60d-ee58-44c7-8326-cd0263e0ba1f\",\"doctorName\":\"Dr. Ramesh Sharma\",\"serviceId\":\"34c1fdca-260d-488f-9732-d68813120e7a\",\"serviceName\":\"General Consultation\",\"isPaused\":false,\"currentSeq\":6,\"waitingCount\":2,\"activeCount\":3,\"currentServingToken\":\"P04\",\"createdAt\":\"2026-10-25T07:23:24.330Z\"},{\"id\":\"d9cfb84a-982f-4a71-b870-a749ee4acdcd\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"Dr. Meera Rao - Cardiology OPD\",\"doctorId\":\"563d1b04-9823-4c71-9f7b-818e28902317\",\"doctorName\":\"Dr. Meera Rao\",\"serviceId\":\"5c8d09e1-57fd-4390-88e1-77de1b47925b\",\"serviceName\":\"Cardiology Consultation\",\"isPaused\":false,\"currentSeq\":2,\"waitingCount\":2,\"activeCount\":2,\"currentServingToken\":null,\"createdAt\":\"2026-10-25T07:23:24.337Z\"}]}",
+      "time": "2026-10-25T09:01:22.594Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea/doctors",
       "body": "{\"success\":true,\"data\":[{\"id\":\"563d1b04-9823-4c71-9f7b-818e28902317\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"Dr. Meera Rao\",\"specialization\":\"Consultant Cardiologist\",\"roomNumber\":\"Room 102\",\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.312Z\",\"updatedAt\":\"2026-10-25T07:23:24.312Z\"},{\"id\":\"73ade60d-ee58-44c7-8326-cd0263e0ba1f\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"Dr. Ramesh Sharma\",\"specialization\":\"General Physician & Internal Medicine\",\"roomNumber\":\"Room 101\",\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.306Z\",\"updatedAt\":\"2026-10-25T07:23:24.306Z\"},{\"id\":\"e8111dfa-2a36-449d-b7aa-e353fc5b3d45\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"Dr. Vikram Patel\",\"specialization\":\"Cardiologist\",\"roomNumber\":\"Room 105\",\"isActive\":true,\"createdAt\":\"2026-10-25T08:26:27.517Z\",\"updatedAt\":\"2026-10-25T08:26:27.517Z\"}]}",
-      "time": "2026-10-25T08:27:07.105Z"
+      "time": "2026-10-25T09:01:22.602Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea/subscription",
       "body": "{\"success\":true,\"data\":{\"id\":\"0ab7108d-49fa-41e1-b90f-b99532417fcd\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"clinicName\":\"City Health Multispecialty Clinic\",\"clinicSlug\":\"city-health\",\"plan\":\"PROFESSIONAL\",\"status\":\"ACTIVE\",\"billingCycle\":\"MONTHLY\",\"amountPaid\":2499,\"startDate\":\"2026-10-25T07:23:24.276Z\",\"endDate\":null,\"maxDoctors\":5,\"maxStaff\":10,\"maxDisplays\":3,\"hasAds\":false,\"daysRemaining\":999,\"isExpiringSoon\":false,\"isExpired\":false,\"doctorsUsed\":3,\"staffUsed\":3,\"displaysUsed\":0,\"invoices\":[]}}",
-      "time": "2026-10-25T08:27:07.120Z"
+      "time": "2026-10-25T09:01:22.611Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea/queues/8eedc70f-dbff-4013-964b-fb80e5501bd4?date=2026-10-25",
-      "body": "{\"success\":true,\"data\":{\"queue\":{\"id\":\"8eedc70f-dbff-4013-964b-fb80e5501bd4\",\"name\":\"Dr. Ramesh Sharma - General OPD\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"isPaused\":false,\"currentSeq\":4,\"doctor\":{\"id\":\"73ade60d-ee58-44c7-8326-cd0263e0ba1f\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"Dr. Ramesh Sharma\",\"specialization\":\"General Physician & Internal Medicine\",\"roomNumber\":\"Room 101\",\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.306Z\",\"updatedAt\":\"2026-10-25T07:23:24.306Z\"},\"service\":{\"id\":\"34c1fdca-260d-488f-9732-d68813120e7a\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"General Consultation\",\"description\":null,\"durationMinutes\":20,\"priceAmount\":200,\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.319Z\",\"updatedAt\":\"2026-10-25T07:23:24.319Z\"}},\"selectedDate\":\"2026-10-25\",\"currentServing\":null,\"waiting\":[],\"booked\":[],\"onHold\":[],\"skipped\":[],\"completed\":[],\"completedCount\":0,\"totalToday\":0}}",
-      "time": "2026-10-25T08:27:07.124Z"
+      "body": "{\"success\":true,\"data\":{\"queue\":{\"id\":\"8eedc70f-dbff-4013-964b-fb80e5501bd4\",\"name\":\"Dr. Ramesh Sharma - General OPD\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"isPaused\":false,\"currentSeq\":6,\"doctor\":{\"id\":\"73ade60d-ee58-44c7-8326-cd0263e0ba1f\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"Dr. Ramesh Sharma\",\"specialization\":\"General Physician & Internal Medicine\",\"roomNumber\":\"Room 101\",\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.306Z\",\"updatedAt\":\"2026-10-25T07:23:24.306Z\"},\"service\":{\"id\":\"34c1fdca-260d-488f-9732-d68813120e7a\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"General Consultation\",\"description\":null,\"durationMinutes\":20,\"priceAmount\":200,\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.319Z\",\"updatedAt\":\"2026-10-25T07:23:24.319Z\"}},\"selectedDate\":\"2026-10-25\",\"currentServing\":null,\"waiting\":[{\"id\":\"8d22d25a-de02-41ce-ad79-17e24dca35fa\",\"queueId\":\"8eedc70f-dbff-4013-964b-fb80e5501bd4\",\"userId\":\"3dae9a2a-01dd-45da-852e-2adb1c3512e5\",\"",
+      "time": "2026-10-25T09:01:22.624Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea/queues/8eedc70f-dbff-4013-964b-fb80e5501bd4?date=2026-10-26",
       "postData": null,
-      "time": "2026-10-25T08:27:08.665Z"
+      "time": "2026-10-25T09:01:24.157Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea/queues/8eedc70f-dbff-4013-964b-fb80e5501bd4?date=2026-10-26",
-      "body": "{\"success\":true,\"data\":{\"queue\":{\"id\":\"8eedc70f-dbff-4013-964b-fb80e5501bd4\",\"name\":\"Dr. Ramesh Sharma - General OPD\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"isPaused\":false,\"currentSeq\":4,\"doctor\":{\"id\":\"73ade60d-ee58-44c7-8326-cd0263e0ba1f\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"Dr. Ramesh Sharma\",\"specialization\":\"General Physician & Internal Medicine\",\"roomNumber\":\"Room 101\",\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.306Z\",\"updatedAt\":\"2026-10-25T07:23:24.306Z\"},\"service\":{\"id\":\"34c1fdca-260d-488f-9732-d68813120e7a\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"General Consultation\",\"description\":null,\"durationMinutes\":20,\"priceAmount\":200,\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.319Z\",\"updatedAt\":\"2026-10-25T07:23:24.319Z\"}},\"selectedDate\":\"2026-10-26\",\"currentServing\":null,\"waiting\":[{\"id\":\"60d71838-ba81-432a-9946-95f7e126c5cd\",\"queueId\":\"8eedc70f-dbff-4013-964b-fb80e5501bd4\",\"userId\":\"4f8fdbf8-c9b9-4754-b642-c59625b5bf4a\",\"",
-      "time": "2026-10-25T08:27:08.721Z"
+      "body": "{\"success\":true,\"data\":{\"queue\":{\"id\":\"8eedc70f-dbff-4013-964b-fb80e5501bd4\",\"name\":\"Dr. Ramesh Sharma - General OPD\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"isPaused\":false,\"currentSeq\":6,\"doctor\":{\"id\":\"73ade60d-ee58-44c7-8326-cd0263e0ba1f\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"Dr. Ramesh Sharma\",\"specialization\":\"General Physician & Internal Medicine\",\"roomNumber\":\"Room 101\",\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.306Z\",\"updatedAt\":\"2026-10-25T07:23:24.306Z\"},\"service\":{\"id\":\"34c1fdca-260d-488f-9732-d68813120e7a\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"General Consultation\",\"description\":null,\"durationMinutes\":20,\"priceAmount\":200,\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.319Z\",\"updatedAt\":\"2026-10-25T07:23:24.319Z\"}},\"selectedDate\":\"2026-10-26\",\"currentServing\":{\"id\":\"60d71838-ba81-432a-9946-95f7e126c5cd\",\"queueId\":\"8eedc70f-dbff-4013-964b-fb80e5501bd4\",\"userId\":\"4f8fdbf8-c9b9-4754-b642-c59625b5bf4a\",\"tokenNumber\":\"P0",
+      "time": "2026-10-25T09:01:24.187Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea/queues/8eedc70f-dbff-4013-964b-fb80e5501bd4?date=2026-10-25",
       "postData": null,
-      "time": "2026-10-25T08:27:09.794Z"
+      "time": "2026-10-25T09:01:25.289Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea/queues/8eedc70f-dbff-4013-964b-fb80e5501bd4?date=2026-10-25",
-      "body": "{\"success\":true,\"data\":{\"queue\":{\"id\":\"8eedc70f-dbff-4013-964b-fb80e5501bd4\",\"name\":\"Dr. Ramesh Sharma - General OPD\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"isPaused\":false,\"currentSeq\":4,\"doctor\":{\"id\":\"73ade60d-ee58-44c7-8326-cd0263e0ba1f\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"Dr. Ramesh Sharma\",\"specialization\":\"General Physician & Internal Medicine\",\"roomNumber\":\"Room 101\",\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.306Z\",\"updatedAt\":\"2026-10-25T07:23:24.306Z\"},\"service\":{\"id\":\"34c1fdca-260d-488f-9732-d68813120e7a\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"General Consultation\",\"description\":null,\"durationMinutes\":20,\"priceAmount\":200,\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.319Z\",\"updatedAt\":\"2026-10-25T07:23:24.319Z\"}},\"selectedDate\":\"2026-10-25\",\"currentServing\":null,\"waiting\":[],\"booked\":[],\"onHold\":[],\"skipped\":[],\"completed\":[],\"completedCount\":0,\"totalToday\":0}}",
-      "time": "2026-10-25T08:27:09.799Z"
+      "body": "{\"success\":true,\"data\":{\"queue\":{\"id\":\"8eedc70f-dbff-4013-964b-fb80e5501bd4\",\"name\":\"Dr. Ramesh Sharma - General OPD\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"isPaused\":false,\"currentSeq\":6,\"doctor\":{\"id\":\"73ade60d-ee58-44c7-8326-cd0263e0ba1f\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"Dr. Ramesh Sharma\",\"specialization\":\"General Physician & Internal Medicine\",\"roomNumber\":\"Room 101\",\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.306Z\",\"updatedAt\":\"2026-10-25T07:23:24.306Z\"},\"service\":{\"id\":\"34c1fdca-260d-488f-9732-d68813120e7a\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"General Consultation\",\"description\":null,\"durationMinutes\":20,\"priceAmount\":200,\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.319Z\",\"updatedAt\":\"2026-10-25T07:23:24.319Z\"}},\"selectedDate\":\"2026-10-25\",\"currentServing\":null,\"waiting\":[{\"id\":\"8d22d25a-de02-41ce-ad79-17e24dca35fa\",\"queueId\":\"8eedc70f-dbff-4013-964b-fb80e5501bd4\",\"userId\":\"3dae9a2a-01dd-45da-852e-2adb1c3512e5\",\"",
+      "time": "2026-10-25T09:01:25.296Z"
     },
     {
       "type": "REQUEST",
       "method": "POST",
       "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea/receptionist/walk-in",
       "postData": "{\"queueId\":\"8eedc70f-dbff-4013-964b-fb80e5501bd4\",\"name\":\"Walkin Patient Test\",\"phoneNumber\":\"+919876500099\"}",
-      "time": "2026-10-25T08:27:10.910Z"
+      "time": "2026-10-25T09:01:26.454Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea/queues/8eedc70f-dbff-4013-964b-fb80e5501bd4?date=2026-10-25",
       "postData": null,
-      "time": "2026-10-25T08:27:10.940Z"
+      "time": "2026-10-25T09:01:26.477Z"
     },
     {
       "type": "RESPONSE",
       "status": 201,
       "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea/receptionist/walk-in",
-      "body": "{\"success\":true,\"data\":{\"user\":{\"id\":\"3dae9a2a-01dd-45da-852e-2adb1c3512e5\",\"phoneNumber\":\"+919876500099\",\"name\":\"Walkin Patient Test\",\"role\":\"RECEPTIONIST\"},\"entry\":{\"id\":\"8d22d25a-de02-41ce-ad79-17e24dca35fa\",\"queueId\":\"8eedc70f-dbff-4013-964b-fb80e5501bd4\",\"userId\":\"3dae9a2a-01dd-45da-852e-2adb1c3512e5\",\"tokenNumber\":\"W05\",\"sequenceNumber\":5,\"status\":\"WAITING\",\"holdReason\":null,\"publicToken\":\"qt_f4c135914cb476f44d66d1b2782e4faa\",\"estimatedWait\":15,\"calledAt\":null,\"startedAt\":null,\"completedAt\":null,\"createdAt\":\"2026-10-25T08:27:10.932Z\",\"updatedAt\":\"2026-10-25T08:27:10.932Z\",\"user\":{\"id\":\"3dae9a2a-01dd-45da-852e-2adb1c3512e5\",\"name\":\"Walkin Patient Test\",\"phoneNumber\":\"+919876500099\"}},\"isExistingPatient\":true}}",
-      "time": "2026-10-25T08:27:10.943Z"
+      "body": "{\"success\":true,\"data\":{\"user\":{\"id\":\"3dae9a2a-01dd-45da-852e-2adb1c3512e5\",\"phoneNumber\":\"+919876500099\",\"name\":\"Walkin Patient Test\",\"role\":\"RECEPTIONIST\"},\"entry\":{\"id\":\"b37b5fe2-417b-40d0-b8b7-48120ef338e9\",\"queueId\":\"8eedc70f-dbff-4013-964b-fb80e5501bd4\",\"userId\":\"3dae9a2a-01dd-45da-852e-2adb1c3512e5\",\"tokenNumber\":\"W07\",\"sequenceNumber\":7,\"status\":\"WAITING\",\"holdReason\":null,\"publicToken\":\"qt_8acd5dd4633cfb3e8ca7e388dbdb768d\",\"estimatedWait\":30,\"calledAt\":null,\"startedAt\":null,\"completedAt\":null,\"createdAt\":\"2026-10-25T09:01:26.464Z\",\"updatedAt\":\"2026-10-25T09:01:26.464Z\",\"user\":{\"id\":\"3dae9a2a-01dd-45da-852e-2adb1c3512e5\",\"name\":\"Walkin Patient Test\",\"phoneNumber\":\"+919876500099\"}},\"isExistingPatient\":true}}",
+      "time": "2026-10-25T09:01:26.477Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea/queues/8eedc70f-dbff-4013-964b-fb80e5501bd4?date=2026-10-25",
-      "body": "{\"success\":true,\"data\":{\"queue\":{\"id\":\"8eedc70f-dbff-4013-964b-fb80e5501bd4\",\"name\":\"Dr. Ramesh Sharma - General OPD\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"isPaused\":false,\"currentSeq\":5,\"doctor\":{\"id\":\"73ade60d-ee58-44c7-8326-cd0263e0ba1f\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"Dr. Ramesh Sharma\",\"specialization\":\"General Physician & Internal Medicine\",\"roomNumber\":\"Room 101\",\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.306Z\",\"updatedAt\":\"2026-10-25T07:23:24.306Z\"},\"service\":{\"id\":\"34c1fdca-260d-488f-9732-d68813120e7a\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"General Consultation\",\"description\":null,\"durationMinutes\":20,\"priceAmount\":200,\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.319Z\",\"updatedAt\":\"2026-10-25T07:23:24.319Z\"}},\"selectedDate\":\"2026-10-25\",\"currentServing\":null,\"waiting\":[{\"id\":\"8d22d25a-de02-41ce-ad79-17e24dca35fa\",\"queueId\":\"8eedc70f-dbff-4013-964b-fb80e5501bd4\",\"userId\":\"3dae9a2a-01dd-45da-852e-2adb1c3512e5\",\"",
-      "time": "2026-10-25T08:27:10.955Z"
+      "body": "{\"success\":true,\"data\":{\"queue\":{\"id\":\"8eedc70f-dbff-4013-964b-fb80e5501bd4\",\"name\":\"Dr. Ramesh Sharma - General OPD\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"isPaused\":false,\"currentSeq\":7,\"doctor\":{\"id\":\"73ade60d-ee58-44c7-8326-cd0263e0ba1f\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"Dr. Ramesh Sharma\",\"specialization\":\"General Physician & Internal Medicine\",\"roomNumber\":\"Room 101\",\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.306Z\",\"updatedAt\":\"2026-10-25T07:23:24.306Z\"},\"service\":{\"id\":\"34c1fdca-260d-488f-9732-d68813120e7a\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"General Consultation\",\"description\":null,\"durationMinutes\":20,\"priceAmount\":200,\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.319Z\",\"updatedAt\":\"2026-10-25T07:23:24.319Z\"}},\"selectedDate\":\"2026-10-25\",\"currentServing\":null,\"waiting\":[{\"id\":\"8d22d25a-de02-41ce-ad79-17e24dca35fa\",\"queueId\":\"8eedc70f-dbff-4013-964b-fb80e5501bd4\",\"userId\":\"3dae9a2a-01dd-45da-852e-2adb1c3512e5\",\"",
+      "time": "2026-10-25T09:01:26.496Z"
     },
     {
       "type": "REQUEST",
       "method": "POST",
       "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea/queues/8eedc70f-dbff-4013-964b-fb80e5501bd4/call-next",
       "postData": null,
-      "time": "2026-10-25T08:27:11.993Z"
+      "time": "2026-10-25T09:01:27.538Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea/queues/8eedc70f-dbff-4013-964b-fb80e5501bd4?date=2026-10-25",
       "postData": null,
-      "time": "2026-10-25T08:27:12.048Z"
+      "time": "2026-10-25T09:01:27.563Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea/queues/8eedc70f-dbff-4013-964b-fb80e5501bd4/call-next",
-      "body": "{\"success\":true,\"data\":{\"calledEntry\":{\"id\":\"60d71838-ba81-432a-9946-95f7e126c5cd\",\"queueId\":\"8eedc70f-dbff-4013-964b-fb80e5501bd4\",\"userId\":\"4f8fdbf8-c9b9-4754-b642-c59625b5bf4a\",\"tokenNumber\":\"P04\",\"sequenceNumber\":4,\"status\":\"CALLED\",\"holdReason\":null,\"publicToken\":\"pt_gpefkaf04k5l\",\"estimatedWait\":5,\"calledAt\":\"2026-10-25T08:27:11.999Z\",\"startedAt\":null,\"completedAt\":null,\"createdAt\":\"2026-10-25T08:27:04.703Z\",\"updatedAt\":\"2026-10-25T08:27:12.000Z\",\"user\":{\"id\":\"4f8fdbf8-c9b9-4754-b642-c59625b5bf4a\",\"name\":\"Rahul Verma\",\"phoneNumber\":\"+919876510001\"}},\"previousEntryCompleted\":false,\"message\":\"Token P04 called successfully.\"}}",
-      "time": "2026-10-25T08:27:12.065Z"
+      "body": "{\"success\":true,\"data\":{\"calledEntry\":{\"id\":\"8d22d25a-de02-41ce-ad79-17e24dca35fa\",\"queueId\":\"8eedc70f-dbff-4013-964b-fb80e5501bd4\",\"userId\":\"3dae9a2a-01dd-45da-852e-2adb1c3512e5\",\"tokenNumber\":\"W05\",\"sequenceNumber\":5,\"status\":\"CALLED\",\"holdReason\":null,\"publicToken\":\"qt_f4c135914cb476f44d66d1b2782e4faa\",\"estimatedWait\":15,\"calledAt\":\"2026-10-25T09:01:27.547Z\",\"startedAt\":null,\"completedAt\":null,\"createdAt\":\"2026-10-25T08:27:10.932Z\",\"updatedAt\":\"2026-10-25T09:01:27.549Z\",\"user\":{\"id\":\"3dae9a2a-01dd-45da-852e-2adb1c3512e5\",\"name\":\"Walkin Patient Test\",\"phoneNumber\":\"+919876500099\"}},\"previousEntryCompleted\":true,\"message\":\"Token W05 called successfully.\"}}",
+      "time": "2026-10-25T09:01:27.577Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea/queues/8eedc70f-dbff-4013-964b-fb80e5501bd4?date=2026-10-25",
-      "body": "{\"success\":true,\"data\":{\"queue\":{\"id\":\"8eedc70f-dbff-4013-964b-fb80e5501bd4\",\"name\":\"Dr. Ramesh Sharma - General OPD\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"isPaused\":false,\"currentSeq\":5,\"doctor\":{\"id\":\"73ade60d-ee58-44c7-8326-cd0263e0ba1f\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"Dr. Ramesh Sharma\",\"specialization\":\"General Physician & Internal Medicine\",\"roomNumber\":\"Room 101\",\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.306Z\",\"updatedAt\":\"2026-10-25T07:23:24.306Z\"},\"service\":{\"id\":\"34c1fdca-260d-488f-9732-d68813120e7a\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"General Consultation\",\"description\":null,\"durationMinutes\":20,\"priceAmount\":200,\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.319Z\",\"updatedAt\":\"2026-10-25T07:23:24.319Z\"}},\"selectedDate\":\"2026-10-25\",\"currentServing\":null,\"waiting\":[{\"id\":\"8d22d25a-de02-41ce-ad79-17e24dca35fa\",\"queueId\":\"8eedc70f-dbff-4013-964b-fb80e5501bd4\",\"userId\":\"3dae9a2a-01dd-45da-852e-2adb1c3512e5\",\"",
-      "time": "2026-10-25T08:27:12.078Z"
+      "body": "{\"success\":true,\"data\":{\"queue\":{\"id\":\"8eedc70f-dbff-4013-964b-fb80e5501bd4\",\"name\":\"Dr. Ramesh Sharma - General OPD\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"isPaused\":false,\"currentSeq\":7,\"doctor\":{\"id\":\"73ade60d-ee58-44c7-8326-cd0263e0ba1f\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"Dr. Ramesh Sharma\",\"specialization\":\"General Physician & Internal Medicine\",\"roomNumber\":\"Room 101\",\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.306Z\",\"updatedAt\":\"2026-10-25T07:23:24.306Z\"},\"service\":{\"id\":\"34c1fdca-260d-488f-9732-d68813120e7a\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"General Consultation\",\"description\":null,\"durationMinutes\":20,\"priceAmount\":200,\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.319Z\",\"updatedAt\":\"2026-10-25T07:23:24.319Z\"}},\"selectedDate\":\"2026-10-25\",\"currentServing\":{\"id\":\"8d22d25a-de02-41ce-ad79-17e24dca35fa\",\"queueId\":\"8eedc70f-dbff-4013-964b-fb80e5501bd4\",\"userId\":\"3dae9a2a-01dd-45da-852e-2adb1c3512e5\",\"tokenNumber\":\"W0",
+      "time": "2026-10-25T09:01:27.602Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea",
       "postData": null,
-      "time": "2026-10-25T08:27:12.139Z"
+      "time": "2026-10-25T09:01:27.676Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea/subscription",
       "postData": null,
-      "time": "2026-10-25T08:27:12.139Z"
+      "time": "2026-10-25T09:01:27.676Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea",
-      "body": "{\"success\":true,\"data\":{\"id\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"chainId\":null,\"name\":\"City Health Multispecialty Clinic\",\"slug\":\"city-health\",\"phoneNumber\":\"+919876500001\",\"email\":\"care@cityhealth.com\",\"address\":\"102 Metro Towers, Ring Road, Indiranagar, Bengaluru\",\"city\":null,\"inClinicPrice\":200,\"remotePrice\":200,\"voiceAnnouncementMode\":\"TOKEN_PATIENT_DOCTOR_ROOM\",\"enableBookingTime\":true,\"enablePriorityQueue\":true,\"workingDays\":\"MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY,SATURDAY,SUNDAY\",\"openTime\":\"08:30 AM\",\"closeTime\":\"07:30 PM\",\"lunchStartTime\":\"01:00 PM\",\"lunchEndTime\":\"02:00 PM\",\"enableLunchBreak\":true,\"slotDurationMinutes\":30,\"holidays\":\"[]\",\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.269Z\",\"updatedAt\":\"2026-10-25T08:26:28.592Z\",\"doctors\":[{\"id\":\"73ade60d-ee58-44c7-8326-cd0263e0ba1f\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"Dr. Ramesh Sharma\",\"specialization\":\"General Physician & Internal Medicine\",\"roomNumber\":\"Room 101\",\"isActive\":true,\"createdAt\":\"2",
-      "time": "2026-10-25T08:27:12.154Z"
+      "body": "{\"success\":true,\"data\":{\"id\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"chainId\":null,\"name\":\"City Health Multispecialty Clinic\",\"slug\":\"city-health\",\"phoneNumber\":\"+919876500001\",\"email\":\"care@cityhealth.com\",\"address\":\"102 Metro Towers, Ring Road, Indiranagar, Bengaluru\",\"city\":null,\"inClinicPrice\":200,\"remotePrice\":200,\"voiceAnnouncementMode\":\"TOKEN_PATIENT_DOCTOR_ROOM\",\"enableBookingTime\":true,\"enablePriorityQueue\":true,\"workingDays\":\"MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY,SATURDAY\",\"openTime\":\"08:30 AM\",\"closeTime\":\"05:00 PM\",\"lunchStartTime\":\"01:00 PM\",\"lunchEndTime\":\"02:00 PM\",\"enableLunchBreak\":true,\"slotDurationMinutes\":15,\"holidays\":\"[]\",\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.269Z\",\"updatedAt\":\"2026-10-25T08:38:50.772Z\",\"doctors\":[{\"id\":\"73ade60d-ee58-44c7-8326-cd0263e0ba1f\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"Dr. Ramesh Sharma\",\"specialization\":\"General Physician & Internal Medicine\",\"roomNumber\":\"Room 101\",\"isActive\":true,\"createdAt\":\"2026-10-",
+      "time": "2026-10-25T09:01:27.699Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea/subscription",
       "body": "{\"success\":true,\"data\":{\"id\":\"0ab7108d-49fa-41e1-b90f-b99532417fcd\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"clinicName\":\"City Health Multispecialty Clinic\",\"clinicSlug\":\"city-health\",\"plan\":\"PROFESSIONAL\",\"status\":\"ACTIVE\",\"billingCycle\":\"MONTHLY\",\"amountPaid\":2499,\"startDate\":\"2026-10-25T07:23:24.276Z\",\"endDate\":null,\"maxDoctors\":5,\"maxStaff\":10,\"maxDisplays\":3,\"hasAds\":false,\"daysRemaining\":999,\"isExpiringSoon\":false,\"isExpired\":false,\"doctorsUsed\":3,\"staffUsed\":3,\"displaysUsed\":0,\"invoices\":[]}}",
-      "time": "2026-10-25T08:27:12.154Z"
+      "time": "2026-10-25T09:01:27.699Z"
     },
     {
       "type": "REQUEST",
       "method": "GET",
       "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea/queues/8eedc70f-dbff-4013-964b-fb80e5501bd4?date=2026-10-25",
       "postData": null,
-      "time": "2026-10-25T08:27:12.256Z"
+      "time": "2026-10-25T09:01:27.745Z"
     },
     {
       "type": "RESPONSE",
       "status": 200,
       "url": "http://localhost:4000/api/clinics/07e06036-9d85-4a71-af56-2f52b9bfe4ea/queues/8eedc70f-dbff-4013-964b-fb80e5501bd4?date=2026-10-25",
-      "body": "{\"success\":true,\"data\":{\"queue\":{\"id\":\"8eedc70f-dbff-4013-964b-fb80e5501bd4\",\"name\":\"Dr. Ramesh Sharma - General OPD\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"isPaused\":false,\"currentSeq\":5,\"doctor\":{\"id\":\"73ade60d-ee58-44c7-8326-cd0263e0ba1f\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"Dr. Ramesh Sharma\",\"specialization\":\"General Physician & Internal Medicine\",\"roomNumber\":\"Room 101\",\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.306Z\",\"updatedAt\":\"2026-10-25T07:23:24.306Z\"},\"service\":{\"id\":\"34c1fdca-260d-488f-9732-d68813120e7a\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"General Consultation\",\"description\":null,\"durationMinutes\":20,\"priceAmount\":200,\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.319Z\",\"updatedAt\":\"2026-10-25T07:23:24.319Z\"}},\"selectedDate\":\"2026-10-25\",\"currentServing\":null,\"waiting\":[{\"id\":\"8d22d25a-de02-41ce-ad79-17e24dca35fa\",\"queueId\":\"8eedc70f-dbff-4013-964b-fb80e5501bd4\",\"userId\":\"3dae9a2a-01dd-45da-852e-2adb1c3512e5\",\"",
-      "time": "2026-10-25T08:27:12.272Z"
+      "body": "{\"success\":true,\"data\":{\"queue\":{\"id\":\"8eedc70f-dbff-4013-964b-fb80e5501bd4\",\"name\":\"Dr. Ramesh Sharma - General OPD\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"isPaused\":false,\"currentSeq\":7,\"doctor\":{\"id\":\"73ade60d-ee58-44c7-8326-cd0263e0ba1f\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"Dr. Ramesh Sharma\",\"specialization\":\"General Physician & Internal Medicine\",\"roomNumber\":\"Room 101\",\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.306Z\",\"updatedAt\":\"2026-10-25T07:23:24.306Z\"},\"service\":{\"id\":\"34c1fdca-260d-488f-9732-d68813120e7a\",\"clinicId\":\"07e06036-9d85-4a71-af56-2f52b9bfe4ea\",\"name\":\"General Consultation\",\"description\":null,\"durationMinutes\":20,\"priceAmount\":200,\"isActive\":true,\"createdAt\":\"2026-10-25T07:23:24.319Z\",\"updatedAt\":\"2026-10-25T07:23:24.319Z\"}},\"selectedDate\":\"2026-10-25\",\"currentServing\":{\"id\":\"8d22d25a-de02-41ce-ad79-17e24dca35fa\",\"queueId\":\"8eedc70f-dbff-4013-964b-fb80e5501bd4\",\"userId\":\"3dae9a2a-01dd-45da-852e-2adb1c3512e5\",\"tokenNumber\":\"W0",
+      "time": "2026-10-25T09:01:27.773Z"
     }
   ],
   "steps": [
@@ -809,7 +837,7 @@
       "detail": "Successfully loaded. Title: \"QueueApp — Clinic Queue & Appointments\"",
       "status": "PASS",
       "error": null,
-      "timestamp": "2026-10-25T08:26:52.568Z"
+      "timestamp": "2026-10-25T09:01:08.129Z"
     },
     {
       "stepNum": 1.2,
@@ -817,7 +845,7 @@
       "detail": "Opened Login Modal via navigation button",
       "status": "PASS",
       "error": null,
-      "timestamp": "2026-10-25T08:26:53.278Z"
+      "timestamp": "2026-10-25T09:01:08.920Z"
     },
     {
       "stepNum": 1.3,
@@ -825,7 +853,7 @@
       "detail": "Entered digits: 9876510001 (Expected: 9876510001)",
       "status": "PASS",
       "error": null,
-      "timestamp": "2026-10-25T08:26:53.305Z"
+      "timestamp": "2026-10-25T09:01:08.950Z"
     },
     {
       "stepNum": 1.4,
@@ -833,15 +861,15 @@
       "detail": "POST /api/auth/send-otp -> Status: 200, Success: true",
       "status": "PASS",
       "error": null,
-      "timestamp": "2026-10-25T08:26:53.850Z"
+      "timestamp": "2026-10-25T09:01:09.190Z"
     },
     {
       "stepNum": 1.5,
       "action": "OTP Input & Cooldown UI",
-      "detail": "OTP input rendered. Resend button state: disabled=true",
+      "detail": "OTP input rendered. Resend button state: disabled=false",
       "status": "PASS",
       "error": null,
-      "timestamp": "2026-10-25T08:26:53.876Z"
+      "timestamp": "2026-10-25T09:01:09.218Z"
     },
     {
       "stepNum": 1.6,
@@ -849,7 +877,7 @@
       "detail": "POST /api/auth/verify-otp -> Status: 200, User: Rahul Verma (PATIENT)",
       "status": "PASS",
       "error": null,
-      "timestamp": "2026-10-25T08:26:54.038Z"
+      "timestamp": "2026-10-25T09:01:09.368Z"
     },
     {
       "stepNum": 1.7,
@@ -857,7 +885,7 @@
       "detail": "Local storage matches backend user payload: Rahul Verma",
       "status": "PASS",
       "error": null,
-      "timestamp": "2026-10-25T08:26:55.051Z"
+      "timestamp": "2026-10-25T09:01:10.377Z"
     },
     {
       "stepNum": 1.8,
@@ -865,7 +893,7 @@
       "detail": "Cleared patient session",
       "status": "PASS",
       "error": null,
-      "timestamp": "2026-10-25T08:26:55.629Z"
+      "timestamp": "2026-10-25T09:01:10.985Z"
     },
     {
       "stepNum": 1.9,
@@ -873,7 +901,7 @@
       "detail": "POST /api/auth/login-password -> Status: 200, Role: CLINIC_ADMIN, ClinicId: 07e06036-9d85-4a71-af56-2f52b9bfe4ea",
       "status": "PASS",
       "error": null,
-      "timestamp": "2026-10-25T08:26:55.963Z"
+      "timestamp": "2026-10-25T09:01:11.289Z"
     },
     {
       "stepNum": 1.1,
@@ -881,7 +909,7 @@
       "detail": "Successfully navigated to Clinic Admin Suite for Dr. Ramesh Sharma",
       "status": "PASS",
       "error": null,
-      "timestamp": "2026-10-25T08:26:57.478Z"
+      "timestamp": "2026-10-25T09:01:12.800Z"
     },
     {
       "stepNum": 1.11,
@@ -889,7 +917,7 @@
       "detail": "POST /api/auth/login-password -> Status: 200, Role: SUPER_ADMIN",
       "status": "PASS",
       "error": null,
-      "timestamp": "2026-10-25T08:26:58.377Z"
+      "timestamp": "2026-10-25T09:01:13.725Z"
     },
     {
       "stepNum": 1.12,
@@ -897,7 +925,7 @@
       "detail": "Navigated to Super Admin Control Panel for System Super Admin",
       "status": "PASS",
       "error": null,
-      "timestamp": "2026-10-25T08:26:59.895Z"
+      "timestamp": "2026-10-25T09:01:15.233Z"
     },
     {
       "stepNum": 2.1,
@@ -905,15 +933,15 @@
       "detail": "Authenticated as Patient Rahul Verma (+919876510001)",
       "status": "PASS",
       "error": null,
-      "timestamp": "2026-10-25T08:27:01.808Z"
+      "timestamp": "2026-10-25T09:01:17.134Z"
     },
     {
       "stepNum": 2.2,
       "action": "Open Booking Modal",
-      "detail": "Clicked \"Book Consultation\", Appointment Booking Modal rendered",
+      "detail": "Clicked Book Consultation / Book Another Appointment, Appointment Booking Modal rendered",
       "status": "PASS",
       "error": null,
-      "timestamp": "2026-10-25T08:27:01.888Z"
+      "timestamp": "2026-10-25T09:01:17.226Z"
     },
     {
       "stepNum": 2.3,
@@ -921,7 +949,7 @@
       "detail": "Base consultation fee of ₹200 displayed in UI: true",
       "status": "PASS",
       "error": null,
-      "timestamp": "2026-10-25T08:27:01.890Z"
+      "timestamp": "2026-10-25T09:01:17.231Z"
     },
     {
       "stepNum": 2.4,
@@ -929,7 +957,7 @@
       "detail": "min: \"2026-10-25\" (today), max: \"2026-10-27\" (today + 2 days). Valid: true",
       "status": "PASS",
       "error": null,
-      "timestamp": "2026-10-25T08:27:01.908Z"
+      "timestamp": "2026-10-25T09:01:17.247Z"
     },
     {
       "stepNum": 2.5,
@@ -937,7 +965,7 @@
       "detail": "Checkbox discovered. Initial checked state: false",
       "status": "PASS",
       "error": null,
-      "timestamp": "2026-10-25T08:27:01.918Z"
+      "timestamp": "2026-10-25T09:01:17.260Z"
     },
     {
       "stepNum": 2.6,
@@ -945,7 +973,7 @@
       "detail": "UI fee correctly updated from ₹200 to ₹250 upon checking instant queue: true",
       "status": "PASS",
       "error": null,
-      "timestamp": "2026-10-25T08:27:02.383Z"
+      "timestamp": "2026-10-25T09:01:17.747Z"
     },
     {
       "stepNum": 2.7,
@@ -953,7 +981,7 @@
       "detail": "Selected clinic: City Health Multispecialty Clinic (102 Metro Towers, Ring Road, Indiranagar, Bengaluru)",
       "status": "PASS",
       "error": null,
-      "timestamp": "2026-10-25T08:27:02.413Z"
+      "timestamp": "2026-10-25T09:01:17.786Z"
     },
     {
       "stepNum": 2.75,
@@ -961,15 +989,15 @@
       "detail": "Selected doctor: Dr. Ramesh Sharma &bull; General Physician & Internal Medicine (Room 101)",
       "status": "PASS",
       "error": null,
-      "timestamp": "2026-10-25T08:27:03.245Z"
+      "timestamp": "2026-10-25T09:01:18.635Z"
     },
     {
       "stepNum": 2.8,
       "action": "Time Slot Selection",
-      "detail": "Selected consultation slot: \"08:30 AM\"",
+      "detail": "Selected consultation slot: \"08:45 AM\"",
       "status": "PASS",
       "error": null,
-      "timestamp": "2026-10-25T08:27:03.887Z"
+      "timestamp": "2026-10-25T09:01:19.288Z"
     },
     {
       "stepNum": 2.9,
@@ -977,7 +1005,7 @@
       "detail": "Navigated to Payment Summary screen",
       "status": "PASS",
       "error": null,
-      "timestamp": "2026-10-25T08:27:04.561Z"
+      "timestamp": "2026-10-25T09:01:19.971Z"
     },
     {
       "stepNum": 2.1,
@@ -985,23 +1013,23 @@
       "detail": "POST /api/appointments -> Status: 201, Success: true, Fee: ₹250",
       "status": "PASS",
       "error": null,
-      "timestamp": "2026-10-25T08:27:04.664Z"
+      "timestamp": "2026-10-25T09:01:20.035Z"
     },
     {
       "stepNum": 2.11,
       "action": "Payment Verification & Token Allocation API",
-      "detail": "POST /api/payments/verify -> Status: 201, Token Assigned: P04",
+      "detail": "POST /api/payments/verify -> Status: 201, Token Assigned: P06",
       "status": "PASS",
       "error": null,
-      "timestamp": "2026-10-25T08:27:04.718Z"
+      "timestamp": "2026-10-25T09:01:20.109Z"
     },
     {
       "stepNum": 2.12,
       "action": "UI Confirmation State Parity",
-      "detail": "UI reflects booked token \"P04\": true",
+      "detail": "UI reflects booked token \"P06\": true",
       "status": "PASS",
       "error": null,
-      "timestamp": "2026-10-25T08:27:06.225Z"
+      "timestamp": "2026-10-25T09:01:21.623Z"
     },
     {
       "stepNum": 3.1,
@@ -1009,7 +1037,7 @@
       "detail": "Logged in as Dr. Ramesh Sharma (City Health Multispecialty Clinic)",
       "status": "PASS",
       "error": null,
-      "timestamp": "2026-10-25T08:27:08.602Z"
+      "timestamp": "2026-10-25T09:01:24.084Z"
     },
     {
       "stepNum": 3.2,
@@ -1017,7 +1045,7 @@
       "detail": "Found 2 date horizon buttons in console",
       "status": "PASS",
       "error": null,
-      "timestamp": "2026-10-25T08:27:08.617Z"
+      "timestamp": "2026-10-25T09:01:24.102Z"
     },
     {
       "stepNum": 3.3,
@@ -1025,7 +1053,7 @@
       "detail": "GET /queues/:id?date=... responded with Status 200, Waiting: 1, Booked: 2",
       "status": "PASS",
       "error": null,
-      "timestamp": "2026-10-25T08:27:08.722Z"
+      "timestamp": "2026-10-25T09:01:24.188Z"
     },
     {
       "stepNum": 3.4,
@@ -1033,7 +1061,7 @@
       "detail": "Patient Name: true, Phone: true, Age/Sex: true, Priority Tag: true",
       "status": "PASS",
       "error": null,
-      "timestamp": "2026-10-25T08:27:09.728Z"
+      "timestamp": "2026-10-25T09:01:25.192Z"
     },
     {
       "stepNum": 3.5,
@@ -1041,15 +1069,15 @@
       "detail": "Successfully switched back to Today queue view",
       "status": "PASS",
       "error": null,
-      "timestamp": "2026-10-25T08:27:10.807Z"
+      "timestamp": "2026-10-25T09:01:26.310Z"
     },
     {
       "stepNum": 3.6,
       "action": "Issue Walk-in Token",
-      "detail": "POST /receptionist/walk-in Status: 201, Token: W05",
+      "detail": "POST /receptionist/walk-in Status: 201, Token: W07",
       "status": "PASS",
       "error": null,
-      "timestamp": "2026-10-25T08:27:10.943Z"
+      "timestamp": "2026-10-25T09:01:26.477Z"
     },
     {
       "stepNum": 3.7,
@@ -1057,7 +1085,7 @@
       "detail": "API Call Next Status: 200, Token Called: N/A",
       "status": "PASS",
       "error": null,
-      "timestamp": "2026-10-25T08:27:12.065Z"
+      "timestamp": "2026-10-25T09:01:27.577Z"
     },
     {
       "stepNum": 3.7,
@@ -1065,7 +1093,7 @@
       "detail": "Operating Hours & Working Days: true, Marked Holidays Section: true",
       "status": "PASS",
       "error": null,
-      "timestamp": "2026-10-25T08:27:13.169Z"
+      "timestamp": "2026-10-25T09:01:28.714Z"
     }
   ],
   "discrepancies": [],

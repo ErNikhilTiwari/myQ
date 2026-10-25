@@ -12,6 +12,7 @@ import {
   LogIn,
   User,
   Calendar,
+  CalendarPlus,
   Sparkles
 } from 'lucide-react';
 import { ClinicSearchSelect, ClinicItem } from './ClinicSearchSelect';
@@ -313,14 +314,20 @@ export const MobileTokenTracker: React.FC<MobileTokenTrackerProps> = ({
               <button
                 type="button"
                 onClick={onOpenBookingModal}
-                className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white p-3 rounded-2xl text-xs font-bold transition flex items-center justify-between shadow-md active:scale-95"
+                className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white p-3 rounded-2xl text-xs font-bold transition flex items-center justify-between shadow-md active:scale-95 cursor-pointer"
               >
                 <div className="flex items-center space-x-2">
                   <div className="p-1.5 bg-white/20 rounded-xl">
-                    <Calendar className="w-4 h-4 text-white" />
+                    {activeTrackingToken || tokenData ? (
+                      <CalendarPlus className="w-4 h-4 text-white" />
+                    ) : (
+                      <Calendar className="w-4 h-4 text-white" />
+                    )}
                   </div>
                   <div className="text-left">
-                    <div className="font-extrabold text-xs">Book Doctor Appointment</div>
+                    <div className="font-extrabold text-xs">
+                      {activeTrackingToken || tokenData ? '+ Book Another Appointment' : 'Book Doctor Appointment'}
+                    </div>
                     <div className="text-[10px] text-emerald-100 font-normal">Fixed ₹200 fee &bull; Optional +₹50 Live Queue</div>
                   </div>
                 </div>

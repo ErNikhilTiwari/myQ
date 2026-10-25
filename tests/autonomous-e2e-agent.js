@@ -266,10 +266,10 @@ async function runAutonomousTesting() {
     logStep(2.1, 'Patient Logged in', 'Authenticated as Patient Rahul Verma (+919876510001)');
 
     // 2.2 Trigger Appointment Booking Modal
-    const bookBtn = await page.waitForSelector('button:has-text("Book Consultation")', { timeout: 6000 });
+    const bookBtn = await page.waitForSelector('button:has-text("Book Consultation"), button:has-text("Book Another Appointment"), button:has-text("Book Another Consultation")', { timeout: 6000 });
     await bookBtn.click();
     await page.waitForSelector('input[type="date"]', { timeout: 6000 });
-    logStep(2.2, 'Open Booking Modal', 'Clicked "Book Consultation", Appointment Booking Modal rendered');
+    logStep(2.2, 'Open Booking Modal', 'Clicked Book Consultation / Book Another Appointment, Appointment Booking Modal rendered');
 
     // 2.3 Inspect Base Appointment Price (₹200)
     const modalText = await page.evaluate(() => document.body.innerText);

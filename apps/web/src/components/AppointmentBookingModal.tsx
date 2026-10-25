@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Calendar, 
   Clock, 
@@ -18,7 +18,8 @@ import {
   User,
   Zap,
   Lock,
-  Layers
+  Layers,
+  CalendarPlus
 } from 'lucide-react';
 import { ClinicItem } from './ClinicSearchSelect';
 
@@ -246,7 +247,50 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
   const priorityFee = isPriorityActive ? 50 : 0;
   const currentFee = baseFee + priorityFee;
 
-  // Sync props when modal opens or query params arrive
+  // Reset modal state cleanly to book another appointment
+  const handleBookAnotherAppointment = () => {
+    setStep('DETAILS');
+    setConfirmedTokenNumber(null);
+    setConfirmedAppointment(null);
+    setErrorMsg(null);
+    setJoinQueueImmediately(false);
+    // Refresh booked slots for current date & clinic
+    if (selectedClinicId && selectedDate) {
+      const doctorParam = selectedDoctorId ? `&doctorId=${selectedDoctorId}` : '';
+      fetch(`/api/appointments/booked-slots?clinicId=${selectedClinicId}&date=${selectedDate}${doctorParam}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.data) {
+            setBookedSlotsData(data.data);
+          }
+        })
+        .catch(() => {});
+    }
+  };
+
+  const handleClose = () => {
+    setStep('DETAILS');
+    setConfirmedTokenNumber(null);
+    setConfirmedAppointment(null);
+    setErrorMsg(null);
+    onClose();
+  };
+
+  const prevIsOpenRef = useRef(false);
+
+  // Reset modal state only when modal transitions from closed to open
+  useEffect(() => {
+    if (isOpen && !prevIsOpenRef.current) {
+      setStep('DETAILS');
+      setConfirmedTokenNumber(null);
+      setConfirmedAppointment(null);
+      setErrorMsg(null);
+      setJoinQueueImmediately(false);
+    }
+    prevIsOpenRef.current = isOpen;
+  }, [isOpen]);
+
+  // Sync props (clinic selection, booking type, qr token)
   useEffect(() => {
     if (preselectedClinicId) {
       setSelectedClinicId(preselectedClinicId);
@@ -259,8 +303,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
     if (initialQrToken) {
       setQrToken(initialQrToken);
     }
-    setErrorMsg(null);
-  }, [isOpen, preselectedClinicId, initialBookingType, initialQrToken, clinics]);
+  }, [preselectedClinicId, initialBookingType, initialQrToken, clinics]);
 
   // Ensure selectedDate stays within [today, today+2] and on open working days
   useEffect(() => {
@@ -555,8 +598,8 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
             </div>
           </div>
           <button
-            onClick={onClose}
-            className="p-1.5 rounded-xl hover:bg-white/20 text-white/80 hover:text-white transition"
+            onClick={handleClose}
+            className="p-1.5 rounded-xl hover:bg-white/20 text-white/80 hover:text-white transition cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -1033,25 +1076,34 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                 <div><b>Total Paid:</b> ₹{currentFee} {isPriorityActive ? '(₹200 Base + ₹50 Live Queue Pass)' : '(Fixed Appointment Fee)'}</div>
               </div>
 
-              <div className="pt-2 flex flex-col sm:flex-row gap-3">
+              <div className="pt-2 flex flex-col sm:flex-row gap-2.5">
                 <button
                   type="button"
-                  onClick={() => {
-                    onClose();
-                    if (onBookingConfirmed && confirmedTokenNumber) {
-                      onBookingConfirmed(confirmedTokenNumber, selectedClinicId);
-                    }
-                  }}
-                  className="flex-1 bg-[#0284C7] hover:bg-[#0369A1] text-white py-3.5 rounded-2xl font-bold text-xs shadow-md transition active:scale-95 flex items-center justify-center space-x-1.5"
+                  onClick={handleBookAnotherAppointment}
+                  className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white py-3.5 rounded-2xl font-bold text-xs shadow-md transition active:scale-95 flex items-center justify-center space-x-1.5 cursor-pointer"
                 >
-                  <Zap className="w-4 h-4" />
-                  <span>Track Live Token Progress Now</span>
+                  <CalendarPlus className="w-4 h-4" />
+                  <span>Book Another Appointment</span>
                 </button>
 
                 <button
                   type="button"
-                  onClick={onClose}
-                  className="px-5 py-3 rounded-2xl border border-slate-300 text-slate-700 font-bold text-xs hover:bg-slate-50 transition"
+                  onClick={() => {
+                    handleClose();
+                    if (onBookingConfirmed && confirmedTokenNumber) {
+                      onBookingConfirmed(confirmedTokenNumber, selectedClinicId);
+                    }
+                  }}
+                  className="flex-1 bg-[#0284C7] hover:bg-[#0369A1] text-white py-3.5 rounded-2xl font-bold text-xs shadow-md transition active:scale-95 flex items-center justify-center space-x-1.5 cursor-pointer"
+                >
+                  <Zap className="w-4 h-4" />
+                  <span>Track Token</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="px-5 py-3 rounded-2xl border border-slate-300 text-slate-700 font-bold text-xs hover:bg-slate-50 transition cursor-pointer"
                 >
                   Done
                 </button>
