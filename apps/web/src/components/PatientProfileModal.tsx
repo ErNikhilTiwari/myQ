@@ -238,8 +238,8 @@ export const PatientProfileModal: React.FC<PatientProfileModalProps> = ({
           <div className="pt-2 space-y-2">
             <button
               type="submit"
-              disabled={loading}
-              className="w-full bg-[#0284C7] hover:bg-[#0369A1] text-white py-2.5 rounded-xl font-bold text-xs transition shadow-sm flex items-center justify-center space-x-1.5 active:scale-95"
+              disabled={loading || !name.trim() || name.trim().length < 2 || !age.trim() || isNaN(Number(age)) || Number(age) < 1 || Number(age) > 125 || !gender}
+              className="w-full py-2.5 rounded-xl font-bold text-xs transition shadow-sm flex items-center justify-center space-x-1.5 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed bg-[#0284C7] hover:bg-[#0369A1] text-white cursor-pointer active:scale-95"
             >
               <CheckCircle className="w-4 h-4" />
               <span>{loading ? 'Saving Profile...' : 'Save & Complete Profile'}</span>

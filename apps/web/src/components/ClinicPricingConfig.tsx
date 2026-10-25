@@ -597,11 +597,13 @@ export const ClinicPricingConfig: React.FC<ClinicPricingConfigProps> = ({
                 </button>
                 <button
                   type="submit"
-                  disabled={isSaving}
-                  className={`flex items-center space-x-1.5 text-white px-4 py-2 rounded-xl font-bold text-xs shadow-sm transition active:scale-95 disabled:opacity-50 ${
-                    editingTarget === 'IN_CLINIC'
-                      ? 'bg-emerald-600 hover:bg-emerald-700'
-                      : 'bg-[#0284C7] hover:bg-[#0369A1]'
+                  disabled={isSaving || !tempPrice || isNaN(tempPrice) || tempPrice <= 0}
+                  className={`flex items-center space-x-1.5 px-4 py-2 rounded-xl font-bold text-xs shadow-sm transition active:scale-95 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed cursor-pointer ${
+                    isSaving || !tempPrice || isNaN(tempPrice) || tempPrice <= 0
+                      ? ''
+                      : editingTarget === 'IN_CLINIC'
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                      : 'bg-[#0284C7] hover:bg-[#0369A1] text-white'
                   }`}
                 >
                   <Save className="w-3.5 h-3.5" />

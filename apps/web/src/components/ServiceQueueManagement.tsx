@@ -500,8 +500,8 @@ export const ServiceQueueManagement: React.FC<ServiceQueueManagementProps> = ({
                 </button>
                 <button
                   type="submit"
-                  disabled={queueSubmitting}
-                  className="px-5 py-2 text-xs font-bold bg-[#0284C7] hover:bg-[#0369A1] text-white rounded-xl shadow-md transition disabled:opacity-50"
+                  disabled={queueSubmitting || !queueName.trim()}
+                  className="px-5 py-2 text-xs font-bold rounded-xl shadow-md transition disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed bg-[#0284C7] hover:bg-[#0369A1] text-white cursor-pointer"
                 >
                   {queueSubmitting ? 'Creating...' : 'Create Queue'}
                 </button>
@@ -592,8 +592,8 @@ export const ServiceQueueManagement: React.FC<ServiceQueueManagementProps> = ({
                 </button>
                 <button
                   type="submit"
-                  disabled={serviceSubmitting}
-                  className="px-5 py-2 text-xs font-bold bg-[#0284C7] hover:bg-[#0369A1] text-white rounded-xl shadow-md transition disabled:opacity-50"
+                  disabled={serviceSubmitting || !serviceName.trim() || !durationMinutes || durationMinutes <= 0 || priceAmount < 0}
+                  className="px-5 py-2 text-xs font-bold rounded-xl shadow-md transition disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed bg-[#0284C7] hover:bg-[#0369A1] text-white cursor-pointer"
                 >
                   {serviceSubmitting ? 'Saving...' : editingService ? 'Save Changes' : 'Create Service'}
                 </button>

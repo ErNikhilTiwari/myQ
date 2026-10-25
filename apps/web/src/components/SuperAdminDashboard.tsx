@@ -2783,8 +2783,8 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                 </button>
                 <button
                   type="submit"
-                  disabled={recSubmitting}
-                  className="px-5 py-2 text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white rounded-xl shadow-md transition disabled:opacity-50"
+                  disabled={recSubmitting || !recFormName.trim() || recFormPhone.length !== 10}
+                  className="px-5 py-2 text-xs font-bold rounded-xl shadow-md transition disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed bg-teal-600 hover:bg-teal-700 text-white cursor-pointer"
                 >
                   {recSubmitting ? 'Saving...' : 'Save Changes'}
                 </button>

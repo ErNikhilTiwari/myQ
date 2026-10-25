@@ -823,9 +823,9 @@ export const ClinicSubscriptionTab: React.FC<ClinicSubscriptionTabProps> = ({
               </button>
               <button
                 type="button"
-                disabled={submittingPayment}
+                disabled={submittingPayment || (paymentMethod === 'UPI' && checkoutTotal > 0 && !upiId.trim())}
                 onClick={handleProcessPayment}
-                className="bg-[#16A34A] hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-md transition-all active:scale-95 flex items-center space-x-2 disabled:opacity-50"
+                className="px-5 py-2.5 rounded-xl font-bold text-xs shadow-md transition-all active:scale-95 flex items-center space-x-2 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed bg-[#16A34A] hover:bg-emerald-700 text-white cursor-pointer"
               >
                 {submittingPayment ? (
                   <>

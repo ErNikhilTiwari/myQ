@@ -24,7 +24,8 @@ import {
   Clock,
   CalendarDays,
   Sun,
-  Trash2
+  Trash2,
+  Edit3
 } from 'lucide-react';
 import { ClinicDto } from '@queueapp/shared';
 
@@ -84,6 +85,11 @@ export const ClinicAdminProfile: React.FC<ClinicAdminProfileProps> = ({
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
+
+  // Edit Mode States (User must click edit details first before modifying and saving)
+  const [isEditingAdmin, setIsEditingAdmin] = useState(false);
+  const [isEditingClinic, setIsEditingClinic] = useState(false);
+  const [isEditingSchedule, setIsEditingSchedule] = useState(false);
 
   // Feedback notifications
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -183,6 +189,7 @@ export const ClinicAdminProfile: React.FC<ClinicAdminProfileProps> = ({
       const data = await res.json();
       if (data.success && data.data) {
         showToast('success', 'Admin profile updated successfully!');
+        setIsEditingAdmin(false);
         if (onProfileUpdated) {
           onProfileUpdated(data.data);
         }
@@ -283,6 +290,7 @@ export const ClinicAdminProfile: React.FC<ClinicAdminProfileProps> = ({
       if (data.success && data.data) {
         showToast('success', 'Clinic information updated successfully!');
         setClinic(data.data);
+        setIsEditingClinic(false);
       } else {
         showToast('error', data.error?.message || data.message || 'Failed to update clinic information.');
       }
@@ -356,6 +364,7 @@ export const ClinicAdminProfile: React.FC<ClinicAdminProfileProps> = ({
       if (data.success && data.data) {
         showToast('success', 'Clinic operating days, hours, lunch window, and holidays updated successfully!');
         setClinic(data.data);
+        setIsEditingSchedule(false);
       } else {
         showToast('error', data.error?.message || data.message || 'Failed to update clinic schedule.');
       }
@@ -513,10 +522,15 @@ export const ClinicAdminProfile: React.FC<ClinicAdminProfileProps> = ({
                 <div className="relative">
                   <input
                     type="text"
+                    disabled={!isEditingAdmin}
                     value={adminName}
                     onChange={(e) => setAdminName(e.target.value)}
                     placeholder="e.g. Dr. Rajesh Gupta / Clinic Admin"
-                    className="w-full bg-[#F8FAFC] border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none"
+                    className={`w-full rounded-xl px-3.5 py-2.5 text-xs font-semibold ${
+                      !isEditingAdmin
+                        ? 'bg-slate-50 border border-slate-200 text-slate-700 cursor-not-allowed select-none'
+                        : 'bg-[#F8FAFC] border border-slate-200 text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none'
+                    }`}
                     required
                   />
                 </div>
@@ -527,16 +541,23 @@ export const ClinicAdminProfile: React.FC<ClinicAdminProfileProps> = ({
                   Login Mobile Number (10 Digits) <span className="text-red-500">*</span>
                 </label>
                 <div className="flex items-center">
-                  <span className="bg-slate-100 border border-r-0 border-slate-300 text-slate-600 text-xs px-3 py-2.5 rounded-l-xl font-bold font-mono">
+                  <span className={`border border-r-0 border-slate-300 text-xs px-3 py-2.5 rounded-l-xl font-bold font-mono ${
+                    !isEditingAdmin ? 'bg-slate-100 text-slate-500' : 'bg-slate-100 text-slate-600'
+                  }`}>
                     +91
                   </span>
                   <input
                     type="tel"
                     maxLength={10}
+                    disabled={!isEditingAdmin}
                     value={adminPhone10}
                     onChange={(e) => setAdminPhone10(e.target.value.replace(/\D/g, ''))}
                     placeholder="9876543210"
-                    className="w-full bg-[#F8FAFC] border border-slate-200 rounded-r-xl px-3.5 py-2.5 text-xs font-mono font-semibold text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none"
+                    className={`w-full rounded-r-xl px-3.5 py-2.5 text-xs font-mono font-semibold ${
+                      !isEditingAdmin
+                        ? 'bg-slate-50 border border-slate-200 text-slate-700 cursor-not-allowed select-none'
+                        : 'bg-[#F8FAFC] border border-slate-200 text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none'
+                    }`}
                     required
                   />
                 </div>
@@ -551,31 +572,62 @@ export const ClinicAdminProfile: React.FC<ClinicAdminProfileProps> = ({
                 </label>
                 <input
                   type="email"
+                  disabled={!isEditingAdmin}
                   value={adminEmail}
                   onChange={(e) => setAdminEmail(e.target.value)}
                   placeholder="admin@apolloclinic.com"
-                  className="w-full bg-[#F8FAFC] border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none"
+                  className={`w-full rounded-xl px-3.5 py-2.5 text-xs font-semibold ${
+                    !isEditingAdmin
+                      ? 'bg-slate-50 border border-slate-200 text-slate-700 cursor-not-allowed select-none'
+                      : 'bg-[#F8FAFC] border border-slate-200 text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none'
+                  }`}
                 />
               </div>
 
               <div className="pt-2">
-                <button
-                  type="submit"
-                  disabled={savingAdmin}
-                  className="w-full bg-[#0284C7] hover:bg-[#0369A1] text-white py-2.5 rounded-xl font-bold text-xs shadow-sm transition flex items-center justify-center space-x-2 disabled:opacity-50 active:scale-[0.99]"
-                >
-                  {savingAdmin ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                      <span>Saving Changes...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4" />
-                      <span>Save Admin Details</span>
-                    </>
-                  )}
-                </button>
+                {!isEditingAdmin ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingAdmin(true)}
+                    className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 py-2.5 rounded-xl font-bold text-xs shadow-xs transition flex items-center justify-center space-x-2 active:scale-[0.99] cursor-pointer"
+                  >
+                    <Edit3 className="w-4 h-4 text-[#0284C7]" />
+                    <span>Edit Admin Details</span>
+                  </button>
+                ) : (
+                  <div className="flex items-center space-x-2">
+                    <button
+                      type="button"
+                      disabled={savingAdmin}
+                      onClick={() => {
+                        setAdminName(currentUser?.name || '');
+                        setAdminPhone10(currentUser?.phoneNumber ? currentUser.phoneNumber.replace(/\D/g, '').slice(-10) : '');
+                        setAdminEmail(currentUser?.email || '');
+                        setIsEditingAdmin(false);
+                      }}
+                      className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={savingAdmin || !adminName.trim() || adminPhone10.length !== 10}
+                      className="flex-1 py-2.5 rounded-xl font-bold text-xs shadow-sm transition flex items-center justify-center space-x-2 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed bg-[#0284C7] hover:bg-[#0369A1] text-white cursor-pointer active:scale-[0.99]"
+                    >
+                      {savingAdmin ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          <span>Saving Changes...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4" />
+                          <span>Save Admin Details</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
               </div>
             </form>
           </div>
@@ -673,8 +725,8 @@ export const ClinicAdminProfile: React.FC<ClinicAdminProfileProps> = ({
               <div className="pt-2">
                 <button
                   type="submit"
-                  disabled={changingPassword}
-                  className="w-full bg-amber-600 hover:bg-amber-700 text-white py-2.5 rounded-xl font-bold text-xs shadow-sm transition flex items-center justify-center space-x-2 disabled:opacity-50 active:scale-[0.99]"
+                  disabled={changingPassword || !currentPassword.trim() || !newPassword.trim() || !confirmPassword.trim()}
+                  className="w-full py-2.5 rounded-xl font-bold text-xs shadow-sm transition flex items-center justify-center space-x-2 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed bg-amber-600 hover:bg-amber-700 text-white cursor-pointer active:scale-[0.99]"
                 >
                   {changingPassword ? (
                     <>
@@ -734,10 +786,15 @@ export const ClinicAdminProfile: React.FC<ClinicAdminProfileProps> = ({
             </label>
             <input
               type="text"
+              disabled={!isEditingClinic}
               value={clinicName}
               onChange={(e) => setClinicName(e.target.value)}
               placeholder="e.g. Apollo Medical Center"
-              className="w-full bg-[#F8FAFC] border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#1E293B] focus:ring-2 focus:ring-teal-500 focus:outline-none"
+              className={`w-full rounded-xl px-3.5 py-2.5 text-xs font-semibold ${
+                !isEditingClinic
+                  ? 'bg-slate-50 border border-slate-200 text-slate-700 cursor-not-allowed select-none'
+                  : 'bg-[#F8FAFC] border border-slate-200 text-[#1E293B] focus:ring-2 focus:ring-teal-500 focus:outline-none'
+              }`}
               required
             />
           </div>
@@ -748,16 +805,23 @@ export const ClinicAdminProfile: React.FC<ClinicAdminProfileProps> = ({
                 Clinic Contact Phone (10 Digits)
               </label>
               <div className="flex items-center">
-                <span className="bg-slate-100 border border-r-0 border-slate-300 text-slate-600 text-xs px-3 py-2.5 rounded-l-xl font-bold font-mono">
+                <span className={`border border-r-0 border-slate-300 text-xs px-3 py-2.5 rounded-l-xl font-bold font-mono ${
+                  !isEditingClinic ? 'bg-slate-100 text-slate-500' : 'bg-slate-100 text-slate-600'
+                }`}>
                   +91
                 </span>
                 <input
                   type="tel"
                   maxLength={10}
+                  disabled={!isEditingClinic}
                   value={clinicPhone10}
                   onChange={(e) => setClinicPhone10(e.target.value.replace(/\D/g, ''))}
                   placeholder="9876543210"
-                  className="w-full bg-[#F8FAFC] border border-slate-200 rounded-r-xl px-3.5 py-2.5 text-xs font-mono font-semibold text-[#1E293B] focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                  className={`w-full rounded-r-xl px-3.5 py-2.5 text-xs font-mono font-semibold ${
+                    !isEditingClinic
+                      ? 'bg-slate-50 border border-slate-200 text-slate-700 cursor-not-allowed select-none'
+                      : 'bg-[#F8FAFC] border border-slate-200 text-[#1E293B] focus:ring-2 focus:ring-teal-500 focus:outline-none'
+                  }`}
                 />
               </div>
             </div>
@@ -768,10 +832,15 @@ export const ClinicAdminProfile: React.FC<ClinicAdminProfileProps> = ({
               </label>
               <input
                 type="email"
+                disabled={!isEditingClinic}
                 value={clinicEmail}
                 onChange={(e) => setClinicEmail(e.target.value)}
                 placeholder="contact@apolloclinic.com"
-                className="w-full bg-[#F8FAFC] border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#1E293B] focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                className={`w-full rounded-xl px-3.5 py-2.5 text-xs font-semibold ${
+                  !isEditingClinic
+                    ? 'bg-slate-50 border border-slate-200 text-slate-700 cursor-not-allowed select-none'
+                    : 'bg-[#F8FAFC] border border-slate-200 text-[#1E293B] focus:ring-2 focus:ring-teal-500 focus:outline-none'
+                }`}
               />
             </div>
           </div>
@@ -781,10 +850,15 @@ export const ClinicAdminProfile: React.FC<ClinicAdminProfileProps> = ({
               <label className="text-xs font-bold text-[#64748B] block mb-1">Street Address</label>
               <input
                 type="text"
+                disabled={!isEditingClinic}
                 value={clinicAddress}
                 onChange={(e) => setClinicAddress(e.target.value)}
                 placeholder="e.g. 104 Park Avenue, Medical Enclave"
-                className="w-full bg-[#F8FAFC] border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#1E293B] focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                className={`w-full rounded-xl px-3.5 py-2.5 text-xs font-semibold ${
+                  !isEditingClinic
+                    ? 'bg-slate-50 border border-slate-200 text-slate-700 cursor-not-allowed select-none'
+                    : 'bg-[#F8FAFC] border border-slate-200 text-[#1E293B] focus:ring-2 focus:ring-teal-500 focus:outline-none'
+                }`}
               />
             </div>
 
@@ -792,32 +866,67 @@ export const ClinicAdminProfile: React.FC<ClinicAdminProfileProps> = ({
               <label className="text-xs font-bold text-[#64748B] block mb-1">City</label>
               <input
                 type="text"
+                disabled={!isEditingClinic}
                 value={clinicCity}
                 onChange={(e) => setClinicCity(e.target.value)}
                 placeholder="e.g. Mumbai"
-                className="w-full bg-[#F8FAFC] border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#1E293B] focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                className={`w-full rounded-xl px-3.5 py-2.5 text-xs font-semibold ${
+                  !isEditingClinic
+                    ? 'bg-slate-50 border border-slate-200 text-slate-700 cursor-not-allowed select-none'
+                    : 'bg-[#F8FAFC] border border-slate-200 text-[#1E293B] focus:ring-2 focus:ring-teal-500 focus:outline-none'
+                }`}
               />
             </div>
           </div>
 
           <div className="pt-3 flex justify-end">
-            <button
-              type="submit"
-              disabled={savingClinic}
-              className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-2.5 rounded-xl font-bold text-xs shadow-sm transition flex items-center space-x-2 disabled:opacity-50 active:scale-[0.99]"
-            >
-              {savingClinic ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Saving Clinic Info...</span>
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4" />
-                  <span>Save Clinic Details</span>
-                </>
-              )}
-            </button>
+            {!isEditingClinic ? (
+              <button
+                type="button"
+                onClick={() => setIsEditingClinic(true)}
+                className="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 px-6 py-2.5 rounded-xl font-bold text-xs shadow-xs transition flex items-center space-x-2 active:scale-[0.99] cursor-pointer"
+              >
+                <Edit3 className="w-4 h-4 text-teal-600" />
+                <span>Edit Clinic Details</span>
+              </button>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <button
+                  type="button"
+                  disabled={savingClinic}
+                  onClick={() => {
+                    if (clinic) {
+                      setClinicName(clinic.name || '');
+                      setClinicPhone10(clinic.phoneNumber ? clinic.phoneNumber.replace(/\D/g, '').slice(-10) : '');
+                      setClinicEmail(clinic.email || '');
+                      setClinicAddress(clinic.address || '');
+                      setClinicCity(clinic.city || '');
+                    }
+                    setIsEditingClinic(false);
+                  }}
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingClinic || !clinicName.trim() || (clinicPhone10.length > 0 && clinicPhone10.length !== 10)}
+                  className="px-6 py-2.5 rounded-xl font-bold text-xs shadow-sm transition flex items-center space-x-2 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed bg-teal-600 hover:bg-teal-700 text-white cursor-pointer active:scale-[0.99]"
+                >
+                  {savingClinic ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Saving Clinic Info...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      <span>Save Clinic Details</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
         </form>
       </div>
@@ -847,6 +956,7 @@ export const ClinicAdminProfile: React.FC<ClinicAdminProfileProps> = ({
         </div>
 
         <form onSubmit={handleSaveSchedule} className="space-y-6">
+          <div className={`space-y-6 ${!isEditingSchedule ? 'pointer-events-none opacity-80 select-none' : ''}`}>
           {/* Working Days Selector */}
           <div>
             <label className="text-xs font-bold text-[#1E293B] block mb-2 flex items-center space-x-2">
@@ -1068,25 +1178,65 @@ export const ClinicAdminProfile: React.FC<ClinicAdminProfileProps> = ({
               </div>
             )}
           </div>
+          </div>
 
           <div className="pt-2 flex justify-end">
-            <button
-              type="submit"
-              disabled={savingSchedule}
-              className="bg-[#0284C7] hover:bg-[#0369A1] text-white px-6 py-2.5 rounded-xl font-bold text-xs shadow-sm transition flex items-center space-x-2 disabled:opacity-50 active:scale-[0.99]"
-            >
-              {savingSchedule ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Saving Schedule...</span>
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4" />
-                  <span>Save Timings &amp; Holidays</span>
-                </>
-              )}
-            </button>
+            {!isEditingSchedule ? (
+              <button
+                type="button"
+                onClick={() => setIsEditingSchedule(true)}
+                className="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 px-6 py-2.5 rounded-xl font-bold text-xs shadow-xs transition flex items-center space-x-2 active:scale-[0.99] cursor-pointer"
+              >
+                <Edit3 className="w-4 h-4 text-[#0284C7]" />
+                <span>Edit Timings &amp; Holidays</span>
+              </button>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <button
+                  type="button"
+                  disabled={savingSchedule}
+                  onClick={() => {
+                    if (clinic) {
+                      if (clinic.workingDays) setWorkingDays(clinic.workingDays.split(','));
+                      if (clinic.openTime) setOpenTime(clinic.openTime);
+                      if (clinic.closeTime) setCloseTime(clinic.closeTime);
+                      if (clinic.lunchStartTime) setLunchStartTime(clinic.lunchStartTime);
+                      if (clinic.lunchEndTime) setLunchEndTime(clinic.lunchEndTime);
+                      if (clinic.enableLunchBreak !== undefined) setEnableLunchBreak(Boolean(clinic.enableLunchBreak));
+                      if (clinic.slotDurationMinutes) setSlotDurationMinutes(clinic.slotDurationMinutes);
+                      if (clinic.holidays) {
+                        try {
+                          setHolidays(JSON.parse(clinic.holidays));
+                        } catch {
+                          setHolidays([]);
+                        }
+                      }
+                    }
+                    setIsEditingSchedule(false);
+                  }}
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingSchedule || workingDays.length === 0}
+                  className="px-6 py-2.5 rounded-xl font-bold text-xs shadow-sm transition flex items-center space-x-2 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed bg-[#0284C7] hover:bg-[#0369A1] text-white cursor-pointer active:scale-[0.99]"
+                >
+                  {savingSchedule ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Saving Schedule...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      <span>Save Timings &amp; Holidays</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
         </form>
       </div>

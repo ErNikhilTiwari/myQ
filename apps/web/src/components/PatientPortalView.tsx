@@ -21,7 +21,8 @@ import {
   QrCode,
   Globe,
   AlertTriangle,
-  CalendarPlus
+  CalendarPlus,
+  Edit3
 } from 'lucide-react';
 import { ClinicSearchSelect, ClinicItem } from './ClinicSearchSelect';
 
@@ -387,10 +388,22 @@ export const PatientPortalView: React.FC<PatientPortalViewProps> = ({
                   {isPatientLoggedIn ? currentUser?.name || 'Patient Portal' : 'Patient Care Portal'}
                 </h1>
                 {isPatientLoggedIn ? (
-                  <span className="bg-[#DCFCE7] text-[#16A34A] text-[10px] font-bold px-2 py-0.5 rounded-full border border-[#16A34A]/30 flex items-center space-x-1">
-                    <CheckCircle className="w-3 h-3" />
-                    <span>Verified Patient</span>
-                  </span>
+                  <div className="flex items-center space-x-2">
+                    <span className="bg-[#DCFCE7] text-[#16A34A] text-[10px] font-bold px-2 py-0.5 rounded-full border border-[#16A34A]/30 flex items-center space-x-1">
+                      <CheckCircle className="w-3 h-3" />
+                      <span>Verified Patient</span>
+                    </span>
+                    {onOpenProfileModal && (
+                      <button
+                        onClick={() => onOpenProfileModal()}
+                        className="text-[11px] text-[#0284C7] hover:text-[#0369A1] font-bold hover:underline flex items-center space-x-1 cursor-pointer bg-sky-50 px-2 py-0.5 rounded-lg border border-sky-200 transition"
+                        title="Edit Patient Profile"
+                      >
+                        <Edit3 className="w-3 h-3" />
+                        <span>Edit Details</span>
+                      </button>
+                    )}
+                  </div>
                 ) : (
                   <span className="bg-[#E0F2FE] text-[#0284C7] text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-[#0284C7]/30">
                     Public Zero-Login Tracking

@@ -1472,8 +1472,8 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmitting}
-                  className="flex-1 bg-[#0284C7] hover:bg-[#0369A1] text-white py-2.5 rounded-xl text-xs font-bold transition shadow-sm"
+                  disabled={isSubmitting || !walkinName.trim() || walkinPhone10.length !== 10}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-bold transition shadow-sm disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed bg-[#0284C7] hover:bg-[#0369A1] text-white cursor-pointer"
                 >
                   {isSubmitting ? 'Issuing...' : 'Generate Token'}
                 </button>
@@ -1595,8 +1595,8 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
                   setCancelReason('');
                   setCancelReasonError('');
                 }}
-                disabled={isSubmitting}
-                className="flex-1 bg-[#DC2626] hover:bg-red-700 text-white py-2.5 rounded-xl text-xs font-bold transition shadow-sm"
+                disabled={isSubmitting || !cancelReason.trim()}
+                className="flex-1 py-2.5 rounded-xl text-xs font-bold transition shadow-sm disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed bg-[#DC2626] hover:bg-red-700 text-white cursor-pointer"
               >
                 {isSubmitting ? 'Cancelling...' : 'Yes, Cancel'}
               </button>

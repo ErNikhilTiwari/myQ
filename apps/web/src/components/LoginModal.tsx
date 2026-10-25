@@ -491,8 +491,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="w-full bg-[#0284C7] hover:bg-[#0369A1] text-white py-2.5 rounded-xl font-bold text-xs transition shadow-sm flex items-center justify-center space-x-1"
+                  disabled={loading || phone10.length !== 10 || !password.trim()}
+                  className="w-full py-2.5 rounded-xl font-bold text-xs transition shadow-sm flex items-center justify-center space-x-1 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed bg-[#0284C7] hover:bg-[#0369A1] text-white cursor-pointer"
                 >
                   <Lock className="w-3.5 h-3.5" />
                   <span>{loading ? 'Logging in...' : 'Login with Password'}</span>
@@ -512,8 +512,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="w-full bg-[#0284C7] hover:bg-[#0369A1] text-white py-2.5 rounded-xl font-bold text-xs transition shadow-sm flex items-center justify-center space-x-1"
+                  disabled={loading || phone10.length !== 10}
+                  className="w-full py-2.5 rounded-xl font-bold text-xs transition shadow-sm flex items-center justify-center space-x-1 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed bg-[#0284C7] hover:bg-[#0369A1] text-white cursor-pointer"
                 >
                   <span>{loading ? 'Sending...' : 'Send OTP & Login'}</span>
                 </button>
@@ -600,8 +600,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
             <button
               type="submit"
-              disabled={loading}
-              className="w-full bg-[#16A34A] hover:bg-[#15803D] text-white py-3 rounded-xl font-bold text-xs transition shadow-sm flex items-center justify-center space-x-2"
+              disabled={loading || otp.length !== 6}
+              className="w-full py-3 rounded-xl font-bold text-xs transition shadow-sm flex items-center justify-center space-x-2 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed bg-[#16A34A] hover:bg-[#15803D] text-white cursor-pointer"
             >
               <CheckCircle className="w-4 h-4" />
               <span>{loading ? 'Verifying...' : 'Verify OTP & Login'}</span>

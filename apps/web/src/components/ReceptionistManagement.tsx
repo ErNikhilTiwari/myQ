@@ -509,8 +509,8 @@ export const ReceptionistManagement: React.FC<ReceptionistManagementProps> = ({
                 </button>
                 <button
                   type="submit"
-                  disabled={formSubmitting}
-                  className="px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold shadow-md transition disabled:opacity-50"
+                  disabled={formSubmitting || !formName.trim() || formPhone.length !== 10}
+                  className="px-5 py-2 rounded-xl text-xs font-bold shadow-md transition disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed bg-teal-600 hover:bg-teal-700 text-white cursor-pointer"
                 >
                   {formSubmitting ? 'Registering...' : 'Register Receptionist'}
                 </button>
@@ -605,8 +605,8 @@ export const ReceptionistManagement: React.FC<ReceptionistManagementProps> = ({
                 </button>
                 <button
                   type="submit"
-                  disabled={formSubmitting}
-                  className="px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold shadow-md transition disabled:opacity-50"
+                  disabled={formSubmitting || !formName.trim() || formPhone.length !== 10}
+                  className="px-5 py-2 rounded-xl text-xs font-bold shadow-md transition disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed bg-teal-600 hover:bg-teal-700 text-white cursor-pointer"
                 >
                   {formSubmitting ? 'Saving...' : 'Save Changes'}
                 </button>

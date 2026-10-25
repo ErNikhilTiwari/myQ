@@ -347,8 +347,8 @@ export const DoctorManagement: React.FC<DoctorManagementProps> = ({
                 </button>
                 <button
                   type="submit"
-                  disabled={submitting}
-                  className="px-5 py-2 text-xs font-bold bg-[#0284C7] hover:bg-[#0369A1] text-white rounded-xl shadow-md transition disabled:opacity-50"
+                  disabled={submitting || !name.trim() || !specialization.trim()}
+                  className="px-5 py-2 text-xs font-bold rounded-xl shadow-md transition disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed bg-[#0284C7] hover:bg-[#0369A1] text-white cursor-pointer"
                 >
                   {submitting ? 'Saving...' : editingDoctor ? 'Save Changes' : 'Create Doctor'}
                 </button>
