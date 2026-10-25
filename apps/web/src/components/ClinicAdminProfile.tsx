@@ -55,12 +55,16 @@ export const ClinicAdminProfile: React.FC<ClinicAdminProfileProps> = ({
   const [clinicAddress, setClinicAddress] = useState('');
   const [clinicCity, setClinicCity] = useState('');
 
-  // Working Hours, Operating Days & Holidays State
+  // Working Hours, Operating Days, Lunch Window & Holidays State
   const [workingDays, setWorkingDays] = useState<string[]>([
     'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'
   ]);
   const [openTime, setOpenTime] = useState<string>('09:00 AM');
   const [closeTime, setCloseTime] = useState<string>('06:00 PM');
+  const [lunchStartTime, setLunchStartTime] = useState<string>('01:00 PM');
+  const [lunchEndTime, setLunchEndTime] = useState<string>('02:00 PM');
+  const [enableLunchBreak, setEnableLunchBreak] = useState<boolean>(true);
+  const [slotDurationMinutes, setSlotDurationMinutes] = useState<number>(15);
   const [holidays, setHolidays] = useState<string[]>([]);
   const [savingSchedule, setSavingSchedule] = useState(false);
 
@@ -111,6 +115,10 @@ export const ClinicAdminProfile: React.FC<ClinicAdminProfileProps> = ({
         }
         if (c.openTime) setOpenTime(c.openTime);
         if (c.closeTime) setCloseTime(c.closeTime);
+        if ((c as any).lunchStartTime) setLunchStartTime((c as any).lunchStartTime);
+        if ((c as any).lunchEndTime) setLunchEndTime((c as any).lunchEndTime);
+        if ((c as any).enableLunchBreak !== undefined) setEnableLunchBreak(Boolean((c as any).enableLunchBreak));
+        if ((c as any).slotDurationMinutes !== undefined) setSlotDurationMinutes(Number((c as any).slotDurationMinutes));
         if (c.holidays) {
           try {
             const parsed = JSON.parse(c.holidays);
@@ -336,13 +344,17 @@ export const ClinicAdminProfile: React.FC<ClinicAdminProfileProps> = ({
           workingDays: workingDays.join(','),
           openTime,
           closeTime,
+          lunchStartTime,
+          lunchEndTime,
+          enableLunchBreak,
+          slotDurationMinutes: Number(slotDurationMinutes),
           holidays: JSON.stringify(holidays),
         }),
       });
 
       const data = await res.json();
       if (data.success && data.data) {
-        showToast('success', 'Clinic operating days, hours, and holidays updated successfully!');
+        showToast('success', 'Clinic operating days, hours, lunch window, and holidays updated successfully!');
         setClinic(data.data);
       } else {
         showToast('error', data.error?.message || data.message || 'Failed to update clinic schedule.');
@@ -897,6 +909,107 @@ export const ClinicAdminProfile: React.FC<ClinicAdminProfileProps> = ({
                 {TIME_OPTIONS.map((t) => (
                   <option key={t} value={t}>{t}</option>
                 ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Lunch Break Window Configuration */}
+          <div className="bg-[#F8FAFC] border border-slate-200/90 rounded-2xl p-4 space-y-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pb-2 border-b border-slate-200/70">
+              <div className="flex items-center space-x-2">
+                <div className="p-1.5 rounded-lg bg-amber-100 text-amber-800">
+                  <Sun className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black text-[#1E293B]">
+                    Clinic Lunch / Break Window
+                  </h4>
+                  <p className="text-[11px] text-slate-500">
+                    Exclude lunch or staff break window from patient appointment slots
+                  </p>
+                </div>
+              </div>
+
+              <label className="flex items-center space-x-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={enableLunchBreak}
+                  onChange={(e) => setEnableLunchBreak(e.target.checked)}
+                  className="rounded border-slate-300 text-amber-600 focus:ring-amber-500 w-4 h-4"
+                />
+                <span className="text-xs font-bold text-slate-700">Enable Lunch Break</span>
+              </label>
+            </div>
+
+            {enableLunchBreak ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                <div>
+                  <label className="text-[11px] font-bold text-[#1E293B] block mb-1">
+                    Lunch Break Start Time
+                  </label>
+                  <select
+                    value={lunchStartTime}
+                    onChange={(e) => setLunchStartTime(e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-[#1E293B] focus:ring-2 focus:ring-amber-500 focus:outline-none cursor-pointer"
+                  >
+                    {TIME_OPTIONS.map((t) => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-[#1E293B] block mb-1">
+                    Lunch Break End Time
+                  </label>
+                  <select
+                    value={lunchEndTime}
+                    onChange={(e) => setLunchEndTime(e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-[#1E293B] focus:ring-2 focus:ring-amber-500 focus:outline-none cursor-pointer"
+                  >
+                    {TIME_OPTIONS.map((t) => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            ) : (
+              <p className="text-[11px] text-slate-400 italic">
+                Lunch break is disabled. Patient appointment slots will run continuously between opening and closing hours.
+              </p>
+            )}
+          </div>
+
+          {/* Procedure / Consultation Slot Duration */}
+          <div className="bg-[#F8FAFC] border border-slate-200/90 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center space-x-2">
+                <Clock className="w-4 h-4 text-[#0284C7]" />
+                <h4 className="text-xs font-black text-[#1E293B]">
+                  Procedure / Consultation Slot Duration
+                </h4>
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 border border-sky-300">
+                  {slotDurationMinutes} Mins Multiples
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                Appointments are generated in multiples of this duration across working hours (excluding lunch break).
+              </p>
+            </div>
+
+            <div className="flex items-center space-x-2 shrink-0">
+              <label className="text-xs font-bold text-slate-600">Interval:</label>
+              <select
+                value={slotDurationMinutes}
+                onChange={(e) => setSlotDurationMinutes(Number(e.target.value))}
+                className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none cursor-pointer"
+              >
+                <option value={10}>10 Minutes</option>
+                <option value={15}>15 Minutes (Standard)</option>
+                <option value={20}>20 Minutes</option>
+                <option value={30}>30 Minutes</option>
+                <option value={45}>45 Minutes</option>
+                <option value={60}>60 Minutes (1 Hour)</option>
               </select>
             </div>
           </div>

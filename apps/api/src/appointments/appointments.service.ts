@@ -91,6 +91,82 @@ export class AppointmentsService {
   }
 
   /**
+   * Get booked slot times for a clinic, doctor, and date (YYYY-MM-DD)
+   */
+  async getBookedSlots(
+    clinicId: string, 
+    doctorId?: string, 
+    dateStr?: string
+  ): Promise<{ bookedSlots: string[]; bookedIsoTimes: string[] }> {
+    if (!clinicId || !dateStr) {
+      return { bookedSlots: [], bookedIsoTimes: [] };
+    }
+
+    const [year, month, day] = dateStr.split('-').map(Number);
+    if (!year || !month || !day) {
+      return { bookedSlots: [], bookedIsoTimes: [] };
+    }
+
+    // Window from start of day to end of day
+    const dayStart = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
+    const dayEnd = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
+
+    const where: any = {
+      clinicId,
+      status: { in: ['CONFIRMED', 'PENDING'] },
+      slotTime: {
+        gte: new Date(dayStart.getTime() - 24 * 60 * 60 * 1000),
+        lte: new Date(dayEnd.getTime() + 24 * 60 * 60 * 1000),
+      },
+    };
+
+    if (doctorId) {
+      where.doctorId = doctorId;
+    }
+
+    const appointments = await this.prisma.appointment.findMany({
+      where,
+      select: { slotTime: true },
+    });
+
+    const bookedSlotsSet = new Set<string>();
+    const bookedIsoSet = new Set<string>();
+
+    for (const appt of appointments) {
+      const d = new Date(appt.slotTime);
+      const apptDateStr = d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+      const aY = d.getFullYear();
+      const aM = d.getMonth() + 1;
+      const aD = d.getDate();
+      const isSameDate = apptDateStr === dateStr || (aY === year && aM === month && aD === day);
+
+      if (isSameDate) {
+        bookedIsoSet.add(d.toISOString());
+        let hours = d.getHours();
+        const minutes = d.getMinutes();
+        const period = hours >= 12 ? 'PM' : 'AM';
+        if (hours > 12) hours -= 12;
+        if (hours === 0) hours = 12;
+        const timeFormatted = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')} ${period}`;
+        bookedSlotsSet.add(timeFormatted);
+
+        const istFormatted = d.toLocaleTimeString('en-US', {
+          timeZone: 'Asia/Kolkata',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true,
+        });
+        bookedSlotsSet.add(istFormatted);
+      }
+    }
+
+    return {
+      bookedSlots: Array.from(bookedSlotsSet),
+      bookedIsoTimes: Array.from(bookedIsoSet),
+    };
+  }
+
+  /**
    * Book an appointment with fail-closed availability check & server-side calculated pricing
    */
   async bookAppointment(

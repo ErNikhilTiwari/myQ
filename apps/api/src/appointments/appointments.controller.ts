@@ -38,6 +38,19 @@ export class AppointmentsController {
   }
 
   /**
+   * 0b. Get Booked Slots for a clinic, doctor, and date (Public/Patient)
+   */
+  @Get('appointments/booked-slots')
+  async getBookedSlots(
+    @Query('clinicId') clinicId: string,
+    @Query('doctorId') doctorId?: string,
+    @Query('date') date?: string,
+  ): Promise<ApiResponse> {
+    const data = await this.appointmentsService.getBookedSlots(clinicId, doctorId, date);
+    return { success: true, data };
+  }
+
+  /**
    * 1. Book an appointment (Patient)
    */
   @Post('appointments')

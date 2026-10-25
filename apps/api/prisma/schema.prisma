@@ -77,6 +77,10 @@ model Clinic {
   workingDays   String   @default("MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY,SATURDAY")
   openTime      String   @default("09:00 AM")
   closeTime     String   @default("06:00 PM")
+  lunchStartTime String? @default("01:00 PM")
+  lunchEndTime   String? @default("02:00 PM")
+  enableLunchBreak Boolean @default(true)
+  slotDurationMinutes Int @default(15)
   holidays      String   @default("[]") // JSON string array of holiday date strings "YYYY-MM-DD"
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())

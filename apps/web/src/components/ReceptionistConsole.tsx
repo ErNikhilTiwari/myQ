@@ -707,7 +707,9 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
           initialRemotePrice={(activeClinicObj as any)?.remotePrice || 200}
           initialEnableBookingTime={(activeClinicObj as any)?.enableBookingTime !== false}
           initialEnablePriorityQueue={(activeClinicObj as any)?.enablePriorityQueue !== false}
+          initialSlotDurationMinutes={(activeClinicObj as any)?.slotDurationMinutes || 15}
           onUpdated={() => {
+            fetchQueueDetails();
             setFeedbackMsg({ type: 'success', text: 'Clinic appointment pricing & booking settings updated!' });
             setTimeout(() => setFeedbackMsg(null), 3000);
           }}

@@ -59,15 +59,71 @@ const getMaxDateStr = (): string => {
   return formatLocalDate(d);
 };
 
-// Fixed daily consultation time slots
-const TIME_SLOTS = [
-  '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', 
-  '11:30 AM', '12:00 PM', '02:00 PM', '02:30 PM', 
-  '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM'
-];
+// Parse time string (e.g. '09:00 AM') into minutes from midnight
+export const timeToMinutes = (timeStr?: string): number => {
+  if (!timeStr) return 0;
+  const match = timeStr.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!match) return 0;
+  let hours = parseInt(match[1], 10);
+  const minutes = parseInt(match[2], 10);
+  const period = match[3].toUpperCase();
+  if (period === 'PM' && hours < 12) hours += 12;
+  if (period === 'AM' && hours === 12) hours = 0;
+  return hours * 60 + minutes;
+};
+
+// Convert minutes from midnight into 12-hour formatted time string ('hh:mm A')
+export const minutesToTime = (totalMinutes: number): string => {
+  let hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  const period = hours >= 12 ? 'PM' : 'AM';
+  if (hours > 12) hours -= 12;
+  if (hours === 0) hours = 12;
+  const hStr = String(hours).padStart(2, '0');
+  const mStr = String(minutes).padStart(2, '0');
+  return `${hStr}:${mStr} ${period}`;
+};
+
+// Generate available consultation time slots based on clinic opening/closing hours,
+// lunch break window, and configured procedure duration multiples.
+export const generateClinicSlots = (clinic: any): string[] => {
+  const openTimeStr = clinic?.openTime || '09:00 AM';
+  const closeTimeStr = clinic?.closeTime || '06:00 PM';
+  const duration = Number(clinic?.slotDurationMinutes) || 15;
+  const enableLunch = clinic?.enableLunchBreak !== false;
+  const lunchStartStr = clinic?.lunchStartTime || '01:00 PM';
+  const lunchEndStr = clinic?.lunchEndTime || '02:00 PM';
+
+  const openMins = timeToMinutes(openTimeStr);
+  const closeMins = timeToMinutes(closeTimeStr);
+  const lunchStartMins = timeToMinutes(lunchStartStr);
+  const lunchEndMins = timeToMinutes(lunchEndStr);
+
+  const slots: string[] = [];
+  // Slots start at openMins, and must finish before or by closeMins (slotStart + duration <= closeMins)
+  for (let m = openMins; m + duration <= closeMins; m += duration) {
+    if (enableLunch && lunchStartMins < lunchEndMins) {
+      const slotEnd = m + duration;
+      // Overlap condition: max(m, lunchStartMins) < min(slotEnd, lunchEndMins)
+      if (Math.max(m, lunchStartMins) < Math.min(slotEnd, lunchEndMins)) {
+        continue;
+      }
+    }
+    slots.push(minutesToTime(m));
+  }
+
+  if (slots.length === 0) {
+    return [
+      '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', 
+      '11:30 AM', '12:00 PM', '02:00 PM', '02:30 PM', 
+      '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM', '05:00 PM', '05:30 PM'
+    ];
+  }
+  return slots;
+};
 
 // Parse local date + time slot string into Date object
-const parseSlotToDate = (dateStr: string, timeStr: string): Date => {
+export const parseSlotToDate = (dateStr: string, timeStr: string): Date => {
   const [time, period] = timeStr.split(' ');
   const [hoursStr, minutesStr] = time.split(':');
   let hours = parseInt(hoursStr, 10);
@@ -79,7 +135,7 @@ const parseSlotToDate = (dateStr: string, timeStr: string): Date => {
   return new Date(y, m - 1, d, hours, minutes, 0, 0);
 };
 
-const isSlotInPast = (dateStr: string, timeStr: string): boolean => {
+export const isSlotInPast = (dateStr: string, timeStr: string): boolean => {
   try {
     const slotDate = parseSlotToDate(dateStr, timeStr);
     return slotDate.getTime() <= Date.now();
@@ -88,8 +144,9 @@ const isSlotInPast = (dateStr: string, timeStr: string): boolean => {
   }
 };
 
-const getFirstAvailableSlot = (dateStr: string): string | null => {
-  for (const slot of TIME_SLOTS) {
+export const getFirstAvailableSlot = (dateStr: string, clinic?: any): string | null => {
+  const slots = generateClinicSlots(clinic);
+  for (const slot of slots) {
     if (!isSlotInPast(dateStr, slot)) {
       return slot;
     }
@@ -158,21 +215,16 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
   // Doctors & Slot State (Horizon: Today + 2 days only, no past bookings)
   const [doctors, setDoctors] = useState<DoctorOption[]>([]);
   const [selectedDoctorId, setSelectedDoctorId] = useState<string>('');
-  const [selectedDate, setSelectedDate] = useState<string>(() => {
-    const todayStr = getMinDateStr();
-    // If all slots today have already passed, auto-select tomorrow
-    if (!getFirstAvailableSlot(todayStr)) {
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      return formatLocalDate(tomorrow);
-    }
-    return todayStr;
-  });
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>(() => {
-    const todayStr = getMinDateStr();
-    return getFirstAvailableSlot(todayStr) || TIME_SLOTS[0];
-  });
+  const [selectedDate, setSelectedDate] = useState<string>(() => getMinDateStr());
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('');
   const [joinQueueImmediately, setJoinQueueImmediately] = useState<boolean>(false);
+
+  // Booked slots tracking to hide already-booked slots
+  const [bookedSlotsData, setBookedSlotsData] = useState<{ bookedSlots: string[]; bookedIsoTimes: string[] }>({
+    bookedSlots: [],
+    bookedIsoTimes: [],
+  });
+  const [isLoadingBookedSlots, setIsLoadingBookedSlots] = useState<boolean>(false);
 
   // Pricing & Execution State
   const [isLoadingDoctors, setIsLoadingDoctors] = useState(false);
@@ -210,7 +262,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
     setErrorMsg(null);
   }, [isOpen, preselectedClinicId, initialBookingType, initialQrToken, clinics]);
 
-  // Ensure selectedDate and selectedTimeSlot stay within [today, today+2], not in the past, and on open working days
+  // Ensure selectedDate stays within [today, today+2] and on open working days
   useEffect(() => {
     if (!isOpen) return;
     const minD = getMinDateStr();
@@ -232,14 +284,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
       setSelectedDate(maxD);
       return;
     }
-
-    if (isSlotInPast(selectedDate, selectedTimeSlot)) {
-      const nextSlot = getFirstAvailableSlot(selectedDate);
-      if (nextSlot) {
-        setSelectedTimeSlot(nextSlot);
-      }
-    }
-  }, [selectedDate, isOpen, selectedTimeSlot, activeClinic]);
+  }, [selectedDate, isOpen, activeClinic]);
 
   // Fetch doctors for current clinic
   useEffect(() => {
@@ -261,12 +306,58 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
       .finally(() => setIsLoadingDoctors(false));
   }, [selectedClinicId]);
 
+  // Fetch booked slots for the selected clinic, doctor, and date
+  useEffect(() => {
+    if (!isOpen || !selectedClinicId || !selectedDate) return;
+    setIsLoadingBookedSlots(true);
+    const doctorParam = selectedDoctorId ? `&doctorId=${selectedDoctorId}` : '';
+    fetch(`/api/appointments/booked-slots?clinicId=${selectedClinicId}&date=${selectedDate}${doctorParam}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.data) {
+          setBookedSlotsData(data.data);
+        } else {
+          setBookedSlotsData({ bookedSlots: [], bookedIsoTimes: [] });
+        }
+      })
+      .catch(() => {
+        setBookedSlotsData({ bookedSlots: [], bookedIsoTimes: [] });
+      })
+      .finally(() => setIsLoadingBookedSlots(false));
+  }, [isOpen, selectedClinicId, selectedDoctorId, selectedDate]);
+
+  // Dynamic Consultation Slots: generated based on open/close times, slotDurationMinutes, and lunch window
+  const allClinicSlots = generateClinicSlots(activeClinic);
+
+  // Available Slots: exclude past slots (if today) and exclude all already-booked slots
+  const availableSlots = allClinicSlots.filter((slot) => {
+    if (isSlotInPast(selectedDate, slot)) return false;
+    if (bookedSlotsData.bookedSlots.includes(slot)) return false;
+    try {
+      const slotIso = parseSlotToDate(selectedDate, slot).toISOString();
+      if (bookedSlotsData.bookedIsoTimes.includes(slotIso)) return false;
+    } catch {}
+    return true;
+  });
+
+  // Keep selectedTimeSlot synchronized with availableSlots
+  useEffect(() => {
+    if (!isOpen) return;
+    if (availableSlots.length > 0) {
+      if (!selectedTimeSlot || !availableSlots.includes(selectedTimeSlot)) {
+        setSelectedTimeSlot(availableSlots[0]);
+      }
+    } else {
+      setSelectedTimeSlot('');
+    }
+  }, [availableSlots, selectedTimeSlot, isOpen]);
+
   if (!isOpen) return null;
 
   const clinicClosedInfo = isClinicClosedOnDate(activeClinic, selectedDate);
 
   // Time slot options
-  const timeSlots = TIME_SLOTS;
+  const timeSlots = availableSlots;
 
   // Helper to convert date + time string into ISO 8601 string
   const getSlotIsoTime = (): string => {
@@ -315,8 +406,18 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
         return;
       }
 
+      if (!selectedTimeSlot || availableSlots.length === 0) {
+        setErrorMsg('No available consultation time slot selected. All slots for this date may be booked.');
+        return;
+      }
+
       if (isSlotInPast(selectedDate, selectedTimeSlot)) {
         setErrorMsg('The selected consultation time slot has already passed. Please choose an upcoming time slot.');
+        return;
+      }
+
+      if (bookedSlotsData.bookedSlots.includes(selectedTimeSlot)) {
+        setErrorMsg('The selected consultation time slot is already booked. Please choose another slot.');
         return;
       }
     }
@@ -561,20 +662,21 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                       <select
                         value={selectedTimeSlot}
                         onChange={(e) => setSelectedTimeSlot(e.target.value)}
-                        disabled={!getFirstAvailableSlot(selectedDate)}
-                        className="w-full bg-[#F8FAFC] border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-bold text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none disabled:bg-slate-100 disabled:text-slate-400"
+                        disabled={isLoadingBookedSlots || availableSlots.length === 0}
+                        className="w-full bg-[#F8FAFC] border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-bold text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none disabled:bg-slate-100 disabled:text-slate-400 cursor-pointer"
                       >
-                        {timeSlots.map((ts) => {
-                          const isPast = isSlotInPast(selectedDate, ts);
-                          return (
-                            <option key={ts} value={ts} disabled={isPast}>
-                              {ts} {isPast ? '(Passed)' : ''}
+                        {availableSlots.length === 0 ? (
+                          <option value="">No available slots</option>
+                        ) : (
+                          availableSlots.map((ts) => (
+                            <option key={ts} value={ts}>
+                              {ts}
                             </option>
-                          );
-                        })}
+                          ))
+                        )}
                       </select>
                       <span className="text-[10px] text-slate-400 mt-1 block">
-                        30-minute consultation window
+                        {(activeClinic as any)?.slotDurationMinutes || 15}-minute consultation interval
                       </span>
                     </div>
                   </div>
@@ -590,10 +692,15 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                     </div>
                   )}
 
-                  {/* Warning banner if all slots today have already passed */}
-                  {selectedDate === getMinDateStr() && !clinicClosedInfo.isClosed && !getFirstAvailableSlot(selectedDate) && (
+                  {/* Warning banner if all slots on this date are booked or have passed */}
+                  {!clinicClosedInfo.isClosed && availableSlots.length === 0 && (
                     <div className="bg-amber-50 border border-amber-200 rounded-xl p-2.5 text-xs text-amber-800 flex items-center space-x-2">
-                      <span>⚠️ All consultation slots for today have passed. Please select tomorrow or day after tomorrow.</span>
+                      <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                      <span>
+                        {selectedDate === getMinDateStr()
+                          ? '⚠️ All consultation slots for today are booked or have passed. Please select tomorrow or day after tomorrow.'
+                          : '⚠️ All consultation slots for this date are already booked. Please choose another date or doctor.'}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -752,7 +859,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
               <div className="pt-2">
                 <button
                   type="submit"
-                  disabled={isProcessingBooking || (isBookingTimeEnabled && clinicClosedInfo.isClosed)}
+                  disabled={isProcessingBooking || (isBookingTimeEnabled && (clinicClosedInfo.isClosed || availableSlots.length === 0))}
                   className="w-full bg-[#0284C7] hover:bg-[#0369A1] text-white py-3.5 rounded-2xl font-bold text-sm shadow-md transition flex items-center justify-center space-x-2 active:scale-95 disabled:opacity-50"
                 >
                   <span>Proceed to Payment</span>

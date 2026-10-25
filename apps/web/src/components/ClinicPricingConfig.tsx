@@ -20,6 +20,7 @@ interface ClinicPricingConfigProps {
   initialRemotePrice?: number;
   initialEnableBookingTime?: boolean;
   initialEnablePriorityQueue?: boolean;
+  initialSlotDurationMinutes?: number;
   onUpdated?: () => void;
 }
 
@@ -30,14 +31,17 @@ export const ClinicPricingConfig: React.FC<ClinicPricingConfigProps> = ({
   initialRemotePrice = 200,
   initialEnableBookingTime = true,
   initialEnablePriorityQueue = true,
+  initialSlotDurationMinutes = 15,
   onUpdated,
 }) => {
   const [inClinicPrice, setInClinicPrice] = useState<number>(initialInClinicPrice);
   const [remotePrice, setRemotePrice] = useState<number>(initialRemotePrice);
   const [enableBookingTime, setEnableBookingTime] = useState<boolean>(initialEnableBookingTime);
   const [enablePriorityQueue, setEnablePriorityQueue] = useState<boolean>(initialEnablePriorityQueue);
+  const [slotDurationMinutes, setSlotDurationMinutes] = useState<number>(initialSlotDurationMinutes);
   const [isTogglingBookingTime, setIsTogglingBookingTime] = useState(false);
   const [isTogglingPriorityQueue, setIsTogglingPriorityQueue] = useState(false);
+  const [isUpdatingSlotDuration, setIsUpdatingSlotDuration] = useState(false);
 
   // Target modal state: only 'IN_CLINIC' or 'REMOTE' at a time
   const [editingTarget, setEditingTarget] = useState<'IN_CLINIC' | 'REMOTE' | null>(null);
@@ -62,6 +66,43 @@ export const ClinicPricingConfig: React.FC<ClinicPricingConfigProps> = ({
   useEffect(() => {
     setEnablePriorityQueue(initialEnablePriorityQueue);
   }, [initialEnablePriorityQueue]);
+
+  useEffect(() => {
+    if (initialSlotDurationMinutes) {
+      setSlotDurationMinutes(initialSlotDurationMinutes);
+    }
+  }, [initialSlotDurationMinutes]);
+
+  const handleUpdateSlotDuration = async (newDuration: number) => {
+    if (!clinicId || !token) return;
+    setIsUpdatingSlotDuration(true);
+    try {
+      const res = await fetch(`/api/clinics/${clinicId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ slotDurationMinutes: newDuration }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setSlotDurationMinutes(newDuration);
+        setMessage({
+          type: 'success',
+          text: `Procedure / Consultation time set to ${newDuration} minutes! Patient appointment slots will be generated in ${newDuration}-minute multiples.`,
+        });
+        if (onUpdated) onUpdated();
+        setTimeout(() => setMessage(null), 4000);
+      } else {
+        setMessage({ type: 'error', text: json.error?.message || 'Failed to update procedure duration.' });
+      }
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message || 'Error updating procedure duration.' });
+    } finally {
+      setIsUpdatingSlotDuration(false);
+    }
+  };
 
   const handleTogglePriorityQueue = async () => {
     if (!clinicId || !token) return;
@@ -372,6 +413,48 @@ export const ClinicPricingConfig: React.FC<ClinicPricingConfigProps> = ({
                 : 'Turn ON Booking Time'}
             </span>
           </button>
+        </div>
+
+        {/* Set Procedure Time / Slot Duration Multiples */}
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+          <div className="flex items-start space-x-3">
+            <div className="p-2.5 rounded-xl shrink-0 mt-0.5 bg-sky-50 text-sky-600 border border-sky-100">
+              <Clock className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="font-extrabold text-sm text-[#1E293B]">
+                  Set Procedure / Consultation Time
+                </span>
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 border border-sky-300">
+                  {slotDurationMinutes} Mins Multiples
+                </span>
+              </div>
+              <p className="text-xs text-[#64748B] mt-1 leading-relaxed">
+                Configure procedure duration. Patient appointment booking slots will automatically be displayed in multiples of this duration (e.g., 15 mins, 20 mins, 30 mins).
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2 shrink-0">
+            <label className="text-xs font-bold text-slate-500">Duration:</label>
+            <select
+              value={slotDurationMinutes}
+              disabled={isUpdatingSlotDuration || !enableBookingTime}
+              onChange={(e) => handleUpdateSlotDuration(Number(e.target.value))}
+              className="bg-[#F8FAFC] border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              <option value={10}>10 Minutes</option>
+              <option value={15}>15 Minutes (Default)</option>
+              <option value={20}>20 Minutes</option>
+              <option value={30}>30 Minutes</option>
+              <option value={45}>45 Minutes</option>
+              <option value={60}>60 Minutes (1 Hour)</option>
+            </select>
+            {isUpdatingSlotDuration && (
+              <span className="text-xs text-sky-600 font-bold animate-pulse">Saving...</span>
+            )}
+          </div>
         </div>
 
         {/* Instant Priority Queue Toggle Card */}

@@ -22,6 +22,10 @@ export interface ClinicDto {
   workingDays?: string;
   openTime?: string;
   closeTime?: string;
+  lunchStartTime?: string | null;
+  lunchEndTime?: string | null;
+  enableLunchBreak?: boolean;
+  slotDurationMinutes?: number;
   holidays?: string;
   isActive: boolean;
   createdAt: string;
@@ -46,6 +50,10 @@ export interface CreateClinicDto {
   workingDays?: string;
   openTime?: string;
   closeTime?: string;
+  lunchStartTime?: string | null;
+  lunchEndTime?: string | null;
+  enableLunchBreak?: boolean;
+  slotDurationMinutes?: number;
   holidays?: string;
   receptionistName?: string;
   receptionistPhoneNumber?: string;
@@ -112,6 +120,10 @@ export interface UpdateClinicDto {
   workingDays?: string;
   openTime?: string;
   closeTime?: string;
+  lunchStartTime?: string | null;
+  lunchEndTime?: string | null;
+  enableLunchBreak?: boolean;
+  slotDurationMinutes?: number;
   holidays?: string;
   isActive?: boolean;
 }
