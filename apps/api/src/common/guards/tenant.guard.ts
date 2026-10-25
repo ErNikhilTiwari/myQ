@@ -16,8 +16,8 @@ export class TenantGuard implements CanActivate {
       return true;
     }
 
-    // Extract clinicId from route params or query
-    const targetClinicId = request.params.clinicId || request.body?.clinicId || request.query?.clinicId;
+    // Extract clinicId from route params, query, or body
+    const targetClinicId = request.params?.clinicId || request.body?.clinicId || request.query?.clinicId;
 
     if (!targetClinicId) {
       // If no target clinic ID is specified in the request context, pass through
@@ -25,9 +25,16 @@ export class TenantGuard implements CanActivate {
     }
 
     // Enforce that clinic staff can only access their assigned clinic
-    if (user.clinicId && user.clinicId !== targetClinicId) {
+    if (user.role === UserRole.CLINIC_ADMIN || user.role === UserRole.RECEPTIONIST || user.role === UserRole.DOCTOR) {
+      if (!user.clinicId || user.clinicId !== targetClinicId) {
+        throw new ForbiddenException(
+          `Cross-tenant access violation: User belonging to clinic "${user.clinicId || 'Unassigned'}" attempted to access clinic "${targetClinicId}".`,
+        );
+      }
+    } else if (user.role === UserRole.PATIENT) {
+      // Patients cannot perform clinic staff/admin operations
       throw new ForbiddenException(
-        `Cross-tenant access violation: User belonging to clinic "${user.clinicId}" attempted to access clinic "${targetClinicId}".`,
+        `Access denied: Patients cannot perform clinic-scoped staff operations on clinic "${targetClinicId}".`,
       );
     }
 

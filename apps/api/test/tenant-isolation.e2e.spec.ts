@@ -29,8 +29,9 @@ describe('Multi-Tenant Isolation & RBAC (E2E Integration)', () => {
     prisma = app.get(PrismaService);
 
     // Fetch seeded clinics
-    clinicA = await prisma.clinic.findUnique({ where: { slug: 'abc-health' } });
-    clinicB = await prisma.clinic.findUnique({ where: { slug: 'city-dental' } });
+    const clinics = await prisma.clinic.findMany({ take: 2, orderBy: { createdAt: 'asc' } });
+    clinicA = clinics[0];
+    clinicB = clinics[1] || clinics[0];
 
     async function loginUser(phoneNumber: string): Promise<string> {
       await prisma.oTPVerification.create({
@@ -48,15 +49,19 @@ describe('Multi-Tenant Isolation & RBAC (E2E Integration)', () => {
       return res.body.data.tokens.accessToken;
     }
 
-    // Login Receptionist A (+919876500001)
-    receptionistAToken = await loginUser('+919876500001');
+    // Login Receptionist A from seeded clinic staff
+    const recAStaff = await prisma.clinicStaff.findFirst({
+      where: { clinicId: clinicA.id, role: 'RECEPTIONIST' },
+      include: { user: true },
+    });
+    receptionistAToken = await loginUser(recAStaff?.user?.phoneNumber || '+919876500012');
 
-    // Create & Login Receptionist B for City Dental (+919876500002)
+    // Create & Login Receptionist B for Clinic B
     const recBUser = await prisma.user.upsert({
-      where: { phoneNumber: '+919876500002' },
+      where: { phoneNumber: '+919876500099' },
       update: {},
       create: {
-        phoneNumber: '+919876500002',
+        phoneNumber: '+919876500099',
         name: 'Anita Desai (Receptionist B)',
         role: 'RECEPTIONIST',
       },
@@ -68,7 +73,7 @@ describe('Multi-Tenant Isolation & RBAC (E2E Integration)', () => {
       create: { clinicId: clinicB.id, userId: recBUser.id, role: 'RECEPTIONIST' },
     });
 
-    receptionistBToken = await loginUser('+919876500002');
+    receptionistBToken = await loginUser('+919876500099');
 
     // Login Super Admin (+919999999999)
     superAdminToken = await loginUser('+919999999999');

@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { BadRequestException, UnauthorizedException, HttpException } from '@nestjs/common';
+import * as bcrypt from 'bcryptjs';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { OTP_PROVIDER_TOKEN } from './otp/otp.provider.interface';
@@ -8,7 +9,7 @@ import { MockOtpProvider } from './otp/mock-otp.provider';
 import { TelegramOtpProvider } from './otp/telegram-otp.provider';
 import { UserRole } from '@queueapp/shared';
 
-describe('AuthService (Unit Tests)', () => {
+describe('AuthService (Unit Tests & Security Hardening)', () => {
   let service: AuthService;
   let mockOtpProvider: MockOtpProvider;
 
@@ -23,6 +24,10 @@ describe('AuthService (Unit Tests)', () => {
       findUnique: jest.fn(),
       findFirst: jest.fn(),
       create: jest.fn(),
+      update: jest.fn(),
+    },
+    patientProfile: {
+      upsert: jest.fn(),
     },
     clinic: {
       findFirst: jest.fn(),
@@ -62,12 +67,15 @@ describe('AuthService (Unit Tests)', () => {
     it('accepts valid 10-digit Indian mobile numbers with +91', () => {
       expect(service.validatePhoneNumber('+919876543210')).toBe('+919876543210');
       expect(service.validatePhoneNumber('+91 88888 88888')).toBe('+918888888888');
+      expect(service.validatePhoneNumber('+91-77777-77777')).toBe('+917777777777');
     });
 
     it('rejects invalid numbers or missing country code', () => {
       expect(() => service.validatePhoneNumber('9876543210')).toThrow(BadRequestException);
       expect(() => service.validatePhoneNumber('+1234567890')).toThrow(BadRequestException);
       expect(() => service.validatePhoneNumber('+911234567890')).toThrow(BadRequestException); // starts with 1
+      expect(() => service.validatePhoneNumber('+9198765')).toThrow(BadRequestException); // short
+      expect(() => service.validatePhoneNumber('')).toThrow(BadRequestException);
     });
   });
 
@@ -147,6 +155,66 @@ describe('AuthService (Unit Tests)', () => {
 
       await expect(
         service.verifyOtp({ phoneNumber: '+919876543210', otp: '000000' }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  describe('loginWithPassword', () => {
+    it('successfully logs in with valid password and returns tokens', async () => {
+      const passwordHash = await bcrypt.hash('Password@123', 10);
+      mockPrismaService.user.findFirst.mockResolvedValue({
+        id: 'user-admin',
+        phoneNumber: '+919876500011',
+        name: 'Dr. Ramesh Sharma',
+        role: UserRole.CLINIC_ADMIN,
+        passwordHash,
+        isActive: true,
+        staffProfiles: [{ clinicId: 'clinic-1' }],
+      });
+      mockPrismaService.auditLog.create.mockResolvedValue({});
+
+      const result = await service.loginWithPassword({
+        phoneNumber: '+919876500011',
+        password: 'Password@123',
+      });
+
+      expect(result.user.role).toBe(UserRole.CLINIC_ADMIN);
+      expect(result.tokens.accessToken).toBe('test_token');
+    });
+
+    it('rejects incorrect password with UnauthorizedException', async () => {
+      const passwordHash = await bcrypt.hash('CorrectPassword@123', 10);
+      mockPrismaService.user.findFirst.mockResolvedValue({
+        id: 'user-admin',
+        phoneNumber: '+919876500011',
+        name: 'Dr. Ramesh Sharma',
+        role: UserRole.CLINIC_ADMIN,
+        passwordHash,
+        isActive: true,
+      });
+
+      await expect(
+        service.loginWithPassword({
+          phoneNumber: '+919876500011',
+          password: 'WrongPassword',
+        }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('rejects inactive or disabled user accounts', async () => {
+      const passwordHash = await bcrypt.hash('Password@123', 10);
+      mockPrismaService.user.findFirst.mockResolvedValue({
+        id: 'user-disabled',
+        phoneNumber: '+919876500011',
+        passwordHash,
+        isActive: false, // Disabled account
+      });
+
+      await expect(
+        service.loginWithPassword({
+          phoneNumber: '+919876500011',
+          password: 'Password@123',
+        }),
       ).rejects.toThrow(UnauthorizedException);
     });
   });

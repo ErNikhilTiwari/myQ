@@ -14,6 +14,7 @@ describe('Clinic Admin Schedule, Holiday Calendar & Queue Date Isolation (E2E)',
   let queue: any;
   let adminToken: string;
   let patientToken: string;
+  let patPhone: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -27,7 +28,7 @@ describe('Clinic Admin Schedule, Holiday Calendar & Queue Date Isolation (E2E)',
 
     prisma = app.get(PrismaService);
 
-    clinic = await prisma.clinic.findUnique({ where: { slug: 'abc-health' } });
+    clinic = await prisma.clinic.findFirst({ orderBy: { createdAt: 'asc' } });
     doctor = await prisma.doctor.findFirst({ where: { clinicId: clinic.id } });
     queue = await prisma.queue.findFirst({ where: { doctorId: doctor.id } });
 
@@ -35,39 +36,51 @@ describe('Clinic Admin Schedule, Holiday Calendar & Queue Date Isolation (E2E)',
     await prisma.appointment.deleteMany({ where: { clinicId: clinic.id } });
     await prisma.queueEntry.deleteMany({ where: { queueId: queue.id } });
 
-    // Login Clinic Admin (+919876500002)
+    const adminStaff = await prisma.clinicStaff.findFirst({
+      where: { clinicId: clinic.id, role: 'CLINIC_ADMIN' },
+      include: { user: true },
+    });
+    const adminPhone = adminStaff?.user?.phoneNumber || '+919876500011';
+
+    const patUser = await prisma.user.findFirst({
+      where: { role: 'PATIENT' },
+    });
+    patPhone = patUser?.phoneNumber || '+919876510001';
+
+    // Login Clinic Admin
     await prisma.oTPVerification.create({
       data: {
-        phoneNumber: '+919876500002',
+        phoneNumber: adminPhone,
         hashedOtp: '$2a$10$dummyHash',
         expiresAt: new Date(Date.now() + 5 * 60 * 1000),
       },
     });
     const adminRes = await request(app.getHttpServer())
       .post('/api/auth/verify-otp')
-      .send({ phoneNumber: '+919876500002', otp: '123456' });
+      .send({ phoneNumber: adminPhone, otp: '123456' });
     adminToken = adminRes.body.data.tokens.accessToken;
 
-    // Login Patient (+919876543210)
+    // Login Patient
     await prisma.oTPVerification.create({
       data: {
-        phoneNumber: '+919876543210',
+        phoneNumber: patPhone,
         hashedOtp: '$2a$10$dummyHash',
         expiresAt: new Date(Date.now() + 5 * 60 * 1000),
       },
     });
     const patRes = await request(app.getHttpServer())
       .post('/api/auth/verify-otp')
-      .send({ phoneNumber: '+919876543210', otp: '123456' });
+      .send({ phoneNumber: patPhone, otp: '123456' });
     patientToken = patRes.body.data.tokens.accessToken;
 
     // Ensure patient profile has demographics (age, gender)
-    const patUser = await prisma.user.findUnique({ where: { phoneNumber: '+919876543210' } });
-    await prisma.patientProfile.upsert({
-      where: { userId: patUser.id },
-      update: { age: 29, gender: 'MALE' },
-      create: { userId: patUser.id, age: 29, gender: 'MALE' },
-    });
+    if (patUser) {
+      await prisma.patientProfile.upsert({
+        where: { userId: patUser.id },
+        update: { age: 29, gender: 'MALE' },
+        create: { userId: patUser.id, age: 29, gender: 'MALE' },
+      });
+    }
   }, 30000);
 
   afterAll(async () => {
@@ -157,7 +170,7 @@ describe('Clinic Admin Schedule, Holiday Calendar & Queue Date Isolation (E2E)',
     expect(allTodayEntries.length).toBeGreaterThan(0);
 
     // Detailed patient metadata assertion
-    const matchedEntry = allTodayEntries.find((e: any) => e.patientName && e.phoneNumber === '+919876543210');
+    const matchedEntry = allTodayEntries.find((e: any) => e.patientName && e.phoneNumber === patPhone);
     expect(matchedEntry).toBeDefined();
     expect(matchedEntry.bookingDate).toBeDefined();
     expect(matchedEntry.bookingTime).toBeDefined();

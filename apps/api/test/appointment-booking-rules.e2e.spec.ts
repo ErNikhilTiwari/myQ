@@ -26,7 +26,7 @@ describe('Appointment Booking Rules (Past Date, 2-Day Horizon, Overlap Protectio
 
     prisma = app.get(PrismaService);
 
-    clinicA = await prisma.clinic.findUnique({ where: { slug: 'abc-health' } });
+    clinicA = await prisma.clinic.findFirst({ orderBy: { createdAt: 'asc' } });
     doctorA = await prisma.doctor.findFirst({ where: { clinicId: clinicA.id } });
 
     // Clean existing test appointments

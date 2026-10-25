@@ -38,7 +38,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
       message = exception.message;
     }
 
-    this.logger.error(`[${request.method}] ${request.url} Status: ${status} - ${message}`);
+    this.logger.error(`[${request.method}] ${request.url} Status: ${status} - ${message}`, exception instanceof Error ? exception.stack : undefined);
+
+    // Prevent sensitive internal database or system error disclosure in production
+    if (status === HttpStatus.INTERNAL_SERVER_ERROR && process.env.NODE_ENV === 'production') {
+      message = 'An unexpected internal error occurred. Please try again later.';
+      details = undefined;
+    }
 
     const errorBody: ApiResponse = {
       success: false,

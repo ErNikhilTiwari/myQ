@@ -33,8 +33,9 @@ describe('Security Audit & Hardening Checklist (E2E Verification)', () => {
 
     prisma = app.get(PrismaService);
 
-    clinicA = await prisma.clinic.findUnique({ where: { slug: 'abc-health' } });
-    clinicB = await prisma.clinic.findUnique({ where: { slug: 'city-dental' } });
+    const clinics = await prisma.clinic.findMany({ take: 2, orderBy: { createdAt: 'asc' } });
+    clinicA = clinics[0];
+    clinicB = clinics[1] || clinics[0];
 
     async function login(phoneNumber: string): Promise<string> {
       await prisma.oTPVerification.create({
@@ -52,8 +53,16 @@ describe('Security Audit & Hardening Checklist (E2E Verification)', () => {
       return res.body.data.tokens.accessToken;
     }
 
-    patientToken = await login('+919876543210');
-    receptionistToken = await login('+919876500001');
+    const recStaff = await prisma.clinicStaff.findFirst({
+      where: { clinicId: clinicA.id, role: 'RECEPTIONIST' },
+      include: { user: true },
+    });
+    const patientUser = await prisma.user.findFirst({
+      where: { role: 'PATIENT' },
+    });
+
+    patientToken = await login(patientUser?.phoneNumber || '+919876510001');
+    receptionistToken = await login(recStaff?.user?.phoneNumber || '+919876500012');
     superAdminToken = await login('+919999999999');
   }, 30000);
 

@@ -34,7 +34,7 @@ describe('Appointments & Razorpay Payments (E2E Integration)', () => {
     prisma = app.get(PrismaService);
     paymentsService = app.get(PaymentsService);
 
-    clinicA = await prisma.clinic.findUnique({ where: { slug: 'abc-health' } });
+    clinicA = await prisma.clinic.findFirst({ orderBy: { createdAt: 'asc' } });
     doctorA = await prisma.doctor.findFirst({ where: { clinicId: clinicA.id } });
 
     // Clean existing test appointments and payments
@@ -56,10 +56,16 @@ describe('Appointments & Razorpay Payments (E2E Integration)', () => {
     patientToken = patRes.body.data.tokens.accessToken;
     patientUserId = patRes.body.data.user.id;
 
-    // Login Receptionist (+919876500001)
+    // Login Receptionist
+    const recStaff = await prisma.clinicStaff.findFirst({
+      where: { clinicId: clinicA.id, role: 'RECEPTIONIST' },
+      include: { user: true },
+    });
+    const recPhone = recStaff?.user?.phoneNumber || '+919876500012';
+
     await prisma.oTPVerification.create({
       data: {
-        phoneNumber: '+919876500001',
+        phoneNumber: recPhone,
         hashedOtp: '$2a$10$dummyHash',
         expiresAt: new Date(Date.now() + 5 * 60 * 1000),
       },
@@ -67,7 +73,7 @@ describe('Appointments & Razorpay Payments (E2E Integration)', () => {
 
     const recRes = await request(app.getHttpServer())
       .post('/api/auth/verify-otp')
-      .send({ phoneNumber: '+919876500001', otp: '123456' });
+      .send({ phoneNumber: recPhone, otp: '123456' });
     receptionistToken = recRes.body.data.tokens.accessToken;
   }, 30000);
 
