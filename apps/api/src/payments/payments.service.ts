@@ -6,6 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { WhatsAppService } from '../whatsapp/whatsapp.service';
 import {
   CreatePaymentOrderDto,
   PaymentOrderDto,
@@ -23,7 +24,10 @@ export class PaymentsService {
   private readonly keyId = process.env.RAZORPAY_KEY_ID || 'rzp_test_queueapp_mock';
   private readonly keySecret = process.env.RAZORPAY_KEY_SECRET || 'rzp_secret_queueapp_mock_12345';
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly whatsAppService: WhatsAppService,
+  ) {}
 
   /**
    * Create Razorpay payment order for an appointment
@@ -75,7 +79,7 @@ export class PaymentsService {
    * Verify client-submitted payment signature (HMAC-SHA256) & Allocate Queue Token on First-Paid Basis
    */
   async verifyPayment(dto: VerifyPaymentDto): Promise<{ success: boolean; message: string; tokenNumber?: string }> {
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       const payment = await tx.payment.findUnique({
         where: { id: dto.paymentId },
         include: { appointment: true },
@@ -130,9 +134,12 @@ export class PaymentsService {
       let tokenNumber: string | undefined;
 
       // FIRST-PAID FIRST-SERVED QUEUE TOKEN ALLOCATION
+      let appointmentDetails: any = null;
+
       if (payment.appointmentId) {
         const appt = await tx.appointment.findUnique({
           where: { id: payment.appointmentId },
+          include: { user: true, doctor: true },
         });
 
         if (appt) {
@@ -202,6 +209,18 @@ export class PaymentsService {
             },
           });
 
+          appointmentDetails = {
+            clinicId: appt.clinicId,
+            slotTime: appt.slotTime,
+            user: appt.user,
+            doctor: appt.doctor,
+            isPriority,
+            clinicName: clinic?.name || 'Clinic',
+            priorityPrice: clinic?.priorityPrice ?? 50,
+            enablePriorityQueue: clinic?.enablePriorityQueue ?? true,
+            tokenNumber,
+          };
+
           this.logger.log(
             `🎟️ First-Paid Queue Token ${tokenNumber} allocated for Appointment ${appt.id} (Seq ${updatedQueue.currentSeq})`
           );
@@ -212,8 +231,55 @@ export class PaymentsService {
         success: true,
         message: 'Payment verified and appointment token confirmed.',
         tokenNumber,
+        appointmentDetails,
       };
     });
+
+    // Auto-dispatch WhatsApp appointment day reminder and live queue offer if scheduled for today
+    if (result.appointmentDetails?.user?.phoneNumber) {
+      try {
+        const { clinicId, slotTime, user, doctor, isPriority, clinicName, priorityPrice, enablePriorityQueue, tokenNumber } =
+          result.appointmentDetails;
+        const tz = 'Asia/Kolkata';
+        const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: tz });
+        const slotDateStr = new Date(slotTime).toLocaleDateString('en-CA', { timeZone: tz });
+
+        if (slotDateStr === todayStr) {
+          const formattedTime = new Date(slotTime).toLocaleTimeString('en-IN', {
+            timeZone: tz,
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true,
+          });
+          const doctorStr = doctor?.name ? `with Dr. ${doctor.name}` : '';
+          const tokenDisplay = tokenNumber ? ` Token: ${tokenNumber}.` : '';
+
+          // Message 1: Appointment details
+          await this.whatsAppService.sendMessage({
+            clinicId,
+            recipientPhone: user.phoneNumber,
+            messageText: `Hello ${user.name || 'Patient'}, your appointment ${doctorStr} at ${clinicName} is scheduled for today at ${formattedTime}.${tokenDisplay}`,
+          });
+
+          // Message 2: Live queue offer (if not already priority pass)
+          if (!isPriority && enablePriorityQueue !== false) {
+            await this.whatsAppService.sendMessage({
+              clinicId,
+              recipientPhone: user.phoneNumber,
+              messageText: `Skip the waiting room! You can join the doctor's live queue right now from the comfort of your home at ₹${priorityPrice}. Open your patient portal to join live queue instantly.`,
+            });
+          }
+        }
+      } catch (err: any) {
+        this.logger.warn(`Failed to dispatch today's appointment WhatsApp message in payment verify: ${err?.message}`);
+      }
+    }
+
+    return {
+      success: result.success,
+      message: result.message,
+      tokenNumber: result.tokenNumber,
+    };
   }
 
   /**

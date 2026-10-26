@@ -158,4 +158,31 @@ export class AppointmentsController {
     const data = await this.appointmentsService.listClinicAppointments(clinicId, status);
     return { success: true, data };
   }
+
+  /**
+   * 7. Join Live Queue on Appointment Date (Patient Upgrade from Home)
+   */
+  @Post('appointments/:id/join-live-queue')
+  @UseGuards(JwtAuthGuard)
+  async joinLiveQueue(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+  ): Promise<ApiResponse> {
+    const data = await this.appointmentsService.joinLiveQueue(id, userId);
+    return { success: true, data };
+  }
+
+  /**
+   * 8. Dispatch Today's Appointment Reminders (Clinic Staff / Cron)
+   */
+  @Post('clinics/:clinicId/appointments/send-today-reminders')
+  @UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.CLINIC_ADMIN, UserRole.RECEPTIONIST)
+  async sendTodayReminders(
+    @Param('clinicId') clinicId: string,
+  ): Promise<ApiResponse> {
+    const data = await this.appointmentsService.sendTodayClinicReminders(clinicId);
+    return { success: true, data };
+  }
 }
+

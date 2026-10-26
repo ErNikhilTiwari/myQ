@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 describe('AppointmentsService (Unit Tests & Defensive Boundaries)', () => {
   let service: AppointmentsService;
   let prisma: any;
+  let whatsAppService: any;
 
   beforeEach(() => {
     prisma = {
@@ -18,11 +19,18 @@ describe('AppointmentsService (Unit Tests & Defensive Boundaries)', () => {
         findMany: jest.fn(),
         update: jest.fn(),
       },
-      queue: { findFirst: jest.fn() },
-      queueEntry: { create: jest.fn(), count: jest.fn() },
+      queue: { findFirst: jest.fn(), update: jest.fn(), create: jest.fn() },
+      queueEntry: { create: jest.fn(), count: jest.fn(), update: jest.fn() },
+      whatsAppMessage: { findFirst: jest.fn(), create: jest.fn() },
+      $transaction: jest.fn((cb) => cb(prisma)),
     };
 
-    service = new AppointmentsService(prisma as unknown as PrismaService);
+    whatsAppService = {
+      sendMessage: jest.fn().mockResolvedValue({ id: 'msg-1' }),
+      sendTemplateNotification: jest.fn().mockResolvedValue({ id: 'tmpl-1' }),
+    };
+
+    service = new AppointmentsService(prisma as unknown as PrismaService, whatsAppService as any);
   });
 
   describe('In-Clinic Rotating QR Code Verification', () => {
@@ -194,7 +202,7 @@ describe('AppointmentsService (Unit Tests & Defensive Boundaries)', () => {
       expect(result.isPriority).toBe(false);
     });
 
-    it('adds +₹50 live queue priority fee when joinQueueImmediately is checked', async () => {
+    it('rejects future booking when joinQueueImmediately is checked', async () => {
       const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
       prisma.clinic.findUnique.mockResolvedValue({
         ...mockClinic,
@@ -202,8 +210,26 @@ describe('AppointmentsService (Unit Tests & Defensive Boundaries)', () => {
       });
       prisma.appointment.findFirst.mockResolvedValue(null);
 
+      await expect(
+        service.bookAppointment('user-1', {
+          clinicId: 'clinic-1',
+          slotTime: tomorrow.toISOString(),
+          bookingType: 'REMOTE',
+          joinQueueImmediately: true,
+        } as any),
+      ).rejects.toThrow(/Join Live Queue option is only available on the date of your appointment/);
+    });
+
+    it('adds +₹50 live queue priority fee when booking for TODAY and joinQueueImmediately is checked', async () => {
+      const todaySlot = new Date();
+      prisma.clinic.findUnique.mockResolvedValue({
+        ...mockClinic,
+        workingDays: 'SUNDAY,MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY,SATURDAY',
+      });
+      prisma.appointment.findFirst.mockResolvedValue(null);
+
       prisma.appointment.create.mockImplementation(({ data }: any) => ({
-        id: 'appt-priority',
+        id: 'appt-priority-today',
         ...data,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -211,7 +237,7 @@ describe('AppointmentsService (Unit Tests & Defensive Boundaries)', () => {
 
       const result = await service.bookAppointment('user-1', {
         clinicId: 'clinic-1',
-        slotTime: tomorrow.toISOString(),
+        slotTime: todaySlot.toISOString(),
         bookingType: 'REMOTE',
         joinQueueImmediately: true,
       } as any);
@@ -219,6 +245,116 @@ describe('AppointmentsService (Unit Tests & Defensive Boundaries)', () => {
       expect(result.bookingFee).toBe(250); // 200 + 50
       expect(result.isPriority).toBe(true);
       expect(result.priorityFee).toBe(50);
+    });
+  });
+
+  describe('joinLiveQueue & Today Appointment WhatsApp Reminders', () => {
+    it('rejects joining live queue if appointment is scheduled for a future date', async () => {
+      const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      prisma.appointment.findUnique.mockResolvedValue({
+        id: 'appt-future',
+        userId: 'patient-1',
+        clinicId: 'clinic-1',
+        status: 'CONFIRMED',
+        slotTime: tomorrow,
+        isPriority: false,
+        clinic: { id: 'clinic-1', enablePriorityQueue: true, priorityPrice: 50 },
+      });
+
+      await expect(service.joinLiveQueue('appt-future', 'patient-1')).rejects.toThrow(
+        /only join the live queue on the date of your appointment/,
+      );
+    });
+
+    it('upgrades appointment to priority live queue with P-prefix token on today date', async () => {
+      const today = new Date();
+      prisma.appointment.findUnique.mockResolvedValue({
+        id: 'appt-today',
+        userId: 'patient-1',
+        clinicId: 'clinic-1',
+        status: 'CONFIRMED',
+        slotTime: today,
+        bookingFee: 200,
+        isPriority: false,
+        queueEntry: {
+          id: 'entry-1',
+          tokenNumber: 'A03',
+          status: 'BOOKED',
+        },
+        clinic: { id: 'clinic-1', name: 'Metro Clinic', slug: 'metro-clinic', enablePriorityQueue: true, priorityPrice: 50 },
+        doctor: { name: 'Sharma' },
+        user: { phoneNumber: '+919876543210', name: 'John Doe' },
+      });
+
+      prisma.queueEntry.update.mockResolvedValue({
+        id: 'entry-1',
+        tokenNumber: 'P03',
+        status: 'WAITING',
+      });
+
+      prisma.appointment.update.mockResolvedValue({
+        id: 'appt-today',
+        userId: 'patient-1',
+        clinicId: 'clinic-1',
+        status: 'CONFIRMED',
+        slotTime: today,
+        bookingFee: 250,
+        isPriority: true,
+        priorityFee: 50,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        clinic: { id: 'clinic-1', name: 'Metro Clinic', slug: 'metro-clinic', priorityPrice: 50, enablePriorityQueue: true },
+        queueEntry: { tokenNumber: 'P03' },
+      });
+
+      const res = await service.joinLiveQueue('appt-today', 'patient-1');
+      expect(res.isPriority).toBe(true);
+      expect(res.tokenNumber).toBe('P03');
+      expect(res.priorityFee).toBe(50);
+      expect(whatsAppService.sendMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          recipientPhone: '+919876543210',
+          messageText: expect.stringContaining('P03'),
+        }),
+      );
+    });
+
+    it('dispatches appointment details and live queue upgrade offer via WhatsApp for today appointments', async () => {
+      const today = new Date();
+      prisma.appointment.findUnique.mockResolvedValue({
+        id: 'appt-today-whatsapp',
+        userId: 'patient-1',
+        clinicId: 'clinic-1',
+        status: 'CONFIRMED',
+        slotTime: today,
+        isPriority: false,
+        clinic: { id: 'clinic-1', name: 'Apex Health', enablePriorityQueue: true, priorityPrice: 50 },
+        doctor: { name: 'Gupta' },
+        queueEntry: { tokenNumber: 'A07' },
+        user: { phoneNumber: '+919999988888', name: 'Alice' },
+      });
+      prisma.whatsAppMessage.findFirst.mockResolvedValue(null);
+
+      await service.sendAppointmentScheduledReminder('appt-today-whatsapp');
+
+      // Should send 2 WhatsApp messages:
+      // Message 1: Appointment details
+      // Message 2: Live queue upgrade offer at ₹50
+      expect(whatsAppService.sendMessage).toHaveBeenCalledTimes(2);
+      expect(whatsAppService.sendMessage).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          recipientPhone: '+919999988888',
+          messageText: expect.stringContaining('is scheduled for today'),
+        }),
+      );
+      expect(whatsAppService.sendMessage).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          recipientPhone: '+919999988888',
+          messageText: expect.stringContaining('join the doctor\'s live queue right now from the comfort of your home at ₹50'),
+        }),
+      );
     });
   });
 

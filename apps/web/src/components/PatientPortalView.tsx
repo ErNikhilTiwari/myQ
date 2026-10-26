@@ -22,7 +22,8 @@ import {
   Globe,
   AlertTriangle,
   CalendarPlus,
-  Edit3
+  Edit3,
+  Zap
 } from 'lucide-react';
 import { ClinicSearchSelect, ClinicItem } from './ClinicSearchSelect';
 
@@ -53,6 +54,9 @@ export interface PatientAppointmentItem {
   bookingFee: number;
   paymentStatus: string;
   tokenNumber?: string | null;
+  isPriority?: boolean;
+  priorityPrice?: number;
+  enablePriorityQueue?: boolean;
   createdAt: string;
 }
 
@@ -101,6 +105,59 @@ export const PatientPortalView: React.FC<PatientPortalViewProps> = ({
   // Logged-in appointments history state
   const [myAppointments, setMyAppointments] = useState<PatientAppointmentItem[]>([]);
   const [isLoadingMyAppts, setIsLoadingMyAppts] = useState(false);
+  const [upgradingApptId, setUpgradingApptId] = useState<string | null>(null);
+
+  const isAppointmentToday = (slotTime: string): boolean => {
+    try {
+      const tz = 'Asia/Kolkata';
+      const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: tz });
+      const slotDateStr = new Date(slotTime).toLocaleDateString('en-CA', { timeZone: tz });
+      return slotDateStr === todayStr;
+    } catch {
+      return false;
+    }
+  };
+
+  const handleJoinLiveQueue = async (appt: PatientAppointmentItem) => {
+    if (!token) return;
+    const pPrice = appt.priorityPrice ?? 50;
+    const confirmed = window.confirm(
+      `⚡ Join Live Queue for ₹${pPrice}?\n\nYou will enter the doctor's live queue right away from the comfort of your home and receive live token updates on your phone.`
+    );
+    if (!confirmed) return;
+
+    setUpgradingApptId(appt.id);
+    try {
+      const res = await fetch(`/api/appointments/${appt.id}/join-live-queue`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const result = await res.json();
+      if (result.success && result.data) {
+        alert(`🎉 Successfully joined the live queue! Your priority token is ${result.data.tokenNumber}.`);
+        fetchMyAppointments();
+        if (result.data.clinicId && onSelectClinicId) {
+          onSelectClinicId(result.data.clinicId);
+        }
+        if (result.data.tokenNumber) {
+          setTokenInput(result.data.tokenNumber);
+          setActiveTab('TRACKER');
+          if (result.data.clinicSlug) {
+            lookupTokenBySlug(result.data.clinicSlug, result.data.tokenNumber);
+          }
+        }
+      } else {
+        alert(result.message || 'Failed to join live queue.');
+      }
+    } catch (err: any) {
+      alert(err?.message || 'Error joining live queue.');
+    } finally {
+      setUpgradingApptId(null);
+    }
+  };
 
   const selectedClinic = clinics.find((c) => c.id === selectedClinicId);
   const clinicSlug = selectedClinic?.slug || defaultClinicSlug;
@@ -748,63 +805,113 @@ export const PatientPortalView: React.FC<PatientPortalViewProps> = ({
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {myAppointments.map((appt) => (
-                  <div
-                    key={appt.id}
-                    className="bg-[#F8FAFC] border border-slate-200/90 rounded-2xl p-4 flex flex-col justify-between hover:border-[#0284C7]/40 transition space-y-3"
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-[10px] font-black uppercase tracking-wider bg-slate-200 text-slate-800 px-2.5 py-0.5 rounded">
-                          {appt.status}
-                        </span>
+                {myAppointments.map((appt) => {
+                  const isToday = isAppointmentToday(appt.slotTime);
+                  const isLivePriority = Boolean(appt.isPriority || appt.tokenNumber?.startsWith('P'));
+                  const canJoinLiveQueue =
+                    isToday && appt.status === 'CONFIRMED' && !isLivePriority && appt.enablePriorityQueue !== false;
 
-                        <span className="font-mono text-xs font-black text-[#16A34A] bg-[#DCFCE7] px-2 py-0.5 rounded border border-[#16A34A]/20">
-                          Paid ₹{appt.bookingFee}
-                        </span>
+                  return (
+                    <div
+                      key={appt.id}
+                      className="bg-[#F8FAFC] border border-slate-200/90 rounded-2xl p-4 flex flex-col justify-between hover:border-[#0284C7]/40 transition space-y-3"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center space-x-1.5">
+                            <span className="text-[10px] font-black uppercase tracking-wider bg-slate-200 text-slate-800 px-2.5 py-0.5 rounded">
+                              {appt.status}
+                            </span>
+                            {isLivePriority && (
+                              <span className="bg-amber-100 text-amber-900 text-[10px] font-black px-2 py-0.5 rounded-full border border-amber-300 flex items-center space-x-1">
+                                <Zap className="w-3 h-3 text-amber-600 fill-amber-500" />
+                                <span>Live Queue</span>
+                              </span>
+                            )}
+                          </div>
+
+                          <span className="font-mono text-xs font-black text-[#16A34A] bg-[#DCFCE7] px-2 py-0.5 rounded border border-[#16A34A]/20">
+                            Paid ₹{appt.bookingFee}
+                          </span>
+                        </div>
+
+                        <div className="text-sm font-black text-[#1E293B]">{appt.doctorName || 'General OPD'}</div>
+                        <div className="text-xs text-[#64748B] mt-0.5 font-medium flex items-center space-x-1">
+                          <Building2 className="w-3.5 h-3.5 shrink-0 text-slate-400" />
+                          <span className="truncate">{appt.clinicName}</span>
+                        </div>
+
+                        <div className="text-xs text-slate-600 mt-2 flex items-center space-x-1.5 font-medium">
+                          <Calendar className="w-3.5 h-3.5 text-[#0284C7]" />
+                          <span>
+                            {new Date(appt.slotTime).toLocaleDateString()} at{' '}
+                            {new Date(appt.slotTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                          {isToday && (
+                            <span className="bg-emerald-100 text-emerald-800 text-[9px] font-black px-1.5 py-0.5 rounded uppercase">
+                              Today
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Upgrade to Live Queue on Appointment Date */}
+                        {canJoinLiveQueue && (
+                          <div className="mt-3 p-3 bg-gradient-to-r from-amber-500/10 via-amber-50 to-orange-50 border-2 border-amber-400/80 rounded-xl flex flex-col gap-2 shadow-xs">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-1.5">
+                                <Zap className="w-4 h-4 text-amber-600 fill-amber-500" />
+                                <span className="text-xs font-black text-amber-950">Join Live Queue from Home</span>
+                              </div>
+                              <span className="bg-amber-100 border border-amber-300 text-amber-800 text-[10px] font-black px-2 py-0.5 rounded-full">
+                                ₹{appt.priorityPrice ?? 50}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-amber-900/90 leading-tight">
+                              Your appointment is scheduled for today! Skip the clinic waiting room and enter the live queue right now from home.
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => handleJoinLiveQueue(appt)}
+                              disabled={upgradingApptId === appt.id}
+                              className="mt-1 w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-black text-xs py-2 px-3 rounded-lg shadow-sm transition active:scale-95 flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-50"
+                            >
+                              <Zap className="w-3.5 h-3.5" />
+                              <span>{upgradingApptId === appt.id ? 'Joining Live Queue...' : `Join Live Queue @ ₹${appt.priorityPrice ?? 50}`}</span>
+                            </button>
+                          </div>
+                        )}
                       </div>
 
-                      <div className="text-sm font-black text-[#1E293B]">{appt.doctorName || 'General OPD'}</div>
-                      <div className="text-xs text-[#64748B] mt-0.5 font-medium flex items-center space-x-1">
-                        <Building2 className="w-3.5 h-3.5 shrink-0 text-slate-400" />
-                        <span className="truncate">{appt.clinicName}</span>
-                      </div>
+                      <div className="pt-2 border-t border-slate-200 flex items-center justify-between">
+                        <div className="flex items-center space-x-1.5">
+                          <span className="text-[10px] text-slate-500 font-bold uppercase">Token:</span>
+                          <span className="font-mono font-black text-base text-[#0284C7]">
+                            {appt.tokenNumber || 'Pending'}
+                          </span>
+                        </div>
 
-                      <div className="text-xs text-slate-600 mt-2 flex items-center space-x-1.5 font-medium">
-                        <Calendar className="w-3.5 h-3.5 text-[#0284C7]" />
-                        <span>{new Date(appt.slotTime).toLocaleDateString()} at {new Date(appt.slotTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        {appt.tokenNumber && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (appt.clinicId && onSelectClinicId) {
+                                onSelectClinicId(appt.clinicId);
+                              }
+                              setTokenInput(appt.tokenNumber!);
+                              setActiveTab('TRACKER');
+                              if (appt.clinicSlug) {
+                                lookupTokenBySlug(appt.clinicSlug, appt.tokenNumber!);
+                              }
+                            }}
+                            className="text-xs font-bold text-[#0284C7] bg-[#E0F2FE] hover:bg-[#BAE6FD] px-3 py-1 rounded-lg transition border border-[#0284C7]/20"
+                          >
+                            Track Status
+                          </button>
+                        )}
                       </div>
                     </div>
-
-                    <div className="pt-2 border-t border-slate-200 flex items-center justify-between">
-                      <div className="flex items-center space-x-1.5">
-                        <span className="text-[10px] text-slate-500 font-bold uppercase">Token:</span>
-                        <span className="font-mono font-black text-base text-[#0284C7]">
-                          {appt.tokenNumber || 'Pending'}
-                        </span>
-                      </div>
-
-                      {appt.tokenNumber && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (appt.clinicId && onSelectClinicId) {
-                              onSelectClinicId(appt.clinicId);
-                            }
-                            setTokenInput(appt.tokenNumber!);
-                            setActiveTab('TRACKER');
-                            if (appt.clinicSlug) {
-                              lookupTokenBySlug(appt.clinicSlug, appt.tokenNumber!);
-                            }
-                          }}
-                          className="text-xs font-bold text-[#0284C7] bg-[#E0F2FE] hover:bg-[#BAE6FD] px-3 py-1 rounded-lg transition border border-[#0284C7]/20"
-                        >
-                          Track Status
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

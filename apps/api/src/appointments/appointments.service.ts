@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { WhatsAppService } from '../whatsapp/whatsapp.service';
 import {
   BookAppointmentDto,
   AppointmentDto,
@@ -27,7 +28,10 @@ const QR_SECRET = process.env.JWT_ACCESS_SECRET || 'qr_rotating_salt_secret_key'
 export class AppointmentsService {
   private readonly logger = new Logger(AppointmentsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly whatsAppService: WhatsAppService,
+  ) {}
 
   /**
    * 1. Generate Rotating Secure In-Clinic QR Code Token
@@ -220,9 +224,21 @@ export class AppointmentsService {
       calculatedFee = clinic.remotePrice ?? 200;
     }
 
-    // Optional Priority Pass / Join Queue Right Away (+₹50 extra fee)
+    // Strict Future Booking Rule: "Join Live Queue" is only available on the date of appointment.
+    const tz = 'Asia/Kolkata';
+    const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: tz });
+    const slotDateStr = slotDate.toLocaleDateString('en-CA', { timeZone: tz });
+    const isToday = slotDateStr === todayStr;
+
+    if (dto.joinQueueImmediately && !isToday) {
+      throw new BadRequestException(
+        'Join Live Queue option is only available on the date of your appointment. When your appointment date arrives, you can join the live queue directly from the app.'
+      );
+    }
+
+    // Optional Priority Pass / Join Queue Right Away (allowed only for today's appointments)
     const isPriorityAllowed = (clinic as any).enablePriorityQueue !== false;
-    const joinQueueImmediately = isPriorityAllowed && Boolean(dto.joinQueueImmediately);
+    const joinQueueImmediately = isPriorityAllowed && isToday && Boolean(dto.joinQueueImmediately);
     const priorityFee = joinQueueImmediately ? Number((clinic as any).priorityPrice ?? 50.0) : 0.0;
     calculatedFee += priorityFee;
 
@@ -662,6 +678,9 @@ export class AppointmentsService {
    * 7. List authenticated patient's own appointments
    */
   async getMyPatientAppointments(userId: string): Promise<any[]> {
+    const tz = 'Asia/Kolkata';
+    const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: tz });
+
     const list = await this.prisma.appointment.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
@@ -674,12 +693,310 @@ export class AppointmentsService {
       },
     });
 
+    // Auto-dispatch reminders for confirmed appointments scheduled for today
+    for (const a of list) {
+      if (a.status === 'CONFIRMED') {
+        const slotDateStr = new Date(a.slotTime).toLocaleDateString('en-CA', { timeZone: tz });
+        if (slotDateStr === todayStr) {
+          this.sendAppointmentScheduledReminder(a.id).catch((err) => {
+            this.logger.warn(`Auto-reminder error for appointment ${a.id}: ${err?.message}`);
+          });
+        }
+      }
+    }
+
     return list.map((a: any) => ({
       ...this.mapToDto(a),
       clinicName: a.clinic?.name || 'Clinic',
       clinicSlug: a.clinic?.slug || '',
       clinicAddress: a.clinic?.address || '',
+      priorityPrice: a.clinic?.priorityPrice ?? 50,
+      enablePriorityQueue: a.clinic?.enablePriorityQueue ?? true,
     }));
+  }
+
+  /**
+   * 8. Join Live Queue on Appointment Date (Patient Upgrade from Home)
+   */
+  async joinLiveQueue(
+    appointmentId: string,
+    userId: string,
+  ): Promise<any> {
+    const tz = 'Asia/Kolkata';
+    const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: tz });
+
+    const appt = await this.prisma.appointment.findUnique({
+      where: { id: appointmentId },
+      include: {
+        clinic: true,
+        doctor: true,
+        service: true,
+        queueEntry: true,
+        user: true,
+      },
+    });
+
+    if (!appt) {
+      throw new NotFoundException(`Appointment with ID "${appointmentId}" not found.`);
+    }
+
+    if (appt.userId !== userId) {
+      throw new ForbiddenException('You cannot modify another patient\'s appointment.');
+    }
+
+    if (appt.status !== 'CONFIRMED') {
+      throw new BadRequestException(
+        `Cannot join live queue for an appointment with status "${appt.status}". Must be CONFIRMED.`
+      );
+    }
+
+    const slotDateStr = new Date(appt.slotTime).toLocaleDateString('en-CA', { timeZone: tz });
+    if (slotDateStr !== todayStr) {
+      throw new BadRequestException('You can only join the live queue on the date of your appointment.');
+    }
+
+    if (appt.clinic.enablePriorityQueue === false) {
+      throw new BadRequestException('Priority live queue is currently disabled by this clinic.');
+    }
+
+    if (appt.isPriority || appt.queueEntry?.tokenNumber?.startsWith('P')) {
+      throw new BadRequestException('This appointment has already joined the priority live queue.');
+    }
+
+    const priorityFee = Number(appt.clinic.priorityPrice ?? 50.0);
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      let newToken = appt.queueEntry?.tokenNumber || 'P01';
+
+      if (appt.queueEntry) {
+        if (appt.queueEntry.tokenNumber.startsWith('A') || appt.queueEntry.tokenNumber.startsWith('Q')) {
+          newToken = 'P' + appt.queueEntry.tokenNumber.slice(1);
+        } else if (!appt.queueEntry.tokenNumber.startsWith('P')) {
+          newToken = 'P' + appt.queueEntry.tokenNumber;
+        }
+
+        await tx.queueEntry.update({
+          where: { id: appt.queueEntry.id },
+          data: {
+            tokenNumber: newToken,
+            status: 'WAITING',
+            estimatedWait: 5,
+          },
+        });
+      } else {
+        // Locate or create queue for clinic/doctor
+        let queue = await tx.queue.findFirst({
+          where: {
+            clinicId: appt.clinicId,
+            ...(appt.doctorId ? { doctorId: appt.doctorId } : {}),
+          },
+        });
+
+        if (!queue) {
+          queue = await tx.queue.findFirst({
+            where: { clinicId: appt.clinicId },
+          });
+        }
+
+        if (!queue) {
+          queue = await tx.queue.create({
+            data: {
+              clinicId: appt.clinicId,
+              name: 'General Queue',
+              doctorId: appt.doctorId || null,
+            },
+          });
+        }
+
+        const updatedQueue = await tx.queue.update({
+          where: { id: queue.id },
+          data: { currentSeq: { increment: 1 } },
+        });
+
+        newToken = `P${String(updatedQueue.currentSeq).padStart(2, '0')}`;
+        const publicToken = `pt_${nanoid()}`;
+
+        const entry = await tx.queueEntry.create({
+          data: {
+            queueId: queue.id,
+            userId: appt.userId,
+            tokenNumber: newToken,
+            sequenceNumber: updatedQueue.currentSeq,
+            status: 'WAITING',
+            publicToken,
+            estimatedWait: 5,
+          },
+        });
+
+        await tx.appointment.update({
+          where: { id: appt.id },
+          data: { queueEntryId: entry.id },
+        });
+      }
+
+      const updatedAppt = await tx.appointment.update({
+        where: { id: appt.id },
+        data: {
+          isPriority: true,
+          priorityFee,
+          bookingFee: appt.bookingFee + priorityFee,
+        },
+        include: {
+          user: true,
+          doctor: true,
+          service: true,
+          queueEntry: true,
+          clinic: true,
+        },
+      });
+
+      this.logger.log(
+        `⚡ Upgraded Appointment ${appt.id} to Live Queue (Token: ${newToken}, Priority Fee: ₹${priorityFee})`
+      );
+
+      return {
+        ...this.mapToDto(updatedAppt),
+        tokenNumber: newToken,
+        clinicName: appt.clinic.name,
+        clinicSlug: appt.clinic.slug,
+        priorityPrice: appt.clinic.priorityPrice ?? 50,
+        enablePriorityQueue: appt.clinic.enablePriorityQueue ?? true,
+      };
+    });
+
+    // Send confirmation WhatsApp message after transaction commits
+    if (appt.user?.phoneNumber) {
+      const docName = appt.doctor?.name ? `with Dr. ${appt.doctor.name}` : '';
+      const msg = `⚡ You have joined the Live Queue for your consultation ${docName} at ${appt.clinic.name}! Your priority token is ${result.tokenNumber}. Track your live status directly on QueueApp.`;
+      try {
+        await this.whatsAppService.sendMessage({
+          clinicId: appt.clinicId,
+          recipientPhone: appt.user.phoneNumber,
+          messageText: msg,
+        });
+      } catch (err: any) {
+        this.logger.warn(`Failed to dispatch join live queue WhatsApp confirmation: ${err?.message}`);
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * 9. Send WhatsApp Appointment Day Reminders (Message 1: Details, Message 2: Live Queue Offer)
+   */
+  async sendAppointmentScheduledReminder(appointmentId: string): Promise<void> {
+    const tz = 'Asia/Kolkata';
+    const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: tz });
+
+    const appt = await this.prisma.appointment.findUnique({
+      where: { id: appointmentId },
+      include: {
+        user: true,
+        clinic: true,
+        doctor: true,
+        queueEntry: true,
+      },
+    });
+
+    if (!appt || !appt.user?.phoneNumber || appt.status !== 'CONFIRMED') {
+      return;
+    }
+
+    const slotDateStr = new Date(appt.slotTime).toLocaleDateString('en-CA', { timeZone: tz });
+    if (slotDateStr !== todayStr) {
+      return;
+    }
+
+    // Check if appointment day reminder was already dispatched today to avoid duplicates
+    const startOfTodayUtc = new Date();
+    startOfTodayUtc.setHours(0, 0, 0, 0);
+
+    const alreadySent = await this.prisma.whatsAppMessage.findFirst({
+      where: {
+        phoneNumber: appt.user.phoneNumber,
+        clinicId: appt.clinicId,
+        content: { contains: 'is scheduled for today' },
+        createdAt: { gte: startOfTodayUtc },
+      },
+    });
+
+    if (alreadySent) {
+      return;
+    }
+
+    const formattedTime = new Date(appt.slotTime).toLocaleTimeString('en-IN', {
+      timeZone: tz,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
+    const tokenStr = appt.queueEntry?.tokenNumber ? ` Token: ${appt.queueEntry.tokenNumber}.` : '';
+    const doctorStr = appt.doctor?.name ? `with Dr. ${appt.doctor.name}` : '';
+
+    // Message 1: Appointment Details
+    const msg1 = `Hello ${appt.user.name || 'Patient'}, your appointment ${doctorStr} at ${appt.clinic.name} is scheduled for today at ${formattedTime}.${tokenStr}`;
+    try {
+      await this.whatsAppService.sendMessage({
+        clinicId: appt.clinicId,
+        recipientPhone: appt.user.phoneNumber,
+        messageText: msg1,
+      });
+      this.logger.log(`📱 Sent today appointment reminder to ${appt.user.phoneNumber} for appointment ${appt.id}`);
+    } catch (err: any) {
+      this.logger.warn(`Failed to dispatch WhatsApp today appointment reminder: ${err?.message}`);
+    }
+
+    // Message 2: Live Queue Offer (if not already priority)
+    const isPriority = appt.isPriority || appt.queueEntry?.tokenNumber?.startsWith('P');
+    if (!isPriority && appt.clinic.enablePriorityQueue !== false) {
+      const price = appt.clinic.priorityPrice ?? 50;
+      const msg2 = `Skip the waiting room! You can join the doctor's live queue right now from the comfort of your home at ₹${price}. Open your patient portal to join live queue instantly.`;
+      try {
+        await this.whatsAppService.sendMessage({
+          clinicId: appt.clinicId,
+          recipientPhone: appt.user.phoneNumber,
+          messageText: msg2,
+        });
+        this.logger.log(`📱 Sent live queue offer to ${appt.user.phoneNumber} for appointment ${appt.id}`);
+      } catch (err: any) {
+        this.logger.warn(`Failed to dispatch WhatsApp live queue offer: ${err?.message}`);
+      }
+    }
+  }
+
+  /**
+   * 10. Bulk trigger today's reminders for a clinic (Clinic Admin / Receptionist)
+   */
+  async sendTodayClinicReminders(clinicId: string): Promise<{ sentCount: number }> {
+    const tz = 'Asia/Kolkata';
+    const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: tz });
+
+    const appts = await this.prisma.appointment.findMany({
+      where: {
+        clinicId,
+        status: 'CONFIRMED',
+      },
+      include: {
+        user: true,
+        clinic: true,
+        doctor: true,
+        queueEntry: true,
+      },
+    });
+
+    const todayAppts = appts.filter((a) => {
+      const slotDateStr = new Date(a.slotTime).toLocaleDateString('en-CA', { timeZone: tz });
+      return slotDateStr === todayStr;
+    });
+
+    let sentCount = 0;
+    for (const a of todayAppts) {
+      await this.sendAppointmentScheduledReminder(a.id);
+      sentCount++;
+    }
+
+    return { sentCount };
   }
 
   private mapToDto(a: any): AppointmentDto {
@@ -707,3 +1024,4 @@ export class AppointmentsService {
     };
   }
 }
+

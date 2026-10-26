@@ -240,13 +240,21 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
   const activeClinic = clinics.find((c) => c.id === selectedClinicId);
   const isBookingTimeEnabled = (activeClinic as any)?.enableBookingTime !== false;
   const isPriorityQueueEnabled = (activeClinic as any)?.enablePriorityQueue !== false;
+  const isTodayBooking = selectedDate === getMinDateStr();
   const inClinicFee = (activeClinic as any)?.inClinicPrice ?? 200;
   const remoteFee = (activeClinic as any)?.remotePrice ?? 200;
   const configuredPriorityPrice = Number((activeClinic as any)?.priorityPrice ?? 50);
   const baseFee = bookingType === 'IN_CLINIC' ? inClinicFee : remoteFee;
-  const isPriorityActive = isPriorityQueueEnabled && joinQueueImmediately;
+  const isPriorityActive = isPriorityQueueEnabled && isTodayBooking && joinQueueImmediately;
   const priorityFee = isPriorityActive ? configuredPriorityPrice : 0;
   const currentFee = baseFee + priorityFee;
+
+  // Auto-reset live queue if date is switched to a future date
+  useEffect(() => {
+    if (!isTodayBooking && joinQueueImmediately) {
+      setJoinQueueImmediately(false);
+    }
+  }, [isTodayBooking, joinQueueImmediately]);
 
   // Reset modal state cleanly to book another appointment
   const handleBookAnotherAppointment = () => {
@@ -791,52 +799,64 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                   </div>
                 </div>
 
-                {/* Additional ₹50 Checkbox to Join Live Queue Right Away */}
-                {isPriorityQueueEnabled ? (
-                  <div
-                    onClick={() => setJoinQueueImmediately(!joinQueueImmediately)}
-                    className={`p-3.5 rounded-xl border-2 transition-all cursor-pointer ${
-                      joinQueueImmediately
-                        ? 'border-amber-500 bg-amber-50/90 shadow-xs ring-2 ring-amber-400/20'
-                        : 'border-slate-200 bg-white hover:border-slate-300'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-start space-x-3">
-                        <input
-                          type="checkbox"
-                          checked={joinQueueImmediately}
-                          onChange={(e) => setJoinQueueImmediately(e.target.checked)}
-                          onClick={(e) => e.stopPropagation()}
-                          className="mt-1 w-4 h-4 text-amber-600 rounded border-slate-300 focus:ring-amber-500 cursor-pointer accent-amber-600"
-                        />
-                        <div>
-                          <div className="flex items-center space-x-2">
-                            <span className="font-black text-xs text-[#1E293B] flex items-center space-x-1.5">
-                              <Zap className="w-3.5 h-3.5 text-amber-600 fill-amber-500" />
-                              <span>Join Live Queue Right Away</span>
-                            </span>
-                            <span className="bg-amber-100 border border-amber-300 text-amber-800 text-[10px] font-black px-2 py-0.5 rounded-full">
-                              +₹{configuredPriorityPrice} Extra
-                            </span>
+                {/* Join Live Queue Option (Allowed ONLY on Today's Date) */}
+                {isTodayBooking ? (
+                  isPriorityQueueEnabled ? (
+                    <div
+                      onClick={() => setJoinQueueImmediately(!joinQueueImmediately)}
+                      className={`p-3.5 rounded-xl border-2 transition-all cursor-pointer ${
+                        joinQueueImmediately
+                          ? 'border-amber-500 bg-amber-50/90 shadow-xs ring-2 ring-amber-400/20'
+                          : 'border-slate-200 bg-white hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start space-x-3">
+                          <input
+                            type="checkbox"
+                            checked={joinQueueImmediately}
+                            onChange={(e) => setJoinQueueImmediately(e.target.checked)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="mt-1 w-4 h-4 text-amber-600 rounded border-slate-300 focus:ring-amber-500 cursor-pointer accent-amber-600"
+                          />
+                          <div>
+                            <div className="flex items-center space-x-2">
+                              <span className="font-black text-xs text-[#1E293B] flex items-center space-x-1.5">
+                                <Zap className="w-3.5 h-3.5 text-amber-600 fill-amber-500" />
+                                <span>Join Live Queue Right Away</span>
+                              </span>
+                              <span className="bg-amber-100 border border-amber-300 text-amber-800 text-[10px] font-black px-2 py-0.5 rounded-full">
+                                +₹{configuredPriorityPrice} Extra
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
+                              {joinQueueImmediately
+                                ? `⚡ Checkbox active (+₹${configuredPriorityPrice}): You will enter the doctor's active live queue right away upon booking.`
+                                : `Check this box (+₹${configuredPriorityPrice}) to enter the doctor's live queue right away. Leave unchecked for a standard appointment at ₹${baseFee}.`}
+                            </p>
                           </div>
-                          <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
-                            {joinQueueImmediately
-                              ? `⚡ Checkbox active (+₹${configuredPriorityPrice}): You will enter the doctor's active live queue right away upon booking.`
-                              : `Check this box (+₹${configuredPriorityPrice}) to enter the doctor's live queue right away. Leave unchecked for a standard appointment at ₹${baseFee}.`}
-                          </p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <div className="text-sm font-black font-mono text-amber-700">+₹{configuredPriorityPrice}</div>
+                          <div className="text-[10px] text-slate-400 font-semibold">Live Queue</div>
                         </div>
                       </div>
-                      <div className="text-right shrink-0">
-                        <div className="text-sm font-black font-mono text-amber-700">+₹{configuredPriorityPrice}</div>
-                        <div className="text-[10px] text-slate-400 font-semibold">Live Queue</div>
-                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="p-2.5 rounded-xl bg-slate-100 border border-slate-200 text-[11px] text-slate-500 flex items-center space-x-2">
+                      <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <span>Live queue priority pass is currently disabled by this clinic.</span>
+                    </div>
+                  )
                 ) : (
-                  <div className="p-2.5 rounded-xl bg-slate-100 border border-slate-200 text-[11px] text-slate-500 flex items-center space-x-2">
-                    <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                    <span>Live queue priority pass is currently disabled by this clinic.</span>
+                  <div className="p-3.5 rounded-xl bg-sky-50/90 border border-sky-200 text-sky-900 flex items-start space-x-3">
+                    <Clock className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
+                    <div className="text-[11px] leading-relaxed">
+                      <span className="font-bold block text-sky-950">Future Appointment Booking ({selectedDate}):</span>
+                      <span>
+                        "Join Live Queue" is only available on the date of your appointment. When your appointment date arrives, open the app to join the live queue directly from the comfort of your home at ₹{configuredPriorityPrice}.
+                      </span>
+                    </div>
                   </div>
                 )}
 
