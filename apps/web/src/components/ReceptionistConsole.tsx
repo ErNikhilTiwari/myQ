@@ -214,6 +214,27 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
     token && currentUser && (currentUser.role === 'RECEPTIONIST' || currentUser.role === 'CLINIC_ADMIN' || currentUser.role === 'SUPER_ADMIN')
   );
 
+  const [currentClinic, setCurrentClinic] = useState<any>(null);
+
+  const fetchClinicDetails = async () => {
+    if (!clinicId) return;
+    try {
+      const res = await fetch(`/api/clinics/${clinicId}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const json = await res.json();
+      if (json.success && json.data) {
+        setCurrentClinic(json.data);
+      }
+    } catch (e) {
+      console.error('Failed to fetch clinic details in ReceptionistConsole:', e);
+    }
+  };
+
+  useEffect(() => {
+    fetchClinicDetails();
+  }, [clinicId, token]);
+
   // Fetch all queues for mapped clinic
   useEffect(() => {
     if (!isReceptionistAuthenticated || !clinicId) return;
@@ -439,7 +460,7 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
     setTimeout(() => setFeedbackMsg(null), 3500);
   };
 
-  const activeClinicObj = clinics.find((c) => c.id === clinicId);
+  const activeClinicObj = currentClinic || clinics.find((c) => c.id === clinicId);
   const activeQueueObj = queues.find((q) => q.id === selectedQueueId);
 
   // STRICT RULE: No receptionist should see the dashboard without logging in!
@@ -705,10 +726,12 @@ export const ReceptionistConsole: React.FC<ReceptionistConsoleProps> = ({
           token={token} 
           initialInClinicPrice={(activeClinicObj as any)?.inClinicPrice || 200}
           initialRemotePrice={(activeClinicObj as any)?.remotePrice || 200}
+          initialPriorityPrice={(activeClinicObj as any)?.priorityPrice ?? 50}
           initialEnableBookingTime={(activeClinicObj as any)?.enableBookingTime !== false}
           initialEnablePriorityQueue={(activeClinicObj as any)?.enablePriorityQueue !== false}
           initialSlotDurationMinutes={(activeClinicObj as any)?.slotDurationMinutes || 15}
           onUpdated={() => {
+            fetchClinicDetails();
             fetchQueueDetails();
             setFeedbackMsg({ type: 'success', text: 'Clinic appointment pricing & booking settings updated!' });
             setTimeout(() => setFeedbackMsg(null), 3000);

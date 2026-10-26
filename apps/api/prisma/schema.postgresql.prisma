@@ -72,6 +72,7 @@ model Clinic {
   city        String?
   inClinicPrice Float    @default(200.0)
   remotePrice   Float    @default(200.0)
+  priorityPrice Float    @default(50.0)
   voiceAnnouncementMode String @default("TOKEN_PATIENT_DOCTOR_ROOM")
   enableBookingTime Boolean @default(true)
   enablePriorityQueue Boolean @default(true)

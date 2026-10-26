@@ -18,6 +18,7 @@ interface ClinicPricingConfigProps {
   token: string | null;
   initialInClinicPrice?: number;
   initialRemotePrice?: number;
+  initialPriorityPrice?: number;
   initialEnableBookingTime?: boolean;
   initialEnablePriorityQueue?: boolean;
   initialSlotDurationMinutes?: number;
@@ -29,6 +30,7 @@ export const ClinicPricingConfig: React.FC<ClinicPricingConfigProps> = ({
   token,
   initialInClinicPrice = 200,
   initialRemotePrice = 200,
+  initialPriorityPrice = 50,
   initialEnableBookingTime = true,
   initialEnablePriorityQueue = true,
   initialSlotDurationMinutes = 15,
@@ -36,6 +38,7 @@ export const ClinicPricingConfig: React.FC<ClinicPricingConfigProps> = ({
 }) => {
   const [inClinicPrice, setInClinicPrice] = useState<number>(initialInClinicPrice);
   const [remotePrice, setRemotePrice] = useState<number>(initialRemotePrice);
+  const [priorityPrice, setPriorityPrice] = useState<number>(initialPriorityPrice);
   const [enableBookingTime, setEnableBookingTime] = useState<boolean>(initialEnableBookingTime);
   const [enablePriorityQueue, setEnablePriorityQueue] = useState<boolean>(initialEnablePriorityQueue);
   const [slotDurationMinutes, setSlotDurationMinutes] = useState<number>(initialSlotDurationMinutes);
@@ -43,13 +46,39 @@ export const ClinicPricingConfig: React.FC<ClinicPricingConfigProps> = ({
   const [isTogglingPriorityQueue, setIsTogglingPriorityQueue] = useState(false);
   const [isUpdatingSlotDuration, setIsUpdatingSlotDuration] = useState(false);
 
-  // Target modal state: only 'IN_CLINIC' or 'REMOTE' at a time
-  const [editingTarget, setEditingTarget] = useState<'IN_CLINIC' | 'REMOTE' | null>(null);
+  // Target modal state: 'IN_CLINIC', 'REMOTE', or 'PRIORITY'
+  const [editingTarget, setEditingTarget] = useState<'IN_CLINIC' | 'REMOTE' | 'PRIORITY' | null>(null);
   const [tempPrice, setTempPrice] = useState<number>(200);
 
   const [isSaving, setIsSaving] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Fetch persisted clinic settings directly on mount and when clinicId changes
+  useEffect(() => {
+    if (!clinicId) return;
+    let isMounted = true;
+    fetch(`/api/clinics/${clinicId}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then((res) => res.json())
+      .then((json) => {
+        if (isMounted && json.success && json.data) {
+          const c = json.data;
+          if (c.inClinicPrice !== undefined) setInClinicPrice(Number(c.inClinicPrice));
+          if (c.remotePrice !== undefined) setRemotePrice(Number(c.remotePrice));
+          if (c.priorityPrice !== undefined) setPriorityPrice(Number(c.priorityPrice));
+          if (c.enableBookingTime !== undefined) setEnableBookingTime(Boolean(c.enableBookingTime));
+          if (c.enablePriorityQueue !== undefined) setEnablePriorityQueue(Boolean(c.enablePriorityQueue));
+          if (c.slotDurationMinutes !== undefined) setSlotDurationMinutes(Number(c.slotDurationMinutes));
+        }
+      })
+      .catch((err) => console.error('Error fetching clinic pricing details:', err));
+
+    return () => {
+      isMounted = false;
+    };
+  }, [clinicId, token]);
 
   useEffect(() => {
     setInClinicPrice(initialInClinicPrice);
@@ -58,6 +87,12 @@ export const ClinicPricingConfig: React.FC<ClinicPricingConfigProps> = ({
   useEffect(() => {
     setRemotePrice(initialRemotePrice);
   }, [initialRemotePrice]);
+
+  useEffect(() => {
+    if (initialPriorityPrice !== undefined) {
+      setPriorityPrice(initialPriorityPrice);
+    }
+  }, [initialPriorityPrice]);
 
   useEffect(() => {
     setEnableBookingTime(initialEnableBookingTime);
@@ -172,9 +207,15 @@ export const ClinicPricingConfig: React.FC<ClinicPricingConfigProps> = ({
     }
   };
 
-  const openModal = (target: 'IN_CLINIC' | 'REMOTE') => {
+  const openModal = (target: 'IN_CLINIC' | 'REMOTE' | 'PRIORITY') => {
     setEditingTarget(target);
-    setTempPrice(target === 'IN_CLINIC' ? inClinicPrice : remotePrice);
+    if (target === 'IN_CLINIC') {
+      setTempPrice(inClinicPrice);
+    } else if (target === 'REMOTE') {
+      setTempPrice(remotePrice);
+    } else {
+      setTempPrice(priorityPrice);
+    }
     setModalError(null);
   };
 
@@ -195,9 +236,14 @@ export const ClinicPricingConfig: React.FC<ClinicPricingConfigProps> = ({
     setIsSaving(true);
     setModalError(null);
 
-    const payload = editingTarget === 'IN_CLINIC'
-      ? { inClinicPrice: Number(tempPrice) }
-      : { remotePrice: Number(tempPrice) };
+    let payload: any = {};
+    if (editingTarget === 'IN_CLINIC') {
+      payload = { inClinicPrice: Number(tempPrice) };
+    } else if (editingTarget === 'REMOTE') {
+      payload = { remotePrice: Number(tempPrice) };
+    } else if (editingTarget === 'PRIORITY') {
+      payload = { priorityPrice: Number(tempPrice) };
+    }
 
     try {
       const res = await fetch(`/api/clinics/${clinicId}`, {
@@ -214,9 +260,12 @@ export const ClinicPricingConfig: React.FC<ClinicPricingConfigProps> = ({
         if (editingTarget === 'IN_CLINIC') {
           setInClinicPrice(Number(tempPrice));
           setMessage({ type: 'success', text: `In-clinic walk-in price updated to ₹${tempPrice}!` });
-        } else {
+        } else if (editingTarget === 'REMOTE') {
           setRemotePrice(Number(tempPrice));
           setMessage({ type: 'success', text: `Remote booking price updated to ₹${tempPrice}!` });
+        } else if (editingTarget === 'PRIORITY') {
+          setPriorityPrice(Number(tempPrice));
+          setMessage({ type: 'success', text: `Priority live queue price updated to ₹${tempPrice}!` });
         }
         closeModal();
         if (onUpdated) onUpdated();
@@ -328,29 +377,84 @@ export const ClinicPricingConfig: React.FC<ClinicPricingConfigProps> = ({
               Standard rate applied when patients book doctor appointments from home via portal.
             </p>
 
-            <div>
-              <label className="text-[11px] font-bold text-slate-500 block mb-1">
-                Current Fee (₹)
-              </label>
-              <div className="flex items-center space-x-2">
-                <div className="relative flex-1">
-                  <span className="absolute left-3 top-2 text-xs font-bold text-slate-400">₹</span>
-                  <input
-                    type="text"
-                    value={remotePrice}
-                    disabled
-                    readOnly
-                    className="w-full bg-slate-100 border border-slate-200 rounded-xl pl-7 pr-3 py-1.5 text-sm font-black font-mono text-slate-400 cursor-not-allowed select-none"
-                  />
+            <div className="space-y-3">
+              {/* Remote Consultation Fee */}
+              <div>
+                <label className="text-[11px] font-bold text-slate-500 block mb-1">
+                  Remote Consultation Fee (₹)
+                </label>
+                <div className="flex items-center space-x-2">
+                  <div className="relative flex-1">
+                    <span className="absolute left-3 top-2 text-xs font-bold text-slate-400">₹</span>
+                    <input
+                      type="text"
+                      value={remotePrice}
+                      disabled
+                      readOnly
+                      className="w-full bg-slate-100 border border-slate-200 rounded-xl pl-7 pr-3 py-1.5 text-sm font-black font-mono text-slate-400 cursor-not-allowed select-none"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => openModal('REMOTE')}
+                    className="flex items-center space-x-1.5 text-xs font-bold text-[#0284C7] bg-[#E0F2FE] hover:bg-[#BAE6FD] border border-[#0284C7]/30 px-3 py-1.5 rounded-xl transition active:scale-95 shrink-0"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    <span>Change Price</span>
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => openModal('REMOTE')}
-                  className="flex items-center space-x-1.5 text-xs font-bold text-[#0284C7] bg-[#E0F2FE] hover:bg-[#BAE6FD] border border-[#0284C7]/30 px-3 py-1.5 rounded-xl transition active:scale-95 shrink-0"
-                >
-                  <Edit3 className="w-3.5 h-3.5" />
-                  <span>Change Price</span>
-                </button>
+              </div>
+
+              {/* Dedicated Row: Priority Live Queue Price (User Request #10) */}
+              <div className={`pt-3 border-t border-slate-200/80 transition-opacity ${
+                !enablePriorityQueue ? 'opacity-50' : ''
+              }`}>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[11px] font-bold text-slate-600 flex items-center space-x-1">
+                    <Zap className={`w-3.5 h-3.5 ${enablePriorityQueue ? 'text-amber-500 fill-amber-500' : 'text-slate-400'}`} />
+                    <span>Priority Live Queue Price (₹)</span>
+                  </label>
+                  {!enablePriorityQueue ? (
+                    <span className="text-[9px] font-bold text-slate-500 bg-slate-200 px-1.5 py-0.5 rounded">
+                      Feature Turned Off
+                    </span>
+                  ) : (
+                    <span className="text-[9px] font-bold text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded">
+                      Instant Queue Pass
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <div className="relative flex-1">
+                    <span className="absolute left-3 top-2 text-xs font-bold text-slate-400">₹</span>
+                    <input
+                      type="text"
+                      value={priorityPrice}
+                      disabled
+                      readOnly
+                      className={`w-full rounded-xl pl-7 pr-3 py-1.5 text-sm font-black font-mono select-none cursor-not-allowed border ${
+                        enablePriorityQueue
+                          ? 'bg-slate-100 border-slate-200 text-slate-400'
+                          : 'bg-slate-200 border-slate-300 text-slate-400'
+                      }`}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    disabled={!enablePriorityQueue}
+                    onClick={() => openModal('PRIORITY')}
+                    className={`flex items-center space-x-1.5 text-xs font-bold px-3 py-1.5 rounded-xl transition shrink-0 ${
+                      enablePriorityQueue
+                        ? 'text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-300 active:scale-95 cursor-pointer'
+                        : 'text-slate-400 bg-slate-100 border border-slate-200 cursor-not-allowed'
+                    }`}
+                    title={!enablePriorityQueue ? 'Instant Priority Queue feature is turned off in clinic settings' : 'Change Priority Live Queue Price'}
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    <span>Change Price</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -518,22 +622,32 @@ export const ClinicPricingConfig: React.FC<ClinicPricingConfigProps> = ({
                 <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
                   editingTarget === 'IN_CLINIC'
                     ? 'bg-emerald-100 text-emerald-700'
-                    : 'bg-[#E0F2FE] text-[#0284C7]'
+                    : editingTarget === 'REMOTE'
+                    ? 'bg-[#E0F2FE] text-[#0284C7]'
+                    : 'bg-amber-100 text-amber-700'
                 }`}>
                   {editingTarget === 'IN_CLINIC' ? (
                     <QrCode className="w-4 h-4" />
-                  ) : (
+                  ) : editingTarget === 'REMOTE' ? (
                     <Globe className="w-4 h-4" />
+                  ) : (
+                    <Zap className="w-4 h-4 fill-amber-500 text-amber-600" />
                   )}
                 </div>
                 <div>
                   <h4 className="font-extrabold text-sm text-[#1E293B]">
-                    {editingTarget === 'IN_CLINIC' ? 'Change In-Clinic Walk-in Fee' : 'Change Remote Booking Fee'}
+                    {editingTarget === 'IN_CLINIC' 
+                      ? 'Change In-Clinic Walk-in Fee' 
+                      : editingTarget === 'REMOTE'
+                      ? 'Change Remote Booking Fee'
+                      : 'Change Priority Live Queue Fee'}
                   </h4>
                   <p className="text-[11px] text-[#64748B]">
                     {editingTarget === 'IN_CLINIC'
                       ? 'Discounted TV QR code scanning price'
-                      : 'Home & mobile portal booking price'}
+                      : editingTarget === 'REMOTE'
+                      ? 'Home & mobile portal booking price'
+                      : 'Instant queue pass surcharge added to consultation'}
                   </p>
                 </div>
               </div>
@@ -559,14 +673,16 @@ export const ClinicPricingConfig: React.FC<ClinicPricingConfigProps> = ({
               <div className={`border rounded-xl p-3.5 space-y-1.5 ${
                 editingTarget === 'IN_CLINIC'
                   ? 'bg-emerald-50/60 border-emerald-200/80'
-                  : 'bg-sky-50/60 border-sky-200/80'
+                  : editingTarget === 'REMOTE'
+                  ? 'bg-sky-50/60 border-sky-200/80'
+                  : 'bg-amber-50/60 border-amber-200/80'
               }`}>
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold text-slate-800">
                     New Fee Amount (₹)
                   </label>
                   <span className="text-[10px] font-mono font-bold text-slate-500 bg-white/80 border border-slate-200 px-1.5 py-0.5 rounded">
-                    Current: ₹{editingTarget === 'IN_CLINIC' ? inClinicPrice : remotePrice}
+                    Current: ₹{editingTarget === 'IN_CLINIC' ? inClinicPrice : editingTarget === 'REMOTE' ? remotePrice : priorityPrice}
                   </span>
                 </div>
 
@@ -603,7 +719,9 @@ export const ClinicPricingConfig: React.FC<ClinicPricingConfigProps> = ({
                       ? ''
                       : editingTarget === 'IN_CLINIC'
                       ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                      : 'bg-[#0284C7] hover:bg-[#0369A1] text-white'
+                      : editingTarget === 'REMOTE'
+                      ? 'bg-[#0284C7] hover:bg-[#0369A1] text-white'
+                      : 'bg-amber-600 hover:bg-amber-700 text-white'
                   }`}
                 >
                   <Save className="w-3.5 h-3.5" />

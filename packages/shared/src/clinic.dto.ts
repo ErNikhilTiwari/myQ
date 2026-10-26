@@ -16,6 +16,7 @@ export interface ClinicDto {
   city?: string | null;
   inClinicPrice: number;
   remotePrice: number;
+  priorityPrice?: number;
   voiceAnnouncementMode?: VoiceAnnouncementMode;
   enableBookingTime?: boolean;
   enablePriorityQueue?: boolean;
@@ -44,6 +45,7 @@ export interface CreateClinicDto {
   city?: string;
   inClinicPrice?: number;
   remotePrice?: number;
+  priorityPrice?: number;
   voiceAnnouncementMode?: VoiceAnnouncementMode;
   enableBookingTime?: boolean;
   enablePriorityQueue?: boolean;
@@ -114,6 +116,7 @@ export interface UpdateClinicDto {
   city?: string;
   inClinicPrice?: number;
   remotePrice?: number;
+  priorityPrice?: number;
   voiceAnnouncementMode?: VoiceAnnouncementMode;
   enableBookingTime?: boolean;
   enablePriorityQueue?: boolean;

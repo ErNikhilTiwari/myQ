@@ -242,9 +242,10 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
   const isPriorityQueueEnabled = (activeClinic as any)?.enablePriorityQueue !== false;
   const inClinicFee = (activeClinic as any)?.inClinicPrice ?? 200;
   const remoteFee = (activeClinic as any)?.remotePrice ?? 200;
+  const configuredPriorityPrice = Number((activeClinic as any)?.priorityPrice ?? 50);
   const baseFee = bookingType === 'IN_CLINIC' ? inClinicFee : remoteFee;
   const isPriorityActive = isPriorityQueueEnabled && joinQueueImmediately;
-  const priorityFee = isPriorityActive ? 50 : 0;
+  const priorityFee = isPriorityActive ? configuredPriorityPrice : 0;
   const currentFee = baseFee + priorityFee;
 
   // Reset modal state cleanly to book another appointment
@@ -816,18 +817,18 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                               <span>Join Live Queue Right Away</span>
                             </span>
                             <span className="bg-amber-100 border border-amber-300 text-amber-800 text-[10px] font-black px-2 py-0.5 rounded-full">
-                              +₹50 Extra
+                              +₹{configuredPriorityPrice} Extra
                             </span>
                           </div>
                           <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
                             {joinQueueImmediately
-                              ? "⚡ Checkbox active (+₹50): You will enter the doctor's active live queue right away upon booking."
-                              : "Check this box (+₹50) to enter the doctor's live queue right away. Leave unchecked for a standard appointment at ₹200."}
+                              ? `⚡ Checkbox active (+₹${configuredPriorityPrice}): You will enter the doctor's active live queue right away upon booking.`
+                              : `Check this box (+₹${configuredPriorityPrice}) to enter the doctor's live queue right away. Leave unchecked for a standard appointment at ₹${baseFee}.`}
                           </p>
                         </div>
                       </div>
                       <div className="text-right shrink-0">
-                        <div className="text-sm font-black font-mono text-amber-700">+₹50</div>
+                        <div className="text-sm font-black font-mono text-amber-700">+₹{configuredPriorityPrice}</div>
                         <div className="text-[10px] text-slate-400 font-semibold">Live Queue</div>
                       </div>
                     </div>
@@ -844,7 +845,7 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
                   <div>
                     <span className="text-xs font-black text-slate-900">Total Payable Amount</span>
                     <span className="text-[10px] text-slate-500 block">
-                      {isPriorityActive ? `₹${baseFee} Fixed + ₹50 Live Queue` : `₹${baseFee} Fixed Appointment`}
+                      {isPriorityActive ? `₹${baseFee} Fixed + ₹${configuredPriorityPrice} Live Queue` : `₹${baseFee} Fixed Appointment`}
                     </span>
                   </div>
                   <div className="text-2xl font-black font-mono text-emerald-600">

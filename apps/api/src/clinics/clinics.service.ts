@@ -61,6 +61,7 @@ export class ClinicsService {
           city: c.city || null,
           inClinicPrice: c.inClinicPrice ?? 200,
           remotePrice: c.remotePrice ?? 200,
+          priorityPrice: (c as any).priorityPrice ?? 50,
           voiceAnnouncementMode: (c as any).voiceAnnouncementMode ?? 'TOKEN_PATIENT_DOCTOR_ROOM',
           enableBookingTime: (c as any).enableBookingTime ?? true,
           enablePriorityQueue: (c as any).enablePriorityQueue ?? true,
@@ -98,6 +99,7 @@ export class ClinicsService {
         city: c.city || null,
         inClinicPrice: c.inClinicPrice ?? 200,
         remotePrice: c.remotePrice ?? 200,
+        priorityPrice: (c as any).priorityPrice ?? 50,
         voiceAnnouncementMode: (c as any).voiceAnnouncementMode ?? 'TOKEN_PATIENT_DOCTOR_ROOM',
         enableBookingTime: (c as any).enableBookingTime ?? true,
         enablePriorityQueue: (c as any).enablePriorityQueue ?? true,
@@ -171,6 +173,7 @@ export class ClinicsService {
         chainId: dto.chainId || null,
         inClinicPrice: dto.inClinicPrice !== undefined ? Number(dto.inClinicPrice) : 200,
         remotePrice: dto.remotePrice !== undefined ? Number(dto.remotePrice) : 200,
+        priorityPrice: dto.priorityPrice !== undefined ? Number(dto.priorityPrice) : 50,
         voiceAnnouncementMode: dto.voiceAnnouncementMode || 'TOKEN_PATIENT_DOCTOR_ROOM',
         enableBookingTime: dto.enableBookingTime !== undefined ? Boolean(dto.enableBookingTime) : true,
         enablePriorityQueue: dto.enablePriorityQueue !== undefined ? Boolean(dto.enablePriorityQueue) : true,
@@ -333,6 +336,7 @@ export class ClinicsService {
         city: clinic.city,
         inClinicPrice: clinic.inClinicPrice ?? 200,
         remotePrice: clinic.remotePrice ?? 200,
+        priorityPrice: (clinic as any).priorityPrice ?? 50,
         voiceAnnouncementMode: clinic.voiceAnnouncementMode,
         enableBookingTime: (clinic as any).enableBookingTime !== false,
         enablePriorityQueue: (clinic as any).enablePriorityQueue !== false,
@@ -403,6 +407,7 @@ export class ClinicsService {
         city: clinic.city,
         inClinicPrice: clinic.inClinicPrice ?? 200,
         remotePrice: clinic.remotePrice ?? 200,
+        priorityPrice: (clinic as any).priorityPrice ?? 50,
         voiceAnnouncementMode: clinic.voiceAnnouncementMode,
         enableBookingTime: (clinic as any).enableBookingTime !== false,
         enablePriorityQueue: (clinic as any).enablePriorityQueue !== false,
@@ -427,6 +432,16 @@ export class ClinicsService {
     }
 
     const dataToUpdate: any = { ...dto };
+
+    if (dto.inClinicPrice !== undefined) {
+      dataToUpdate.inClinicPrice = Number(dto.inClinicPrice);
+    }
+    if (dto.remotePrice !== undefined) {
+      dataToUpdate.remotePrice = Number(dto.remotePrice);
+    }
+    if (dto.priorityPrice !== undefined) {
+      dataToUpdate.priorityPrice = Number(dto.priorityPrice);
+    }
 
     if (dto.phoneNumber) {
       const rawDigits = dto.phoneNumber.replace(/\D/g, '').slice(-10);
