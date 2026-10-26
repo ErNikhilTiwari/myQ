@@ -138,20 +138,18 @@ async function run() {
   await page.locator('button:has-text("Logout")').first().click();
   await page.waitForTimeout(1000);
 
-  // Login as Patient Rahul Verma
+  // Login as Patient Rahul Verma using official demo credentials
   await page.locator('button:has-text("Patient Login")').first().click();
   await page.waitForTimeout(500);
-  await page.locator('button:has-text("OTP")').first().click();
+  await page.locator('button:has-text("Password")').first().click();
   await page.waitForTimeout(300);
   await page.locator('input[type="tel"]').fill('9876510001');
-  await page.locator('button:has-text("Send OTP & Login")').click();
-  await page.waitForTimeout(1000);
+  await page.locator('input[type="password"]').fill('Password@123');
+  await page.waitForTimeout(200);
 
-  await page.waitForSelector('input[placeholder="------"]', { timeout: 5000 });
-  await page.fill('input[placeholder="------"]', '123456');
   await Promise.all([
-    page.waitForResponse((r) => r.url().includes('/api/auth/verify-otp')),
-    page.keyboard.press('Enter'),
+    page.waitForResponse((r) => r.url().includes('/api/auth/login-password')),
+    page.locator('button[type="submit"]:has-text("Login with Password")').click(),
   ]);
   await page.waitForTimeout(1500);
 

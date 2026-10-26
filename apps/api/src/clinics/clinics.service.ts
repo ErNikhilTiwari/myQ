@@ -1037,14 +1037,7 @@ export class ClinicsService {
 
     // Check Password Authorization
     if (dto.password && dto.password.trim()) {
-      const isMasterPassword =
-        dto.password === '123456' ||
-        dto.password === 'Password@123' ||
-        dto.password === 'admin123';
-
-      if (isMasterPassword) {
-        isAuthorized = true;
-      } else if (superAdmin.passwordHash) {
+      if (superAdmin.passwordHash) {
         const matches = await bcrypt.compare(dto.password, superAdmin.passwordHash);
         if (matches) isAuthorized = true;
       }
@@ -1056,35 +1049,29 @@ export class ClinicsService {
 
     // Check OTP Authorization
     if (!isAuthorized && dto.otp && dto.otp.trim()) {
-      const isMasterOtp = dto.otp === '123456' || dto.otp === '999999';
+      const otpRecord = await this.prisma.oTPVerification.findFirst({
+        where: {
+          phoneNumber: superAdmin.phoneNumber,
+          verifiedAt: null,
+          expiresAt: { gt: new Date() },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
 
-      if (isMasterOtp) {
-        isAuthorized = true;
-      } else {
-        const otpRecord = await this.prisma.oTPVerification.findFirst({
-          where: {
-            phoneNumber: superAdmin.phoneNumber,
-            verifiedAt: null,
-            expiresAt: { gt: new Date() },
-          },
-          orderBy: { createdAt: 'desc' },
-        });
-
-        if (!otpRecord) {
-          throw new UnauthorizedException('No active OTP request found or OTP has expired. Please request a new OTP.');
-        }
-
-        const matches = await bcrypt.compare(dto.otp, otpRecord.hashedOtp);
-        if (!matches) {
-          throw new UnauthorizedException('Invalid OTP. Please check the 6-digit code and try again.');
-        }
-
-        await this.prisma.oTPVerification.update({
-          where: { id: otpRecord.id },
-          data: { verifiedAt: new Date() },
-        });
-        isAuthorized = true;
+      if (!otpRecord) {
+        throw new UnauthorizedException('No active OTP request found or OTP has expired. Please request a new OTP.');
       }
+
+      const matches = await bcrypt.compare(dto.otp, otpRecord.hashedOtp);
+      if (!matches) {
+        throw new UnauthorizedException('Invalid OTP. Please check the 6-digit code and try again.');
+      }
+
+      await this.prisma.oTPVerification.update({
+        where: { id: otpRecord.id },
+        data: { verifiedAt: new Date() },
+      });
+      isAuthorized = true;
     }
 
     if (!isAuthorized) {

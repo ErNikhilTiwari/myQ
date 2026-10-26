@@ -21,18 +21,18 @@ async function run() {
   await page.locator('button:has-text("Patient Login")').first().click();
   await page.waitForTimeout(500);
 
-  // Fill Phone Number
-  await page.locator('input[type="tel"]').fill('9876510001');
-  const sendOtpBtn = await page.waitForSelector('button:has-text("Send OTP & Login")');
-  await sendOtpBtn.click();
-  await page.waitForTimeout(1000);
+  // Switch to Password tab
+  await page.locator('button:has-text("Password")').first().click();
+  await page.waitForTimeout(300);
 
-  // Fill Default OTP
-  await page.waitForSelector('input[placeholder="------"]', { timeout: 5000 });
-  await page.fill('input[placeholder="------"]', '123456');
+  // Fill Phone Number and Password
+  await page.locator('input[type="tel"]').fill('9876510001');
+  await page.locator('input[type="password"]').fill('Password@123');
+  await page.waitForTimeout(200);
+
   await Promise.all([
-    page.waitForResponse((r) => r.url().includes('/api/auth/verify-otp')),
-    page.keyboard.press('Enter'),
+    page.waitForResponse((r) => r.url().includes('/api/auth/login-password')),
+    page.locator('button[type="submit"]:has-text("Login with Password")').click(),
   ]);
   await page.waitForTimeout(1500);
 

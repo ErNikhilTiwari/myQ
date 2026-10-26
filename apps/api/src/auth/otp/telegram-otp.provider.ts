@@ -205,7 +205,7 @@ Any verification OTPs requested on the website for *${normalized}* will now arri
       if (activeOtp) {
         await this.sendMessage(
           chatId,
-          `🔑 *Your Pending OTP Code is:* *123456* (or check latest generated code in your request session)`,
+          `ℹ️ *Notice:* A pending OTP verification is active for this number. If you missed it, please click *Resend OTP* on the login screen to receive a fresh code here.`,
         );
       }
     } else {

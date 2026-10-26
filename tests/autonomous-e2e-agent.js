@@ -150,19 +150,30 @@ async function runAutonomousTesting() {
       `OTP input rendered. Resend button state: disabled=${isResendDisabled !== null}`
     );
 
-    // 1.6 Verify OTP Submission (Patient 1: Rahul Verma)
+    // 1.6 Verify that arbitrary OTP bypass (e.g. 123456) is strictly rejected (Zero OTP Bypass)
     await page.fill('input[placeholder="------"]', '123456');
     const [verifyOtpRes] = await Promise.all([
       page.waitForResponse((r) => r.url().includes('/api/auth/verify-otp')),
       page.keyboard.press('Enter'),
     ]);
     const verifyOtpData = await verifyOtpRes.json();
+    const isBypassRejected = verifyOtpRes.status() === 401 && !verifyOtpData.success;
     logStep(
       1.6,
-      'Verify OTP API Call',
-      `POST /api/auth/verify-otp -> Status: ${verifyOtpRes.status()}, User: ${verifyOtpData.data?.user?.name} (${verifyOtpData.data?.user?.role})`,
-      verifyOtpData.success ? 'PASS' : 'FAIL'
+      'OTP Bypass Elimination Check',
+      `Arbitrary OTP (123456) rejected with 401: ${isBypassRejected}. Zero OTP bypass strictly enforced.`,
+      isBypassRejected ? 'PASS' : 'FAIL'
     );
+
+    // 1.65 Log in as Patient using official demo account password (Password@123)
+    await page.click('button:has-text("Login with Password instead")');
+    await page.waitForTimeout(400);
+    await page.fill('input[type="tel"]', '9876510001');
+    await page.fill('input[type="password"]', 'Password@123');
+    await Promise.all([
+      page.waitForResponse((r) => r.url().includes('/api/auth/login-password')),
+      page.click('button[type="submit"]:has-text("Login with Password")'),
+    ]);
 
     // 1.7 Patient Session Storage Parity Check
     await page.waitForTimeout(1000);

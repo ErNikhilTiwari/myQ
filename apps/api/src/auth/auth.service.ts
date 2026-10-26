@@ -169,49 +169,42 @@ export class AuthService {
       },
     });
 
-    const isMasterBypass = dto.otp === '123456' || dto.otp === '999999';
-
-    if (!record && !isMasterBypass) {
+    if (!record) {
       throw new UnauthorizedException('No pending OTP request found. Please request an OTP first.');
     }
 
-    if (record) {
-      // Check expiry (bypassed if master demo code)
-      if (!isMasterBypass && new Date() > record.expiresAt) {
-        throw new UnauthorizedException('OTP has expired. Please request a new OTP.');
-      }
+    // Check expiry
+    if (new Date() > record.expiresAt) {
+      throw new UnauthorizedException('OTP has expired. Please request a new OTP.');
+    }
 
-      // Check maximum attempts (bypassed if master demo code)
-      if (!isMasterBypass && record.attempts >= this.OTP_MAX_ATTEMPTS) {
-        throw new HttpException(
-          'Maximum OTP attempts exceeded. Please request a new OTP.',
-          HttpStatus.TOO_MANY_REQUESTS,
-        );
-      }
+    // Check maximum attempts
+    if (record.attempts >= this.OTP_MAX_ATTEMPTS) {
+      throw new HttpException(
+        'Maximum OTP attempts exceeded. Please request a new OTP.',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
 
-      // Validate OTP code (in test environment or mock provider, allow 123456 or 999999 as bypass)
-      let isMatch = await bcrypt.compare(dto.otp, record.hashedOtp);
-      if (!isMatch && isMasterBypass) {
-        isMatch = true;
-      }
+    // Validate OTP code strictly against hashedOtp
+    const isMatch = await bcrypt.compare(dto.otp, record.hashedOtp);
 
-      if (!isMatch) {
-        // Increment attempt counter
-        await this.prisma.oTPVerification.update({
-          where: { id: record.id },
-          data: { attempts: record.attempts + 1 },
-        });
-        throw new UnauthorizedException(
-          `Invalid OTP code. ${this.OTP_MAX_ATTEMPTS - (record.attempts + 1)} attempts remaining.`,
-        );
-      }
-
-      // Mark verified
+    if (!isMatch) {
+      // Increment attempt counter
       await this.prisma.oTPVerification.update({
         where: { id: record.id },
-        data: { verifiedAt: new Date() },
+        data: { attempts: record.attempts + 1 },
       });
+      throw new UnauthorizedException(
+        `Invalid OTP code. ${this.OTP_MAX_ATTEMPTS - (record.attempts + 1)} attempts remaining.`,
+      );
     }
+
+    // Mark verified
+    await this.prisma.oTPVerification.update({
+      where: { id: record.id },
+      data: { verifiedAt: new Date() },
+    });
 
     // Find or create user
     let user = await this.prisma.user.findFirst({
@@ -372,11 +365,6 @@ export class AuthService {
       },
     });
 
-    const isMasterPassword =
-      dto.password === '123456' ||
-      dto.password === 'Password@123' ||
-      dto.password === 'admin123';
-
     const matchingClinic = await this.findMatchingClinicForPhone(phone);
     let isNewUser = false;
 
@@ -476,11 +464,6 @@ export class AuthService {
           where: { id: user.id },
           data: { passwordHash: hashedPassword },
         });
-        isValidPassword = true;
-      }
-
-      // Master password bypass for local testing & reviewer convenience
-      if (!isValidPassword && isMasterPassword) {
         isValidPassword = true;
       }
 
@@ -651,17 +634,12 @@ export class AuthService {
 
     // If user already has a password set, require current password verification
     if (user.passwordHash) {
-      const isMasterPassword =
-        dto.currentPassword === '123456' ||
-        dto.currentPassword === 'Password@123' ||
-        dto.currentPassword === 'admin123';
-
-      let matches = false;
-      if (dto.currentPassword) {
-        matches = await bcrypt.compare(dto.currentPassword, user.passwordHash);
+      if (!dto.currentPassword) {
+        throw new BadRequestException('Current password is required to update your account password.');
       }
 
-      if (!matches && !isMasterPassword) {
+      const matches = await bcrypt.compare(dto.currentPassword, user.passwordHash);
+      if (!matches) {
         throw new BadRequestException('Current password does not match. Please verify and try again.');
       }
     }

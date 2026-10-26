@@ -115,10 +115,12 @@ describe('AuthService (Unit Tests & Security Hardening)', () => {
   describe('verifyOtp', () => {
     it('authenticates user and returns JWT tokens on valid OTP', async () => {
       const now = new Date();
+      const realOtp = '849201';
+      const hashedOtp = await bcrypt.hash(realOtp, 10);
       mockPrismaService.oTPVerification.findFirst.mockResolvedValue({
         id: 'otp-1',
         phoneNumber: '+919876543210',
-        hashedOtp: '$2a$10$dummyHash',
+        hashedOtp,
         attempts: 0,
         expiresAt: new Date(now.getTime() + 5 * 60 * 1000),
         verifiedAt: null,
@@ -136,12 +138,29 @@ describe('AuthService (Unit Tests & Security Hardening)', () => {
 
       const result = await service.verifyOtp({
         phoneNumber: '+919876543210',
-        otp: '123456', // Test bypass
+        otp: realOtp,
       });
 
       expect(result.user.phoneNumber).toBe('+919876543210');
       expect(result.tokens.accessToken).toBe('test_token');
       expect(result.tokens.refreshToken).toBe('test_token');
+    });
+
+    it('rejects invalid OTP and strictly blocks 123456 without bypass', async () => {
+      const now = new Date();
+      const hashedOtp = await bcrypt.hash('849201', 10);
+      mockPrismaService.oTPVerification.findFirst.mockResolvedValue({
+        id: 'otp-2',
+        phoneNumber: '+919876543210',
+        hashedOtp,
+        attempts: 0,
+        expiresAt: new Date(now.getTime() + 5 * 60 * 1000),
+        verifiedAt: null,
+      });
+
+      await expect(
+        service.verifyOtp({ phoneNumber: '+919876543210', otp: '123456' }),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('rejects expired OTP', async () => {
