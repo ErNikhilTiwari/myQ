@@ -312,10 +312,33 @@ export const ClinicAdminProfile: React.FC<ClinicAdminProfileProps> = ({
     { key: 'SUNDAY', label: 'Sun', full: 'Sunday' },
   ];
 
+  // Full 24-hour time options at 30-minute intervals covering 00:00 to 23:59 (48 slots + 11:59 PM End of Day)
   const TIME_OPTIONS = [
-    '07:00 AM', '07:30 AM', '08:00 AM', '08:30 AM', '09:00 AM', '09:30 AM', '10:00 AM',
-    '10:30 AM', '11:00 AM', '11:30 AM', '12:00 PM', '01:00 PM', '02:00 PM', '03:00 PM',
-    '04:00 PM', '05:00 PM', '06:00 PM', '07:00 PM', '08:00 PM', '09:00 PM', '10:00 PM'
+    '12:00 AM', '12:30 AM',
+    '01:00 AM', '01:30 AM',
+    '02:00 AM', '02:30 AM',
+    '03:00 AM', '03:30 AM',
+    '04:00 AM', '04:30 AM',
+    '05:00 AM', '05:30 AM',
+    '06:00 AM', '06:30 AM',
+    '07:00 AM', '07:30 AM',
+    '08:00 AM', '08:30 AM',
+    '09:00 AM', '09:30 AM',
+    '10:00 AM', '10:30 AM',
+    '11:00 AM', '11:30 AM',
+    '12:00 PM', '12:30 PM',
+    '01:00 PM', '01:30 PM',
+    '02:00 PM', '02:30 PM',
+    '03:00 PM', '03:30 PM',
+    '04:00 PM', '04:30 PM',
+    '05:00 PM', '05:30 PM',
+    '06:00 PM', '06:30 PM',
+    '07:00 PM', '07:30 PM',
+    '08:00 PM', '08:30 PM',
+    '09:00 PM', '09:30 PM',
+    '10:00 PM', '10:30 PM',
+    '11:00 PM', '11:30 PM',
+    '11:59 PM',
   ];
 
   const handleToggleDay = (dayKey: string) => {
@@ -447,6 +470,12 @@ export const ClinicAdminProfile: React.FC<ClinicAdminProfileProps> = ({
       </div>
     );
   };
+
+  const is24HoursOpen = openTime === '12:00 AM' && (closeTime === '11:59 PM' || closeTime === '12:00 AM');
+  const openTimeOptions = TIME_OPTIONS.includes(openTime) ? TIME_OPTIONS : [openTime, ...TIME_OPTIONS];
+  const closeTimeOptions = TIME_OPTIONS.includes(closeTime) ? TIME_OPTIONS : [closeTime, ...TIME_OPTIONS];
+  const lunchStartOptions = TIME_OPTIONS.includes(lunchStartTime) ? TIME_OPTIONS : [lunchStartTime, ...TIME_OPTIONS];
+  const lunchEndOptions = TIME_OPTIONS.includes(lunchEndTime) ? TIME_OPTIONS : [lunchEndTime, ...TIME_OPTIONS];
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto w-full pb-10 animate-in fade-in duration-200">
@@ -989,37 +1018,75 @@ export const ClinicAdminProfile: React.FC<ClinicAdminProfileProps> = ({
           </div>
 
           {/* Working Timings */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
-            <div>
-              <label className="text-xs font-bold text-[#1E293B] block mb-1.5 flex items-center space-x-1.5">
-                <Clock className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Daily Opening Time</span>
-              </label>
-              <select
-                value={openTime}
-                onChange={(e) => setOpenTime(e.target.value)}
-                className="w-full bg-[#F8FAFC] border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none"
-              >
-                {TIME_OPTIONS.map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
+          <div className="pt-2 border-t border-slate-100 space-y-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+              <div className="flex items-center space-x-2">
+                <Clock className="w-4 h-4 text-[#0284C7]" />
+                <h4 className="text-xs font-black text-[#1E293B]">
+                  Daily Consultation Timings (24-Hour Range)
+                </h4>
+                {is24HoursOpen && (
+                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                    🟢 24 Hours Open (Round-the-Clock)
+                  </span>
+                )}
+              </div>
+
+              {isEditingSchedule && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpenTime('12:00 AM');
+                    setCloseTime('11:59 PM');
+                    setEnableLunchBreak(false);
+                  }}
+                  className={`px-3 py-1 text-[11px] font-bold rounded-lg border transition ${
+                    is24HoursOpen
+                      ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                      : 'bg-white border-slate-200 hover:border-[#0284C7] text-slate-700 hover:text-[#0284C7]'
+                  }`}
+                >
+                  ⚡ Set 24 Hours Open
+                </button>
+              )}
             </div>
 
-            <div>
-              <label className="text-xs font-bold text-[#1E293B] block mb-1.5 flex items-center space-x-1.5">
-                <Clock className="w-3.5 h-3.5 text-rose-600" />
-                <span>Daily Closing Time</span>
-              </label>
-              <select
-                value={closeTime}
-                onChange={(e) => setCloseTime(e.target.value)}
-                className="w-full bg-[#F8FAFC] border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none"
-              >
-                {TIME_OPTIONS.map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-bold text-[#1E293B] block mb-1.5 flex items-center space-x-1.5">
+                  <Clock className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Daily Opening Time</span>
+                </label>
+                <select
+                  value={openTime}
+                  onChange={(e) => setOpenTime(e.target.value)}
+                  className="w-full bg-[#F8FAFC] border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none cursor-pointer"
+                >
+                  {openTimeOptions.map((t) => (
+                    <option key={t} value={t}>
+                      {t}{t === '12:00 AM' ? ' (Midnight / 24h Start)' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-[#1E293B] block mb-1.5 flex items-center space-x-1.5">
+                  <Clock className="w-3.5 h-3.5 text-rose-600" />
+                  <span>Daily Closing Time</span>
+                </label>
+                <select
+                  value={closeTime}
+                  onChange={(e) => setCloseTime(e.target.value)}
+                  className="w-full bg-[#F8FAFC] border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-[#1E293B] focus:ring-2 focus:ring-[#0284C7] focus:outline-none cursor-pointer"
+                >
+                  {closeTimeOptions.map((t) => (
+                    <option key={t} value={t}>
+                      {t}{t === '11:59 PM' ? ' (End of Day / 24h Close)' : t === '12:00 AM' ? ' (Midnight)' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 
@@ -1062,7 +1129,7 @@ export const ClinicAdminProfile: React.FC<ClinicAdminProfileProps> = ({
                     onChange={(e) => setLunchStartTime(e.target.value)}
                     className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-[#1E293B] focus:ring-2 focus:ring-amber-500 focus:outline-none cursor-pointer"
                   >
-                    {TIME_OPTIONS.map((t) => (
+                    {lunchStartOptions.map((t) => (
                       <option key={t} value={t}>{t}</option>
                     ))}
                   </select>
@@ -1077,7 +1144,7 @@ export const ClinicAdminProfile: React.FC<ClinicAdminProfileProps> = ({
                     onChange={(e) => setLunchEndTime(e.target.value)}
                     className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-[#1E293B] focus:ring-2 focus:ring-amber-500 focus:outline-none cursor-pointer"
                   >
-                    {TIME_OPTIONS.map((t) => (
+                    {lunchEndOptions.map((t) => (
                       <option key={t} value={t}>{t}</option>
                     ))}
                   </select>

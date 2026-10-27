@@ -86,7 +86,7 @@ export const minutesToTime = (totalMinutes: number): string => {
 };
 
 // Generate available consultation time slots based on clinic opening/closing hours,
-// lunch break window, and configured procedure duration multiples.
+// lunch break window, and configured procedure duration multiples. Supports full 24-hour schedules.
 export const generateClinicSlots = (clinic: any): string[] => {
   const openTimeStr = clinic?.openTime || '09:00 AM';
   const closeTimeStr = clinic?.closeTime || '06:00 PM';
@@ -96,21 +96,51 @@ export const generateClinicSlots = (clinic: any): string[] => {
   const lunchEndStr = clinic?.lunchEndTime || '02:00 PM';
 
   const openMins = timeToMinutes(openTimeStr);
-  const closeMins = timeToMinutes(closeTimeStr);
+  let closeMins = timeToMinutes(closeTimeStr);
   const lunchStartMins = timeToMinutes(lunchStartStr);
   const lunchEndMins = timeToMinutes(lunchEndStr);
 
+  // When closing time is 12:00 AM (midnight) or 11:59 PM (end of day), or when openTime equals closeTime (24-hour round-the-clock):
+  // Close represents the end of the 24-hour day (1440 minutes).
+  if (
+    closeTimeStr === '12:00 AM' || 
+    closeTimeStr === '11:59 PM' || 
+    (openMins === 0 && closeMins === 0) ||
+    openTimeStr === closeTimeStr
+  ) {
+    closeMins = 1440;
+  }
+
+  const isSlotAllowed = (startM: number): boolean => {
+    if (!enableLunch || lunchStartMins >= lunchEndMins) return true;
+    const endM = startM + duration;
+    // Overlap condition: max(startM, lunchStartMins) < min(endM, lunchEndMins)
+    return !(Math.max(startM, lunchStartMins) < Math.min(endM, lunchEndMins));
+  };
+
   const slots: string[] = [];
-  // Slots start at openMins, and must finish before or by closeMins (slotStart + duration <= closeMins)
-  for (let m = openMins; m + duration <= closeMins; m += duration) {
-    if (enableLunch && lunchStartMins < lunchEndMins) {
-      const slotEnd = m + duration;
-      // Overlap condition: max(m, lunchStartMins) < min(slotEnd, lunchEndMins)
-      if (Math.max(m, lunchStartMins) < Math.min(slotEnd, lunchEndMins)) {
-        continue;
+
+  if (closeMins > openMins) {
+    // Normal day or full 24-hour schedule (e.g., 00:00 to 1440 or 09:00 to 18:00)
+    for (let m = openMins; m + duration <= closeMins; m += duration) {
+      if (isSlotAllowed(m)) {
+        slots.push(minutesToTime(m));
       }
     }
-    slots.push(minutesToTime(m));
+  } else if (closeMins < openMins) {
+    // Overnight schedule spanning across midnight (e.g., 08:00 PM to 04:00 AM)
+    // Part 1: from openMins to midnight (1440)
+    for (let m = openMins; m + duration <= 1440; m += duration) {
+      if (isSlotAllowed(m)) {
+        slots.push(minutesToTime(m));
+      }
+    }
+    // Part 2: from midnight (0) to closeMins
+    for (let m = 0; m + duration <= closeMins; m += duration) {
+      if (isSlotAllowed(m)) {
+        slots.push(minutesToTime(m));
+      }
+    }
   }
 
   if (slots.length === 0) {
