@@ -10,8 +10,14 @@ export class SmsOtpProvider implements IOtpProvider {
 
   async sendOtp(phoneNumber: string, otp: string): Promise<boolean> {
     if (!this.authKey || !this.templateId) {
+      if (process.env.NODE_ENV === 'production') {
+        this.logger.error(
+          `❌ [SMS OTP] MSG91 credentials missing in production! Configure MSG91_AUTH_KEY and MSG91_TEMPLATE_ID. Delivery to ${phoneNumber} aborted.`,
+        );
+        return false;
+      }
       this.logger.warn(
-        `⚠️ MSG91 credentials missing. Falling back to console log: OTP for ${phoneNumber} is ${otp}`,
+        `⚠️ MSG91 credentials missing. Falling back to dev console log: OTP for ${phoneNumber} is ${otp}`,
       );
       return true;
     }

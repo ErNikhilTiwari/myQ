@@ -6,7 +6,6 @@ import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { OTP_PROVIDER_TOKEN } from './otp/otp.provider.interface';
 import { MockOtpProvider } from './otp/mock-otp.provider';
-import { TelegramOtpProvider } from './otp/telegram-otp.provider';
 import { UserRole } from '@queueapp/shared';
 
 describe('AuthService (Unit Tests & Security Hardening)', () => {
@@ -42,10 +41,6 @@ describe('AuthService (Unit Tests & Security Hardening)', () => {
     verify: jest.fn(),
   };
 
-  const mockTelegramOtpProvider = {
-    getBotInfo: jest.fn().mockResolvedValue({ username: 'test_telegram_bot' }),
-  };
-
   beforeEach(async () => {
     mockOtpProvider = new MockOtpProvider();
 
@@ -55,7 +50,6 @@ describe('AuthService (Unit Tests & Security Hardening)', () => {
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: JwtService, useValue: mockJwtService },
         { provide: OTP_PROVIDER_TOKEN, useValue: mockOtpProvider },
-        { provide: TelegramOtpProvider, useValue: mockTelegramOtpProvider },
       ],
     }).compile();
 

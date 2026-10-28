@@ -87,21 +87,4 @@ export class AuthController {
       meta: { timestamp: new Date().toISOString() },
     };
   }
-
-  @Get('telegram/info')
-  async getTelegramInfo(): Promise<ApiResponse> {
-    const data = await this.authService.getTelegramInfo();
-    return {
-      success: true,
-      data,
-      meta: { timestamp: new Date().toISOString() },
-    };
-  }
-
-  @Post('telegram/webhook')
-  @HttpCode(HttpStatus.OK)
-  async handleTelegramWebhook(@Body() update: any): Promise<{ ok: boolean }> {
-    await this.authService.processTelegramUpdate(update);
-    return { ok: true };
-  }
 }

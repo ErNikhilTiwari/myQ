@@ -13,7 +13,6 @@ import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { IOtpProvider, OTP_PROVIDER_TOKEN } from './otp/otp.provider.interface';
-import { TelegramOtpProvider } from './otp/telegram-otp.provider';
 import {
   SendOtpRequestDto,
   SendOtpResponseDto,
@@ -34,7 +33,6 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     @Inject(OTP_PROVIDER_TOKEN) private readonly otpProvider: IOtpProvider,
-    private readonly telegramProvider: TelegramOtpProvider,
   ) {}
 
   /**
@@ -112,7 +110,6 @@ export class AuthService {
     // Send through provider
     await this.otpProvider.sendOtp(phone, rawOtp);
 
-    const botInfo = await this.telegramProvider.getBotInfo();
     const currentAttempts = attemptsInLastMinute + 1;
 
     // Resend cooldown policy:
@@ -130,7 +127,6 @@ export class AuthService {
       success: true,
       message: 'OTP sent successfully to ' + phone,
       expiresInSeconds: this.OTP_EXPIRY_MINUTES * 60,
-      telegramBotUsername: botInfo?.username || undefined,
       resendCooldownSeconds,
       attemptsInWindow: currentAttempts,
     };
@@ -705,13 +701,5 @@ export class AuthService {
       refreshToken,
       expiresIn: '15m',
     };
-  }
-
-  async getTelegramInfo() {
-    return this.telegramProvider.getBotInfo();
-  }
-
-  async processTelegramUpdate(update: any) {
-    return this.telegramProvider.processIncomingUpdate(update);
   }
 }

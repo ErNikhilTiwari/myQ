@@ -10,6 +10,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  ForbiddenException,
 } from '@nestjs/common';
 import { WhatsAppService } from './whatsapp.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -69,6 +70,9 @@ export class WhatsAppController {
     @Body('phoneNumber') phoneNumber: string,
     @Body('messageText') messageText: string,
   ): Promise<ApiResponse> {
+    if (process.env.NODE_ENV === 'production') {
+      throw new ForbiddenException('Simulation endpoints are disabled in production.');
+    }
     const data = await this.whatsAppService.processChatbotMessage(
       clinicId,
       phoneNumber,

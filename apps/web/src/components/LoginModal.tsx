@@ -24,7 +24,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const [step, setStep] = useState<'INPUT' | 'OTP'>('INPUT');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [telegramBotUsername, setTelegramBotUsername] = useState<string | null>(null);
   const [resendCountdown, setResendCountdown] = useState<number>(0);
   const [otpAttemptsInMinute, setOtpAttemptsInMinute] = useState<number[]>([]);
 
@@ -46,19 +45,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       setErrorMsg(null);
     }
   }, [isOpen, profileType]);
-
-  useEffect(() => {
-    fetch('/api/auth/telegram/info', {
-      headers: { 'Bypass-Tunnel-Reminder': 'true' },
-    })
-      .then((res) => res.json())
-      .then((res) => {
-        if (res?.data?.username) {
-          setTelegramBotUsername(res.data.username);
-        }
-      })
-      .catch(() => {});
-  }, []);
 
   if (!isOpen) return null;
 
@@ -173,9 +159,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
       if (data.success) {
         setOtp('');
-        if (data.data?.telegramBotUsername || data.telegramBotUsername) {
-          setTelegramBotUsername(data.data?.telegramBotUsername || data.telegramBotUsername);
-        }
         setStep('OTP');
         const updatedAttempts = [...recentAttempts, now];
         setOtpAttemptsInMinute(updatedAttempts);
@@ -466,9 +449,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                     <label className="text-xs font-semibold text-[#334155]">
                       Account Password
                     </label>
-                    <span className="text-[10px] text-[#0284C7] font-semibold">
-                      Demo: Password@123
-                    </span>
                   </div>
                   <div className="relative">
                     <input
@@ -548,27 +528,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 placeholder="------"
                 className="w-full bg-[#F8FAFC] border border-slate-300 rounded-xl px-4 py-2.5 text-center text-lg tracking-widest text-[#0284C7] font-mono font-bold focus:outline-none focus:border-[#0284C7] focus:bg-white placeholder:text-slate-400 placeholder:font-normal placeholder:opacity-50"
               />
-
-              {telegramBotUsername && (
-                <div className="bg-sky-50 border border-sky-200 rounded-xl p-2.5 mt-2.5 text-xs text-sky-900 flex items-center justify-between shadow-xs">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-base shrink-0">🤖</span>
-                    <div className="text-left">
-                      <p className="font-bold text-[11px] text-sky-950">Receive OTP on Telegram</p>
-                      <p className="text-[10px] text-sky-700">Get OTP directly in Telegram:</p>
-                    </div>
-                  </div>
-                  <a
-                    href={`https://t.me/${telegramBotUsername}?start=${phone10}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="ml-2 px-2.5 py-1.5 bg-[#0088cc] hover:bg-[#0077b5] text-white text-[11px] font-bold rounded-lg shadow-xs shrink-0 transition flex items-center space-x-1"
-                  >
-                    <span>Open Bot</span>
-                    <span>↗</span>
-                  </a>
-                </div>
-              )}
 
               {/* Resend OTP Row with 10s cooldown and 3-tries rate limit */}
               <div className="flex items-center justify-between text-xs pt-2">

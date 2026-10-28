@@ -6,7 +6,6 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { OTP_PROVIDER_TOKEN } from './otp/otp.provider.interface';
 import { MockOtpProvider } from './otp/mock-otp.provider';
-import { TelegramOtpProvider } from './otp/telegram-otp.provider';
 import { SmsOtpProvider } from './otp/sms-otp.provider';
 
 @Module({
@@ -22,27 +21,22 @@ import { SmsOtpProvider } from './otp/sms-otp.provider';
     AuthService,
     JwtStrategy,
     MockOtpProvider,
-    TelegramOtpProvider,
     SmsOtpProvider,
     {
       provide: OTP_PROVIDER_TOKEN,
       useFactory: (
-        telegramProvider: TelegramOtpProvider,
         smsProvider: SmsOtpProvider,
         mockProvider: MockOtpProvider,
       ) => {
         const provider = (process.env.OTP_PROVIDER || '').trim().toLowerCase();
-        if (provider === 'telegram') {
-          return telegramProvider;
-        }
         if (provider === 'sms' || provider === 'msg91' || (process.env.MSG91_AUTH_KEY && provider !== 'mock')) {
           return smsProvider;
         }
         return mockProvider;
       },
-      inject: [TelegramOtpProvider, SmsOtpProvider, MockOtpProvider],
+      inject: [SmsOtpProvider, MockOtpProvider],
     },
   ],
-  exports: [AuthService, JwtModule, PassportModule, TelegramOtpProvider],
+  exports: [AuthService, JwtModule, PassportModule],
 })
 export class AuthModule {}

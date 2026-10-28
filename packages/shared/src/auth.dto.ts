@@ -8,7 +8,6 @@ export interface SendOtpResponseDto {
   success: boolean;
   message: string;
   expiresInSeconds: number;
-  telegramBotUsername?: string;
   resendCooldownSeconds?: number;
   attemptsInWindow?: number;
 }
