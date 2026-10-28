@@ -17,8 +17,12 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Enable CORS for frontend and smart TV displays
+  const configuredOrigins = process.env.CORS_ALLOWED_ORIGINS
+    ? process.env.CORS_ALLOWED_ORIGINS.split(',').map((s) => s.trim())
+    : true;
+
   app.enableCors({
-    origin: '*',
+    origin: configuredOrigins,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });

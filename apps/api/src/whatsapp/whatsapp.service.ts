@@ -27,8 +27,12 @@ export class WhatsAppService {
     process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN ||
     process.env.WHATSAPP_VERIFY_TOKEN ||
     'queueapp_verify_token_secret';
-  private readonly phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-  private readonly accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+  private readonly phoneNumberId =
+    process.env.WHATSAPP_PHONE_NUMBER_ID ||
+    process.env.META_WHATSAPP_PHONE_NUMBER_ID;
+  private readonly accessToken =
+    process.env.WHATSAPP_ACCESS_TOKEN ||
+    process.env.META_WHATSAPP_TOKEN;
   private readonly gatewayUrl = process.env.WHATSAPP_GATEWAY_URL;
 
   constructor(private readonly prisma: PrismaService) {}
