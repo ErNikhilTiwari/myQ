@@ -23,9 +23,86 @@ const nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 12);
 export class WhatsAppService {
   private readonly logger = new Logger(WhatsAppService.name);
   private readonly appSecret = process.env.META_APP_SECRET || 'test_meta_app_secret_12345';
-  private readonly verifyToken = process.env.WHATSAPP_VERIFY_TOKEN || 'queueapp_verify_token_secret';
+  private readonly verifyToken =
+    process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN ||
+    process.env.WHATSAPP_VERIFY_TOKEN ||
+    'queueapp_verify_token_secret';
+  private readonly phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+  private readonly accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+  private readonly gatewayUrl = process.env.WHATSAPP_GATEWAY_URL;
 
   constructor(private readonly prisma: PrismaService) {}
+
+  /**
+   * Dispatches outbound message to Meta WhatsApp Cloud API or WhatsApp Web Gateway
+   */
+  private async dispatchToWhatsAppGateway(
+    recipientPhone: string,
+    payload: any,
+  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    // 1. Meta WhatsApp Cloud API (Official Cloud API)
+    if (this.phoneNumberId && this.accessToken) {
+      const cleanPhone = recipientPhone.replace(/\D/g, '');
+      try {
+        const url = `https://graph.facebook.com/v20.0/${this.phoneNumberId}/messages`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${this.accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            messaging_product: 'whatsapp',
+            recipient_type: 'individual',
+            to: cleanPhone,
+            ...payload,
+          }),
+        });
+
+        const data: any = await res.json();
+        if (!res.ok) {
+          const errDetail = data?.error?.message || JSON.stringify(data);
+          this.logger.error(`❌ Meta WhatsApp Cloud API Error (${res.status}): ${errDetail}`);
+          return { success: false, error: errDetail };
+        }
+
+        const wamId = data?.messages?.[0]?.id || `wam_${nanoid()}`;
+        this.logger.log(`📱 [WhatsApp Cloud API] Delivered message to ${cleanPhone}. ID: ${wamId}`);
+        return { success: true, messageId: wamId };
+      } catch (err: any) {
+        this.logger.error(`❌ Meta WhatsApp Cloud API network error: ${err.message}`);
+        return { success: false, error: err.message };
+      }
+    }
+
+    // 2. WhatsApp Web API / Self-hosted Web Gateway (e.g. Baileys, WPPConnect, Evolution API)
+    if (this.gatewayUrl) {
+      try {
+        const cleanPhone = recipientPhone.replace(/\D/g, '');
+        const res = await fetch(this.gatewayUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone: cleanPhone,
+            message: payload?.text?.body || payload?.template?.name || '',
+            ...payload,
+          }),
+        });
+
+        const data: any = await res.json();
+        const msgId = data?.id || data?.messageId || `wam_web_${nanoid()}`;
+        this.logger.log(`📱 [WhatsApp Web Gateway] Dispatched to ${cleanPhone}. ID: ${msgId}`);
+        return { success: true, messageId: msgId };
+      } catch (err: any) {
+        this.logger.error(`❌ WhatsApp Web Gateway network error: ${err.message}`);
+        return { success: false, error: err.message };
+      }
+    }
+
+    // 3. Fallback / Mock Dev Mode: Credentials not configured
+    this.logger.log(`ℹ️ [WhatsApp Sim] (${recipientPhone}): ${payload?.text?.body || payload?.template?.name || 'outbound'}`);
+    return { success: true, messageId: `wam_${nanoid()}` };
+  }
 
   /**
    * Verify WhatsApp Webhook Challenge (GET /api/webhooks/whatsapp)
@@ -56,8 +133,6 @@ export class WhatsAppService {
       where: { phoneNumber: dto.recipientPhone },
     });
 
-    const gatewayMessageId = `wam_${nanoid()}`;
-
     let content = `[Template: ${dto.templateName}] `;
     if (dto.templateName === 'appointment_confirmed') {
       content += `Hello! Your appointment with ${clinic.name} is confirmed for ${dto.parameters.slotTime || 'your slot'}.`;
@@ -67,6 +142,15 @@ export class WhatsAppService {
       content += JSON.stringify(dto.parameters);
     }
 
+    // Dispatch via real Meta Cloud API or Gateway
+    const dispatch = await this.dispatchToWhatsAppGateway(dto.recipientPhone, {
+      type: 'template',
+      template: {
+        name: dto.templateName,
+        language: { code: 'en' },
+      },
+    });
+
     const message = await this.prisma.whatsAppMessage.create({
       data: {
         clinicId: dto.clinicId,
@@ -75,8 +159,8 @@ export class WhatsAppService {
         direction: 'OUTBOUND',
         messageType: 'TEMPLATE',
         content,
-        gatewayMessageId,
-        status: 'SENT',
+        gatewayMessageId: dispatch.messageId || `wam_${nanoid()}`,
+        status: dispatch.success ? 'SENT' : 'FAILED',
       },
     });
 
@@ -101,7 +185,11 @@ export class WhatsAppService {
       where: { phoneNumber: dto.recipientPhone },
     });
 
-    const gatewayMessageId = `wam_${nanoid()}`;
+    // Dispatch via real Meta Cloud API or Gateway
+    const dispatch = await this.dispatchToWhatsAppGateway(dto.recipientPhone, {
+      type: 'text',
+      text: { preview_url: false, body: dto.messageText },
+    });
 
     const message = await this.prisma.whatsAppMessage.create({
       data: {
@@ -111,8 +199,8 @@ export class WhatsAppService {
         direction: 'OUTBOUND',
         messageType: 'TEXT',
         content: dto.messageText,
-        gatewayMessageId,
-        status: 'SENT',
+        gatewayMessageId: dispatch.messageId || `wam_${nanoid()}`,
+        status: dispatch.success ? 'SENT' : 'FAILED',
       },
     });
 

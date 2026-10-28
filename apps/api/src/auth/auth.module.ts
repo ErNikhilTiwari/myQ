@@ -31,11 +31,11 @@ import { SmsOtpProvider } from './otp/sms-otp.provider';
         smsProvider: SmsOtpProvider,
         mockProvider: MockOtpProvider,
       ) => {
-        const provider = (process.env.OTP_PROVIDER || 'mock').trim().toLowerCase();
+        const provider = (process.env.OTP_PROVIDER || '').trim().toLowerCase();
         if (provider === 'telegram') {
           return telegramProvider;
         }
-        if (provider === 'sms' || provider === 'msg91') {
+        if (provider === 'sms' || provider === 'msg91' || (process.env.MSG91_AUTH_KEY && provider !== 'mock')) {
           return smsProvider;
         }
         return mockProvider;

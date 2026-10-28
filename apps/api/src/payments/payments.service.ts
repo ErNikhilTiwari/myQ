@@ -30,6 +30,48 @@ export class PaymentsService {
   ) {}
 
   /**
+   * Helper to create real Razorpay Order via REST API if live/test credentials are provided
+   */
+  private async createRazorpayOrder(
+    amountPaise: number,
+    receipt: string,
+    notes?: Record<string, string>,
+  ): Promise<string | null> {
+    if (!process.env.RAZORPAY_KEY_ID || this.keyId.startsWith('rzp_test_queueapp_mock')) {
+      return null;
+    }
+
+    try {
+      const authHeader = Buffer.from(`${this.keyId}:${this.keySecret}`).toString('base64');
+      const response = await fetch('https://api.razorpay.com/v1/orders', {
+        method: 'POST',
+        headers: {
+          Authorization: `Basic ${authHeader}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: amountPaise,
+          currency: 'INR',
+          receipt: receipt.slice(0, 40),
+          notes,
+        }),
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        this.logger.error(`❌ Razorpay Orders API returned ${response.status}: ${errText}`);
+        return null;
+      }
+
+      const json: any = await response.json();
+      return json.id || null;
+    } catch (err: any) {
+      this.logger.error(`❌ Error calling Razorpay Orders API: ${err.message}`);
+      return null;
+    }
+  }
+
+  /**
    * Create Razorpay payment order for an appointment
    */
   async createPaymentOrder(
@@ -45,10 +87,32 @@ export class PaymentsService {
     }
 
     const provider = dto.provider || 'RAZORPAY';
-    const orderId = `${provider.toLowerCase()}_order_${nanoid()}`;
-
-    // STRICT SERVER PRICING: NEVER trust client amount; always use appointment.bookingFee
     const serverAmount = appointment.bookingFee;
+    const amountPaise = Math.round(serverAmount * 100);
+
+    // Call real Razorpay API if credentials configured
+    let orderId: string;
+    let effectiveKeyId: string;
+
+    const realRazorpayOrderId = await this.createRazorpayOrder(
+      amountPaise,
+      `appt_${appointment.id}`,
+      {
+        appointmentId: appointment.id,
+        clinicId: appointment.clinicId,
+        userId,
+      },
+    );
+
+    if (realRazorpayOrderId) {
+      orderId = realRazorpayOrderId;
+      effectiveKeyId = this.keyId;
+      this.logger.log(`💳 Created Real Razorpay Order ${orderId} via API for Appointment ${appointment.id}`);
+    } else {
+      orderId = `${provider.toLowerCase()}_order_${nanoid()}`;
+      effectiveKeyId = process.env.RAZORPAY_KEY_ID || `${provider.toLowerCase()}_key_test`;
+      this.logger.log(`💳 Created [${provider}] Dev/Mock Payment Order ${orderId} for Appointment ${appointment.id}`);
+    }
 
     const payment = await this.prisma.payment.create({
       data: {
@@ -62,15 +126,13 @@ export class PaymentsService {
       },
     });
 
-    this.logger.log(`💳 Created [${provider}] Payment Order ${orderId} for Appointment ${appointment.id} at strict server price ₹${serverAmount}`);
-
     return {
       paymentId: payment.id,
       orderId,
       amount: payment.amount,
       currency: payment.currency,
       provider,
-      keyId: `${provider.toLowerCase()}_key_test`,
+      keyId: effectiveKeyId,
       status: payment.status as PaymentStatus,
     };
   }
@@ -109,8 +171,12 @@ export class PaymentsService {
         .update(textToSign)
         .digest('hex');
 
+      const isMockAllowed =
+        process.env.NODE_ENV !== 'production' &&
+        (!process.env.RAZORPAY_KEY_ID || this.keyId.startsWith('rzp_test_queueapp_mock'));
+
       const isSignatureValid =
-        dto.razorpaySignature === 'mock_paid_signature' ||
+        (isMockAllowed && dto.razorpaySignature === 'mock_paid_signature') ||
         dto.razorpaySignature === generatedSignature;
 
       if (!isSignatureValid) {
@@ -296,9 +362,11 @@ export class PaymentsService {
 
     const bodyString = typeof rawBody === 'string' ? rawBody : rawBody.toString('utf8');
 
+    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || this.keySecret;
+
     // Verify webhook signature
     const expectedSignature = crypto
-      .createHmac('sha256', this.keySecret)
+      .createHmac('sha256', webhookSecret)
       .update(bodyString)
       .digest('hex');
 

@@ -58,9 +58,8 @@ async function runTest() {
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  // Format today's slot time: 04:30 PM today
-  const [tY, tM, tD] = today.toLocaleDateString('en-CA', { timeZone: tz }).split('-').map(Number);
-  const todaySlotDate = new Date(Date.UTC(tY, tM - 1, tD, 11, 0, 0)); // 11:00 UTC = 16:30 IST (4:30 PM)
+  // Format today's slot time: 30 minutes in future of current time (so test succeeds any hour of the day)
+  const todaySlotDate = new Date(Date.now() + 30 * 60 * 1000);
 
   // Format tomorrow's slot time: 11:00 AM tomorrow
   const [tomY, tomM, tomD] = tomorrow.toLocaleDateString('en-CA', { timeZone: tz }).split('-').map(Number);

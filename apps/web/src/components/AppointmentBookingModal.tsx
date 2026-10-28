@@ -577,35 +577,101 @@ export const AppointmentBookingModal: React.FC<AppointmentBookingModalProps> = (
 
       const paymentOrder = orderJson.data;
 
-      // 3. Verify Payment & Allocate First-Paid First-Served Queue Position
+      const confirmVerification = async (
+        razorpayPaymentId: string,
+        razorpayOrderId: string,
+        razorpaySignature: string,
+      ) => {
+        const verifyRes = await fetch('/api/payments/verify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${activeToken}`,
+          },
+          body: JSON.stringify({
+            paymentId: paymentOrder.paymentId,
+            razorpayOrderId,
+            razorpayPaymentId,
+            razorpaySignature,
+          }),
+        });
+
+        const verifyJson = await verifyRes.json();
+        if (!verifyJson.success) {
+          throw new Error(verifyJson.error?.message || verifyJson.message || 'Payment verification failed.');
+        }
+
+        const finalToken = verifyJson.data?.tokenNumber || 'Q01';
+        setConfirmedTokenNumber(finalToken);
+        setConfirmedAppointment(appointment);
+        setStep('SUCCESS');
+
+        if (onBookingConfirmed) {
+          onBookingConfirmed(finalToken, selectedClinicId);
+        }
+      };
+
+      // Check if real Razorpay Checkout modal should be opened
+      const isRealRazorpay =
+        paymentOrder.provider === 'RAZORPAY' &&
+        paymentOrder.keyId &&
+        paymentOrder.keyId !== 'razorpay_key_test' &&
+        !paymentOrder.keyId.startsWith('rzp_test_queueapp_mock') &&
+        typeof (window as any).Razorpay !== 'undefined';
+
+      if (isRealRazorpay) {
+        const options = {
+          key: paymentOrder.keyId,
+          amount: Math.round(paymentOrder.amount * 100),
+          currency: paymentOrder.currency || 'INR',
+          name: activeClinic?.name || 'Doctor Appointment',
+          description: 'Consultation Fee (Queue Allocation)',
+          order_id: paymentOrder.orderId,
+          handler: async (response: any) => {
+            try {
+              setIsProcessingBooking(true);
+              await confirmVerification(
+                response.razorpay_payment_id,
+                response.razorpay_order_id || paymentOrder.orderId,
+                response.razorpay_signature,
+              );
+            } catch (vErr: any) {
+              setErrorMsg(vErr.message || 'Payment verification failed.');
+            } finally {
+              setIsProcessingBooking(false);
+            }
+          },
+          prefill: {
+            name: currentUser?.name || '',
+            contact: currentUser?.phoneNumber ? currentUser.phoneNumber.replace(/\D/g, '').slice(-10) : '',
+            email: currentUser?.email || '',
+          },
+          theme: {
+            color: '#0284C7',
+          },
+          modal: {
+            ondismiss: () => {
+              setIsProcessingBooking(false);
+            },
+          },
+        };
+
+        const rzp = new (window as any).Razorpay(options);
+        rzp.on('payment.failed', (resp: any) => {
+          setErrorMsg(resp.error?.description || 'Payment was unsuccessful. Please retry.');
+          setIsProcessingBooking(false);
+        });
+        rzp.open();
+        return;
+      }
+
+      // Fallback for local mock/dev testing when live Razorpay keys are not configured
       const mockPaymentId = `pay_mock_${Date.now()}`;
-      const verifyRes = await fetch('/api/payments/verify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${activeToken}`,
-        },
-        body: JSON.stringify({
-          paymentId: paymentOrder.paymentId,
-          razorpayOrderId: paymentOrder.orderId,
-          razorpayPaymentId: mockPaymentId,
-          razorpaySignature: 'mock_paid_signature',
-        }),
-      });
-
-      const verifyJson = await verifyRes.json();
-      if (!verifyJson.success) {
-        throw new Error(verifyJson.error?.message || verifyJson.message || 'Payment verification failed.');
-      }
-
-      const finalToken = verifyJson.data?.tokenNumber || 'Q01';
-      setConfirmedTokenNumber(finalToken);
-      setConfirmedAppointment(appointment);
-      setStep('SUCCESS');
-
-      if (onBookingConfirmed) {
-        onBookingConfirmed(finalToken, selectedClinicId);
-      }
+      await confirmVerification(
+        mockPaymentId,
+        paymentOrder.orderId,
+        'mock_paid_signature',
+      );
     } catch (err: any) {
       setErrorMsg(err.message || 'An unexpected error occurred during booking.');
     } finally {
